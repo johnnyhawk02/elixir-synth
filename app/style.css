@@ -173,8 +173,8 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-pages::-webkit-scrollbar { display: none; }
 .m-panel { display: grid; grid-template-rows: 1fr; gap: 12px; align-content: stretch; min-height: 0; overflow: hidden; }
 
-/* the page buttons, one line of five along the bottom, under the pages */
-.m > .m-tabs { grid-area: tabs; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 6px 0 0; }
+/* the page buttons, one line of six along the bottom, under the pages */
+.m > .m-tabs { grid-area: tabs; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; padding: 6px 0 0; }
 .m-tabs button { border-color: transparent; min-width: 0; }
 .m-tabs button[aria-selected="true"] { border-color: var(--ink); }
 .m .m-tabs button { min-height: 40px; padding: 0; font-size: 1.3rem !important; letter-spacing: .04em; }
@@ -203,6 +203,25 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 /* next bar: a button waiting for the bar flashes */
 .m .m-btn.pending { animation: m-flash .5s steps(1) infinite; }
 @media (prefers-reduced-motion: reduce) { .m .m-btn.pending { animation: none; outline: 2px dashed var(--ink); outline-offset: 2px; } }
+
+/* ---- main: every page's randomisers in one place, a column each (as the pages' own columns: the big random button,
+   then a row each), with everything, next bar and undo first and save last ---- */
+.m-main-card { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); min-height: 0; padding: 6px 2px; }
+.m-mcol { display: grid; grid-template-rows: 36px 64px; grid-auto-rows: 48px; gap: 6px; align-content: start; min-height: 0; min-width: 0; padding: 0 8px; }
+.m-mcol + .m-mcol { border-left: var(--rule); }
+.m-mcol:first-child { padding-left: 2px; }
+.m-mcol:last-child { padding-right: 2px; }
+.m .m-mcol .m-btn { min-height: 0; min-width: 0; font-size: min(var(--fs-xs), 15.6px) !important; padding: 0 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.m .m-mcol .m-mnotes { flex-direction: column; }
+.m-mcol .m-nextbar { min-height: 0; padding-left: 4px; }
+.m .m-mcol .m-toggle { min-height: 0; min-width: 0; font-size: min(var(--fs-xs), 15.6px) !important; padding: 0 4px; }
+.m-mcol .m-nshift { align-items: stretch; text-align: center; }
+.m-mcol .m-nshift > span { align-self: center; }
+.m .m-mcol .m-nshift .m-btn { font-size: var(--fs-s) !important; }
+.m-mcol .m-fxhead b { padding-left: 0; }
+.m-mpreset { grid-template-rows: 36px 30px 64px; }
+.m-mcur { align-self: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-s); }
+.m-mpreset .m-note { line-height: 1.2; }
 
 /* ---- seq: the page buttons and tools, the sixteen steps in one line, the gate (or morph) lane, then the faders ---- */
 .m-seqpage { display: grid; grid-template-rows: auto minmax(0, 1.6fr) minmax(0, 0.9fr) 134px; grid-template-columns: minmax(0, 1fr) 118px; gap: 8px 10px; min-height: 0; padding: 6px 2px; }

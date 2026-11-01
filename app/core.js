@@ -120,10 +120,14 @@ let playing = false, tempo = 120;
 const DENSITY_ORDER = [0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15];
 const stepWeight = (st, s) => (Number.isFinite(st.w) ? st.w : Math.round(99 - DENSITY_ORDER.indexOf(s % 16) * 99 / 15));
 const thinned = () => seq.steps.map((st, s) => s < seq.len && st.gate > 0 && stepWeight(st, s) < 100 - seq.density);
+// the metronome (on the main page): a click on each beat while playing, high on the bar's first; a setting of this
+// browser's, not of the preset, and not in a recording
+const METRO_KEY = 'elixir-synth-metro';
+let metroOn = store.get(METRO_KEY) === '1';
 function sendSeq() {
   const thin = thinned();
   const md = MORPH_DESTS[seq.morph - 1];
-  send({ type: 'seq', playing, len: seq.len, bpm: tempo, vel: seq.vel, glide: seq.glide / 100, accentDb: seq.accent, morph: md ? PAR[md[1]] : null,
+  send({ type: 'seq', playing, metro: metroOn, len: seq.len, bpm: tempo, vel: seq.vel, glide: seq.glide / 100, accentDb: seq.accent, morph: md ? PAR[md[1]] : null,
     steps: seq.steps.map((st, s) => ({ n: degSemis(st.d), gate: thin[s] ? 0 : st.gate, acc: st.acc, slide: st.slide, m: (st.m || 0) / 100 })) });
 }
 

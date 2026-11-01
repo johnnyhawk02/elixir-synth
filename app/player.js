@@ -38,6 +38,8 @@ class Player {
     // Off, the parameter is put back and nothing here touches the voice
     this.morphPar = null; this.mCur = 0; this.mFrom = null; this.mTo = 0; this.mSet = null;
     this.rec = null;
+    // the metronome: a short blip on each beat (clickN counts its samples, -1 silent), added after the recorder
+    this.metro = false; this.clickN = -1; this.clickF = 1000;
     // the master: the distortion as an insert on the mix, then a compressor, the same design as the LXR-02's FX compressor
     this.master = { comp: true, thresh: -12, ratio: 3, attack: 5, release: 120, makeup: 0 };
     // the echo is the engine's own FX bus (the firmware's delay, tempo-synced, all wet as a send); the ring mod a send bus
@@ -77,7 +79,7 @@ class Player {
     else if (m.type === 'seq') {
       // a live change wins over one still waiting for the bar
       this.atBar = this.atBar.filter((q) => q.type !== 'seq');
-      this.steps = m.steps; this.bpm = m.bpm; this.e.bpm = m.bpm; this.vel = m.vel; this.glide = m.glide;
+      this.metro = !!m.metro; this.steps = m.steps; this.bpm = m.bpm; this.e.bpm = m.bpm; this.vel = m.vel; this.glide = m.glide;
       this.len = Math.max(1, Math.min(this.steps.length, m.len || this.steps.length)); if (this.pos >= this.len) this.pos = 0;
       this.accGain = Math.pow(10, -m.accentDb / 20);
       const mp = m.morph === undefined ? null : m.morph;
@@ -147,6 +149,7 @@ class Player {
         const len = LXR.REAL_FS * 60 / this.bpm / 4;
         // the sequence plays through its length (the pages in turn) and starts again; a bar is still 16 steps
         this.doStep(this.pos);
+        if (this.metro && this.step % 4 === 0) { this.clickN = 0; this.clickF = this.step === 0 ? 1760 : 1175; }
         this.events.push({ type: 'step', step: this.pos % 16, page: Math.floor(this.pos / 16), bar: this.bar, gr: this.gr });
         this.pos = (this.pos + 1) % this.len;
         this.gr = 0;
@@ -238,6 +241,12 @@ class Player {
     // the recorder takes the finished mix at the engine's own rate
     const r = this.rec;
     if (r) { r.L.set(L, r.n); r.R.set(R, r.n); r.n += 64; if (r.n === r.L.length) this.recFlush(); }
+    // the metronome's blip (about 40 ms), heard but not recorded
+    if (this.clickN >= 0) {
+      const w = 2 * Math.PI * this.clickF / LXR.REAL_FS, d = 120 / LXR.REAL_FS;
+      for (let i = 0; i < 64; i++, this.clickN++) { const s = Math.sin(w * this.clickN) * Math.exp(-d * this.clickN) * 0.3; L[i] += s; R[i] += s; }
+      if (this.clickN > LXR.REAL_FS * 0.04) this.clickN = -1;
+    }
   }
   process(L, R) {
     for (let n = 0; n < L.length; n++) {

@@ -30,6 +30,48 @@
   </div>
 
   <div class="m-pages" id="m-pages">
+  <div class="m-panel" data-m-panel="main">
+    <section class="m-card m-main-card">
+      <div class="m-mcol" role="group" aria-label="randomise everything">
+        <div class="m-fxhead"><b>all</b></div>
+        <button class="m-btn m-big" id="m-mall" type="button">everything</button>
+        <label class="m-chk m-nextbar"><input id="m-mnextbar" type="checkbox"><i aria-hidden="true"></i>next bar</label>
+        <button class="m-btn" data-undo type="button" disabled>undo</button>
+        <button class="m-toggle" id="m-metro" type="button" aria-pressed="false">metronome</button>
+      </div>
+      <div class="m-mcol" role="group" aria-label="randomise the notes">
+        <div class="m-fxhead"><b>notes</b></div>
+        <button class="m-btn m-big m-mnotes" data-nrand type="button">random<small class="m-nalgo" data-nalgo></small></button>
+        <button class="m-btn" data-nalter type="button">alter</button>
+        <span class="m-nshift" role="group" aria-label="shift"><button class="m-btn" type="button" data-nshift="-1" aria-label="shift the pattern left">←</button><span aria-hidden="true">shift</span><button class="m-btn" type="button" data-nshift="1" aria-label="shift the pattern right">→</button></span>
+      </div>
+      <div class="m-mcol" role="group" aria-label="randomise the voice">
+        <div class="m-fxhead"><b>voice</b></div>
+        <button class="m-btn m-big" id="m-mvrand" type="button">random voice</button>
+        <button class="m-btn" data-vrand="tone" type="button">tone</button>
+        <button class="m-btn" data-vrand="shape" type="button">shape</button>
+        <button class="m-btn" data-vrand="filter" type="button">filter</button>
+        <button class="m-btn" data-vrand="mod" type="button">mod</button>
+        <button class="m-btn" id="m-mvalter" type="button">alter</button>
+      </div>
+      <div class="m-mcol" role="group" aria-label="randomise the effects">
+        <div class="m-fxhead"><b>fx</b></div>
+        <button class="m-btn m-big" id="m-fxr3" type="button">random fx</button>
+        <button class="m-btn" data-fxrand="echo" type="button">echo</button>
+        <button class="m-btn" data-fxrand="reverb" type="button">reverb</button>
+        <button class="m-btn" data-fxrand="ring" type="button">ring mod</button>
+        <button class="m-btn" id="m-fxa3" type="button">alter</button>
+      </div>
+      <div class="m-mcol m-mpreset" role="group" aria-label="preset">
+        <div class="m-fxhead"><b>preset</b></div>
+        <output class="m-mcur" id="m-mcur"></output>
+        <button class="m-btn m-big" id="m-msave" type="button">save new</button>
+        <button class="m-btn" id="m-mover" type="button">save over</button>
+        <p class="m-note" id="m-mnote" aria-live="polite"></p>
+      </div>
+    </section>
+  </div>
+
   <div class="m-panel" data-m-panel="seq">
     <section class="m-card m-seqpage">
       <div class="m-npages" id="m-npages" role="tablist" aria-label="page">
@@ -39,7 +81,7 @@
         <button class="m-btn" type="button" role="tab" data-page="3" aria-selected="false">4</button>
         <button class="m-btn" type="button" id="m-ncopy">copy to 2</button>
         <button class="m-btn" type="button" id="m-nlane" aria-pressed="false" aria-label="show the morph lane under the notes">morph</button>
-        <span class="m-nshift" role="group" aria-label="shift"><button class="m-btn" type="button" id="m-nshift-l" aria-label="shift the pattern left">←</button><span aria-hidden="true">shift</span><button class="m-btn" type="button" id="m-nshift-r" aria-label="shift the pattern right">→</button></span>
+        <span class="m-nshift" role="group" aria-label="shift"><button class="m-btn" type="button" id="m-nshift-l" data-nshift="-1" aria-label="shift the pattern left">←</button><span aria-hidden="true">shift</span><button class="m-btn" type="button" id="m-nshift-r" data-nshift="1" aria-label="shift the pattern right">→</button></span>
         <span class="m-noct" role="group" aria-label="octave"><button class="m-btn" type="button" id="m-noct-dn" aria-label="octave down">oct −</button><output id="m-noct-out">0</output><button class="m-btn" type="button" id="m-noct-up" aria-label="octave up">oct +</button></span>
       </div>
       <div class="m-steps" id="m-steps" role="grid" aria-label="the sixteen steps of the page"></div>
@@ -49,8 +91,8 @@
         <div class="m-faders m-seqf" id="m-seqf"></div>
       </div>
       <div class="m-vbtns m-seqbtns" role="group" aria-label="randomise the notes">
-        <button class="m-btn m-big" id="m-nrand" type="button">random<small class="m-nalgo" id="m-nalgo"></small></button>
-        <button class="m-btn" id="m-nalter" type="button">alter</button>
+        <button class="m-btn m-big" id="m-nrand" data-nrand type="button">random<small class="m-nalgo" data-nalgo></small></button>
+        <button class="m-btn" id="m-nalter" data-nalter type="button">alter</button>
         <button class="m-btn" data-undo type="button" disabled>undo</button>
       </div>
     </section>
@@ -116,7 +158,8 @@
 
   <button class="m-btn m-rnd-open" id="m-rnd-open" type="button" aria-haspopup="dialog" aria-expanded="false">randomise</button>
   <nav class="m-tabs" role="tablist" aria-label="pages">
-    <button type="button" role="tab" data-m-tab="seq" aria-selected="true">seq</button>
+    <button type="button" role="tab" data-m-tab="main" aria-selected="true">main</button>
+    <button type="button" role="tab" data-m-tab="seq" aria-selected="false">seq</button>
     <button type="button" role="tab" data-m-tab="voice" aria-selected="false">voice</button>
     <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
     <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>

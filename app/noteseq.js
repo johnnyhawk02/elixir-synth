@@ -61,8 +61,7 @@ function nsShift(k) {
   for (let s = 0; s < n; s++) seq.steps[s] = was[(s - k + n) % n];
   nsChanged();
 }
-$('m-nshift-l').addEventListener('click', () => nsShift(-1));
-$('m-nshift-r').addEventListener('click', () => nsShift(1));
+for (const b of document.querySelectorAll('[data-nshift]')) b.addEventListener('click', () => nsShift(+b.dataset.nshift));
 $('m-noct-dn').addEventListener('click', () => nsOct(-1));
 $('m-noct-up').addEventListener('click', () => nsOct(1));
 // hear a note as it's set, while stopped
@@ -247,8 +246,8 @@ function copyVary() {
 // the whole sequence, for the perf page's randomisers: a new page 1 and its variations
 function randomNotes() { randomPage(0); copyVary(); sendSeq(); }
 // random: all 64 steps, each page a new line of its own (not a variation of page 1), whichever page is shown
-$('m-nrand').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { for (let pg = 0; pg < PAGES; pg++) randomPage(pg); sendSeq(); }));
-$('m-nalter').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { alterPage(nsPage); sendSeq(); }));
+for (const b of document.querySelectorAll('[data-nrand]')) b.addEventListener('click', (e) => mRandomise(e.currentTarget, () => { for (let pg = 0; pg < PAGES; pg++) randomPage(pg); sendSeq(); }));
+for (const b of document.querySelectorAll('[data-nalter]')) b.addEventListener('click', (e) => mRandomise(e.currentTarget, () => { alterPage(nsPage); sendSeq(); }));
 // copy to the next page: the page shown, exactly, onto the one after it, which is then shown (so pressing it again
 // carries on to the next); off on page 4. Undo puts the page back as it was
 $('m-ncopy').addEventListener('click', (e) => {
@@ -259,4 +258,4 @@ $('m-ncopy').addEventListener('click', (e) => {
 });
 // the algorithm random uses: its number on the fader, its name on the random button
 mFader($('m-seqf'), 'algo', { min: 0, max: SEQ_ALGOS.length - 1, get: () => seq.algo, set: (v) => { seq.algo = v; drawAll(); }, show: (v) => String(v + 1), dflt: SEQ0.algo });
-drawHooks.push(() => { $('m-nalgo').textContent = `${seq.algo + 1} ${SEQ_ALGOS[seq.algo][0]}`; });
+drawHooks.push(() => { document.querySelectorAll('[data-nalgo]').forEach((e) => { e.textContent = `${seq.algo + 1} ${SEQ_ALGOS[seq.algo][0]}`; }); });

@@ -188,8 +188,8 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-pages::-webkit-scrollbar { display: none; }
 .m-panel { display: grid; grid-template-rows: 1fr; gap: 12px; align-content: stretch; min-height: 0; overflow: hidden; }
 
-/* the page buttons, one line of five along the bottom, under the pages */
-.m > .m-tabs { grid-area: tabs; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 6px 0 0; }
+/* the page buttons, one line of six along the bottom, under the pages */
+.m > .m-tabs { grid-area: tabs; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; padding: 6px 0 0; }
 .m-tabs button { border-color: transparent; min-width: 0; }
 .m-tabs button[aria-selected="true"] { border-color: var(--ink); }
 .m .m-tabs button { min-height: 40px; padding: 0; font-size: 1.3rem !important; letter-spacing: .04em; }
@@ -218,6 +218,25 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 /* next bar: a button waiting for the bar flashes */
 .m .m-btn.pending { animation: m-flash .5s steps(1) infinite; }
 @media (prefers-reduced-motion: reduce) { .m .m-btn.pending { animation: none; outline: 2px dashed var(--ink); outline-offset: 2px; } }
+
+/* ---- main: every page's randomisers in one place, a column each (as the pages' own columns: the big random button,
+   then a row each), with everything, next bar and undo first and save last ---- */
+.m-main-card { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); min-height: 0; padding: 6px 2px; }
+.m-mcol { display: grid; grid-template-rows: 36px 64px; grid-auto-rows: 48px; gap: 6px; align-content: start; min-height: 0; min-width: 0; padding: 0 8px; }
+.m-mcol + .m-mcol { border-left: var(--rule); }
+.m-mcol:first-child { padding-left: 2px; }
+.m-mcol:last-child { padding-right: 2px; }
+.m .m-mcol .m-btn { min-height: 0; min-width: 0; font-size: min(var(--fs-xs), 15.6px) !important; padding: 0 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.m .m-mcol .m-mnotes { flex-direction: column; }
+.m-mcol .m-nextbar { min-height: 0; padding-left: 4px; }
+.m .m-mcol .m-toggle { min-height: 0; min-width: 0; font-size: min(var(--fs-xs), 15.6px) !important; padding: 0 4px; }
+.m-mcol .m-nshift { align-items: stretch; text-align: center; }
+.m-mcol .m-nshift > span { align-self: center; }
+.m .m-mcol .m-nshift .m-btn { font-size: var(--fs-s) !important; }
+.m-mcol .m-fxhead b { padding-left: 0; }
+.m-mpreset { grid-template-rows: 36px 30px 64px; }
+.m-mcur { align-self: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-s); }
+.m-mpreset .m-note { line-height: 1.2; }
 
 /* ---- seq: the page buttons and tools, the sixteen steps in one line, the gate (or morph) lane, then the faders ---- */
 .m-seqpage { display: grid; grid-template-rows: auto minmax(0, 1.6fr) minmax(0, 0.9fr) 134px; grid-template-columns: minmax(0, 1fr) 118px; gap: 8px 10px; min-height: 0; padding: 6px 2px; }
@@ -410,7 +429,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v85</small></button>
+    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v86</small></button>
     <div class="m-tport">
       <button class="m-btn m-play" id="m-play" type="button" aria-pressed="false" aria-label="play (space)" title="play (space)"><i aria-hidden="true"></i></button>
       <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
@@ -422,6 +441,48 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
   </div>
 
   <div class="m-pages" id="m-pages">
+  <div class="m-panel" data-m-panel="main">
+    <section class="m-card m-main-card">
+      <div class="m-mcol" role="group" aria-label="randomise everything">
+        <div class="m-fxhead"><b>all</b></div>
+        <button class="m-btn m-big" id="m-mall" type="button">everything</button>
+        <label class="m-chk m-nextbar"><input id="m-mnextbar" type="checkbox"><i aria-hidden="true"></i>next bar</label>
+        <button class="m-btn" data-undo type="button" disabled>undo</button>
+        <button class="m-toggle" id="m-metro" type="button" aria-pressed="false">metronome</button>
+      </div>
+      <div class="m-mcol" role="group" aria-label="randomise the notes">
+        <div class="m-fxhead"><b>notes</b></div>
+        <button class="m-btn m-big m-mnotes" data-nrand type="button">random<small class="m-nalgo" data-nalgo></small></button>
+        <button class="m-btn" data-nalter type="button">alter</button>
+        <span class="m-nshift" role="group" aria-label="shift"><button class="m-btn" type="button" data-nshift="-1" aria-label="shift the pattern left">←</button><span aria-hidden="true">shift</span><button class="m-btn" type="button" data-nshift="1" aria-label="shift the pattern right">→</button></span>
+      </div>
+      <div class="m-mcol" role="group" aria-label="randomise the voice">
+        <div class="m-fxhead"><b>voice</b></div>
+        <button class="m-btn m-big" id="m-mvrand" type="button">random voice</button>
+        <button class="m-btn" data-vrand="tone" type="button">tone</button>
+        <button class="m-btn" data-vrand="shape" type="button">shape</button>
+        <button class="m-btn" data-vrand="filter" type="button">filter</button>
+        <button class="m-btn" data-vrand="mod" type="button">mod</button>
+        <button class="m-btn" id="m-mvalter" type="button">alter</button>
+      </div>
+      <div class="m-mcol" role="group" aria-label="randomise the effects">
+        <div class="m-fxhead"><b>fx</b></div>
+        <button class="m-btn m-big" id="m-fxr3" type="button">random fx</button>
+        <button class="m-btn" data-fxrand="echo" type="button">echo</button>
+        <button class="m-btn" data-fxrand="reverb" type="button">reverb</button>
+        <button class="m-btn" data-fxrand="ring" type="button">ring mod</button>
+        <button class="m-btn" id="m-fxa3" type="button">alter</button>
+      </div>
+      <div class="m-mcol m-mpreset" role="group" aria-label="preset">
+        <div class="m-fxhead"><b>preset</b></div>
+        <output class="m-mcur" id="m-mcur"></output>
+        <button class="m-btn m-big" id="m-msave" type="button">save new</button>
+        <button class="m-btn" id="m-mover" type="button">save over</button>
+        <p class="m-note" id="m-mnote" aria-live="polite"></p>
+      </div>
+    </section>
+  </div>
+
   <div class="m-panel" data-m-panel="seq">
     <section class="m-card m-seqpage">
       <div class="m-npages" id="m-npages" role="tablist" aria-label="page">
@@ -431,7 +492,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" type="button" role="tab" data-page="3" aria-selected="false">4</button>
         <button class="m-btn" type="button" id="m-ncopy">copy to 2</button>
         <button class="m-btn" type="button" id="m-nlane" aria-pressed="false" aria-label="show the morph lane under the notes">morph</button>
-        <span class="m-nshift" role="group" aria-label="shift"><button class="m-btn" type="button" id="m-nshift-l" aria-label="shift the pattern left">←</button><span aria-hidden="true">shift</span><button class="m-btn" type="button" id="m-nshift-r" aria-label="shift the pattern right">→</button></span>
+        <span class="m-nshift" role="group" aria-label="shift"><button class="m-btn" type="button" id="m-nshift-l" data-nshift="-1" aria-label="shift the pattern left">←</button><span aria-hidden="true">shift</span><button class="m-btn" type="button" id="m-nshift-r" data-nshift="1" aria-label="shift the pattern right">→</button></span>
         <span class="m-noct" role="group" aria-label="octave"><button class="m-btn" type="button" id="m-noct-dn" aria-label="octave down">oct −</button><output id="m-noct-out">0</output><button class="m-btn" type="button" id="m-noct-up" aria-label="octave up">oct +</button></span>
       </div>
       <div class="m-steps" id="m-steps" role="grid" aria-label="the sixteen steps of the page"></div>
@@ -441,8 +502,8 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <div class="m-faders m-seqf" id="m-seqf"></div>
       </div>
       <div class="m-vbtns m-seqbtns" role="group" aria-label="randomise the notes">
-        <button class="m-btn m-big" id="m-nrand" type="button">random<small class="m-nalgo" id="m-nalgo"></small></button>
-        <button class="m-btn" id="m-nalter" type="button">alter</button>
+        <button class="m-btn m-big" id="m-nrand" data-nrand type="button">random<small class="m-nalgo" data-nalgo></small></button>
+        <button class="m-btn" id="m-nalter" data-nalter type="button">alter</button>
         <button class="m-btn" data-undo type="button" disabled>undo</button>
       </div>
     </section>
@@ -508,7 +569,8 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
   <button class="m-btn m-rnd-open" id="m-rnd-open" type="button" aria-haspopup="dialog" aria-expanded="false">randomise</button>
   <nav class="m-tabs" role="tablist" aria-label="pages">
-    <button type="button" role="tab" data-m-tab="seq" aria-selected="true">seq</button>
+    <button type="button" role="tab" data-m-tab="main" aria-selected="true">main</button>
+    <button type="button" role="tab" data-m-tab="seq" aria-selected="false">seq</button>
     <button type="button" role="tab" data-m-tab="voice" aria-selected="false">voice</button>
     <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
     <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>
@@ -522,7 +584,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <div class="m-lcd" id="m-lcd" role="group" aria-label="screen colours"><span>screen</span></div>
         <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
         <label class="m-chk"><input id="m-lowlat" type="checkbox"><i aria-hidden="true"></i>low latency (can break up when the phone is busy)</label>
-        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v85, 1 Nov, 15:46</footer>
+        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v86, 1 Nov, 16:17</footer>
       </div>
     </section>
   </div>
@@ -4363,6 +4425,8 @@ class Player {
     // Off, the parameter is put back and nothing here touches the voice
     this.morphPar = null; this.mCur = 0; this.mFrom = null; this.mTo = 0; this.mSet = null;
     this.rec = null;
+    // the metronome: a short blip on each beat (clickN counts its samples, -1 silent), added after the recorder
+    this.metro = false; this.clickN = -1; this.clickF = 1000;
     // the master: the distortion as an insert on the mix, then a compressor, the same design as the LXR-02's FX compressor
     this.master = { comp: true, thresh: -12, ratio: 3, attack: 5, release: 120, makeup: 0 };
     // the echo is the engine's own FX bus (the firmware's delay, tempo-synced, all wet as a send); the ring mod a send bus
@@ -4402,7 +4466,7 @@ class Player {
     else if (m.type === 'seq') {
       // a live change wins over one still waiting for the bar
       this.atBar = this.atBar.filter((q) => q.type !== 'seq');
-      this.steps = m.steps; this.bpm = m.bpm; this.e.bpm = m.bpm; this.vel = m.vel; this.glide = m.glide;
+      this.metro = !!m.metro; this.steps = m.steps; this.bpm = m.bpm; this.e.bpm = m.bpm; this.vel = m.vel; this.glide = m.glide;
       this.len = Math.max(1, Math.min(this.steps.length, m.len || this.steps.length)); if (this.pos >= this.len) this.pos = 0;
       this.accGain = Math.pow(10, -m.accentDb / 20);
       const mp = m.morph === undefined ? null : m.morph;
@@ -4472,6 +4536,7 @@ class Player {
         const len = LXR.REAL_FS * 60 / this.bpm / 4;
         // the sequence plays through its length (the pages in turn) and starts again; a bar is still 16 steps
         this.doStep(this.pos);
+        if (this.metro && this.step % 4 === 0) { this.clickN = 0; this.clickF = this.step === 0 ? 1760 : 1175; }
         this.events.push({ type: 'step', step: this.pos % 16, page: Math.floor(this.pos / 16), bar: this.bar, gr: this.gr });
         this.pos = (this.pos + 1) % this.len;
         this.gr = 0;
@@ -4563,6 +4628,12 @@ class Player {
     // the recorder takes the finished mix at the engine's own rate
     const r = this.rec;
     if (r) { r.L.set(L, r.n); r.R.set(R, r.n); r.n += 64; if (r.n === r.L.length) this.recFlush(); }
+    // the metronome's blip (about 40 ms), heard but not recorded
+    if (this.clickN >= 0) {
+      const w = 2 * Math.PI * this.clickF / LXR.REAL_FS, d = 120 / LXR.REAL_FS;
+      for (let i = 0; i < 64; i++, this.clickN++) { const s = Math.sin(w * this.clickN) * Math.exp(-d * this.clickN) * 0.3; L[i] += s; R[i] += s; }
+      if (this.clickN > LXR.REAL_FS * 0.04) this.clickN = -1;
+    }
   }
   process(L, R) {
     for (let n = 0; n < L.length; n++) {
@@ -4708,10 +4779,14 @@ let playing = false, tempo = 120;
 const DENSITY_ORDER = [0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15];
 const stepWeight = (st, s) => (Number.isFinite(st.w) ? st.w : Math.round(99 - DENSITY_ORDER.indexOf(s % 16) * 99 / 15));
 const thinned = () => seq.steps.map((st, s) => s < seq.len && st.gate > 0 && stepWeight(st, s) < 100 - seq.density);
+// the metronome (on the main page): a click on each beat while playing, high on the bar's first; a setting of this
+// browser's, not of the preset, and not in a recording
+const METRO_KEY = 'elixir-synth-metro';
+let metroOn = store.get(METRO_KEY) === '1';
 function sendSeq() {
   const thin = thinned();
   const md = MORPH_DESTS[seq.morph - 1];
-  send({ type: 'seq', playing, len: seq.len, bpm: tempo, vel: seq.vel, glide: seq.glide / 100, accentDb: seq.accent, morph: md ? PAR[md[1]] : null,
+  send({ type: 'seq', playing, metro: metroOn, len: seq.len, bpm: tempo, vel: seq.vel, glide: seq.glide / 100, accentDb: seq.accent, morph: md ? PAR[md[1]] : null,
     steps: seq.steps.map((st, s) => ({ n: degSemis(st.d), gate: thin[s] ? 0 : st.gate, acc: st.acc, slide: st.slide, m: (st.m || 0) / 100 })) });
 }
 
@@ -5180,8 +5255,7 @@ function nsShift(k) {
   for (let s = 0; s < n; s++) seq.steps[s] = was[(s - k + n) % n];
   nsChanged();
 }
-$('m-nshift-l').addEventListener('click', () => nsShift(-1));
-$('m-nshift-r').addEventListener('click', () => nsShift(1));
+for (const b of document.querySelectorAll('[data-nshift]')) b.addEventListener('click', () => nsShift(+b.dataset.nshift));
 $('m-noct-dn').addEventListener('click', () => nsOct(-1));
 $('m-noct-up').addEventListener('click', () => nsOct(1));
 // hear a note as it's set, while stopped
@@ -5366,8 +5440,8 @@ function copyVary() {
 // the whole sequence, for the perf page's randomisers: a new page 1 and its variations
 function randomNotes() { randomPage(0); copyVary(); sendSeq(); }
 // random: all 64 steps, each page a new line of its own (not a variation of page 1), whichever page is shown
-$('m-nrand').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { for (let pg = 0; pg < PAGES; pg++) randomPage(pg); sendSeq(); }));
-$('m-nalter').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { alterPage(nsPage); sendSeq(); }));
+for (const b of document.querySelectorAll('[data-nrand]')) b.addEventListener('click', (e) => mRandomise(e.currentTarget, () => { for (let pg = 0; pg < PAGES; pg++) randomPage(pg); sendSeq(); }));
+for (const b of document.querySelectorAll('[data-nalter]')) b.addEventListener('click', (e) => mRandomise(e.currentTarget, () => { alterPage(nsPage); sendSeq(); }));
 // copy to the next page: the page shown, exactly, onto the one after it, which is then shown (so pressing it again
 // carries on to the next); off on page 4. Undo puts the page back as it was
 $('m-ncopy').addEventListener('click', (e) => {
@@ -5378,7 +5452,7 @@ $('m-ncopy').addEventListener('click', (e) => {
 });
 // the algorithm random uses: its number on the fader, its name on the random button
 mFader($('m-seqf'), 'algo', { min: 0, max: SEQ_ALGOS.length - 1, get: () => seq.algo, set: (v) => { seq.algo = v; drawAll(); }, show: (v) => String(v + 1), dflt: SEQ0.algo });
-drawHooks.push(() => { $('m-nalgo').textContent = `${seq.algo + 1} ${SEQ_ALGOS[seq.algo][0]}`; });
+drawHooks.push(() => { document.querySelectorAll('[data-nalgo]').forEach((e) => { e.textContent = `${seq.algo + 1} ${SEQ_ALGOS[seq.algo][0]}`; }); });
 
 // ---- fader step sequencers: holding a fader still for half a second opens one for it: 2 to 16 steps, each an offset
 // from the fader's setting (up or down, up to depth of its range) that it takes while playing (the step is the bar's
@@ -5575,6 +5649,10 @@ eventHandlers.push((ev) => {
 });
 stopHooks.push(() => { mBarBtns.forEach((b) => b.classList.remove('pending')); mBarBtns.clear(); });
 storedCheck('m-nextbar', 'elixir-synth-nextbar', false);
+// (the main page has its own next bar box: the two are one setting)
+$('m-mnextbar').checked = $('m-nextbar').checked;
+$('m-mnextbar').addEventListener('change', () => { $('m-nextbar').checked = $('m-mnextbar').checked; $('m-nextbar').dispatchEvent(new Event('change')); });
+$('m-nextbar').addEventListener('change', () => { $('m-mnextbar').checked = $('m-nextbar').checked; });
 
 // sound: a new patch for the voice, in ranges that still play notes: the note (coarse) and the level and pan stay;
 // mostly saw, square or pwm through a low-pass, now and then fm, a pitch blip, a click or the lfo on a parameter. One
@@ -5639,10 +5717,10 @@ function alterFx(a = 0.1) {
   fx.width = nudge(fx.width, 0, 200); fx.ringFreq = nudge(fx.ringFreq, 0, 127);
   sendMix();
 }
-$('m-everything').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { randomSound(); randomNotes(); randomFx(); }));
+for (const id of ['m-everything', 'm-mall']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => { randomSound(); randomNotes(); randomFx(); }));
 $('m-sound').addEventListener('click', (e) => mRandomise(e.currentTarget, randomSound));
-for (const id of ['m-alter', 'm-valter']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterSound()));
-$('m-vrand').addEventListener('click', (e) => mRandomise(e.currentTarget, randomSound));
+for (const id of ['m-alter', 'm-valter', 'm-mvalter']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterSound()));
+for (const id of ['m-vrand', 'm-mvrand']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomSound));
 // the voice page's section randomisers: one section new, and its tab shown so the change can be seen
 for (const b of document.querySelectorAll('[data-vrand]')) b.addEventListener('click', (e) => {
   const sec = b.dataset.vrand;
@@ -5651,8 +5729,13 @@ for (const b of document.querySelectorAll('[data-vrand]')) b.addEventListener('c
 });
 $('m-pattern').addEventListener('click', (e) => mRandomise(e.currentTarget, randomNotes));
 for (const b of document.querySelectorAll('[data-fxrand]')) b.addEventListener('click', (e) => mRandomise(e.currentTarget, () => { RANDOM_FX[b.dataset.fxrand](); sendMix(); }));
-for (const id of ['m-fxr', 'm-fxr2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomFx));
-for (const id of ['m-fxa', 'm-fxa2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterFx()));
+for (const id of ['m-fxr', 'm-fxr2', 'm-fxr3']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomFx));
+for (const id of ['m-fxa', 'm-fxa2', 'm-fxa3']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterFx()));
+
+// the metronome
+const metroDraw = () => $('m-metro').setAttribute('aria-pressed', metroOn);
+$('m-metro').addEventListener('click', () => { metroOn = !metroOn; store.set(METRO_KEY, metroOn ? '1' : '0'); metroDraw(); sendSeq(); });
+metroDraw();
 
 // the randomise popup: opens over the pages and stays open while its buttons are used (next bar's pending flash shows
 // there); done, the opener again, or Escape closes it
@@ -5702,6 +5785,9 @@ stopHooks.push(() => { if (pPending) { pPending = null; pDraw(); } });
 function pDraw() {
   const over = !pPending && pCur.saved ? pCur : null;
   $('m-pover').disabled = !over; $('m-pover').textContent = over ? `save over ${over.name}` : 'save over';
+  // (the main page names the preset over its buttons, so its save over is just that)
+  $('m-mover').disabled = !over;
+  $('m-mcur').textContent = (pPending ? pShown : pCur).name;
   const list = $('m-plist'), cur = pPending ? pShown : pCur;
   list.innerHTML = '';
   const group = (t) => { const li = document.createElement('li'); li.className = 'm-pgroup'; li.textContent = t; list.append(li); };
@@ -5728,18 +5814,20 @@ function pDraw() {
   group('built in');
   presetList.filter((k) => k.builtin).forEach(row);
 }
-pageHooks.push((t) => { if (t === 'presets') pDraw(); });
-$('m-psave').addEventListener('click', () => {
+pageHooks.push((t) => { if (t === 'presets' || t === 'main') pDraw(); });
+// save new and save over, here and on the main page (each says what it did under itself)
+const pNote = (t) => { $('m-pnote').textContent = t; $('m-mnote').textContent = t; };
+for (const id of ['m-psave', 'm-msave']) $(id).addEventListener('click', () => {
   const k = { name: newName(), ...snapshot(), saved: true };
   presetList.push(k); storePresets(); pCur = k; pPending = null;
-  $('m-pnote').textContent = `Saved as ${k.name}.`;
+  pNote(`Saved as ${k.name}.`);
   pDraw();
 });
-$('m-pover').addEventListener('click', () => {
+for (const id of ['m-pover', 'm-mover']) $(id).addEventListener('click', () => {
   const k = pCur;
   if (!k.saved || !confirm(`Save the current sound over ${k.name}?`)) return;
   Object.assign(k, snapshot()); storePresets();
-  $('m-pnote').textContent = `Saved over ${k.name}.`;
+  pNote(`Saved over ${k.name}.`);
   pDraw();
 });
 // files: { elixirSynth: 1, presets: [...] }; a name already saved here is skipped

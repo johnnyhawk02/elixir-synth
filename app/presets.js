@@ -35,6 +35,9 @@ stopHooks.push(() => { if (pPending) { pPending = null; pDraw(); } });
 function pDraw() {
   const over = !pPending && pCur.saved ? pCur : null;
   $('m-pover').disabled = !over; $('m-pover').textContent = over ? `save over ${over.name}` : 'save over';
+  // (the main page names the preset over its buttons, so its save over is just that)
+  $('m-mover').disabled = !over;
+  $('m-mcur').textContent = (pPending ? pShown : pCur).name;
   const list = $('m-plist'), cur = pPending ? pShown : pCur;
   list.innerHTML = '';
   const group = (t) => { const li = document.createElement('li'); li.className = 'm-pgroup'; li.textContent = t; list.append(li); };
@@ -61,18 +64,20 @@ function pDraw() {
   group('built in');
   presetList.filter((k) => k.builtin).forEach(row);
 }
-pageHooks.push((t) => { if (t === 'presets') pDraw(); });
-$('m-psave').addEventListener('click', () => {
+pageHooks.push((t) => { if (t === 'presets' || t === 'main') pDraw(); });
+// save new and save over, here and on the main page (each says what it did under itself)
+const pNote = (t) => { $('m-pnote').textContent = t; $('m-mnote').textContent = t; };
+for (const id of ['m-psave', 'm-msave']) $(id).addEventListener('click', () => {
   const k = { name: newName(), ...snapshot(), saved: true };
   presetList.push(k); storePresets(); pCur = k; pPending = null;
-  $('m-pnote').textContent = `Saved as ${k.name}.`;
+  pNote(`Saved as ${k.name}.`);
   pDraw();
 });
-$('m-pover').addEventListener('click', () => {
+for (const id of ['m-pover', 'm-mover']) $(id).addEventListener('click', () => {
   const k = pCur;
   if (!k.saved || !confirm(`Save the current sound over ${k.name}?`)) return;
   Object.assign(k, snapshot()); storePresets();
-  $('m-pnote').textContent = `Saved over ${k.name}.`;
+  pNote(`Saved over ${k.name}.`);
   pDraw();
 });
 // files: { elixirSynth: 1, presets: [...] }; a name already saved here is skipped

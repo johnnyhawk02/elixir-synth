@@ -26,6 +26,10 @@ eventHandlers.push((ev) => {
 });
 stopHooks.push(() => { mBarBtns.forEach((b) => b.classList.remove('pending')); mBarBtns.clear(); });
 storedCheck('m-nextbar', 'elixir-synth-nextbar', false);
+// (the main page has its own next bar box: the two are one setting)
+$('m-mnextbar').checked = $('m-nextbar').checked;
+$('m-mnextbar').addEventListener('change', () => { $('m-nextbar').checked = $('m-mnextbar').checked; $('m-nextbar').dispatchEvent(new Event('change')); });
+$('m-nextbar').addEventListener('change', () => { $('m-mnextbar').checked = $('m-nextbar').checked; });
 
 // sound: a new patch for the voice, in ranges that still play notes: the note (coarse) and the level and pan stay;
 // mostly saw, square or pwm through a low-pass, now and then fm, a pitch blip, a click or the lfo on a parameter. One
@@ -90,10 +94,10 @@ function alterFx(a = 0.1) {
   fx.width = nudge(fx.width, 0, 200); fx.ringFreq = nudge(fx.ringFreq, 0, 127);
   sendMix();
 }
-$('m-everything').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { randomSound(); randomNotes(); randomFx(); }));
+for (const id of ['m-everything', 'm-mall']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => { randomSound(); randomNotes(); randomFx(); }));
 $('m-sound').addEventListener('click', (e) => mRandomise(e.currentTarget, randomSound));
-for (const id of ['m-alter', 'm-valter']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterSound()));
-$('m-vrand').addEventListener('click', (e) => mRandomise(e.currentTarget, randomSound));
+for (const id of ['m-alter', 'm-valter', 'm-mvalter']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterSound()));
+for (const id of ['m-vrand', 'm-mvrand']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomSound));
 // the voice page's section randomisers: one section new, and its tab shown so the change can be seen
 for (const b of document.querySelectorAll('[data-vrand]')) b.addEventListener('click', (e) => {
   const sec = b.dataset.vrand;
@@ -102,8 +106,13 @@ for (const b of document.querySelectorAll('[data-vrand]')) b.addEventListener('c
 });
 $('m-pattern').addEventListener('click', (e) => mRandomise(e.currentTarget, randomNotes));
 for (const b of document.querySelectorAll('[data-fxrand]')) b.addEventListener('click', (e) => mRandomise(e.currentTarget, () => { RANDOM_FX[b.dataset.fxrand](); sendMix(); }));
-for (const id of ['m-fxr', 'm-fxr2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomFx));
-for (const id of ['m-fxa', 'm-fxa2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterFx()));
+for (const id of ['m-fxr', 'm-fxr2', 'm-fxr3']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomFx));
+for (const id of ['m-fxa', 'm-fxa2', 'm-fxa3']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterFx()));
+
+// the metronome
+const metroDraw = () => $('m-metro').setAttribute('aria-pressed', metroOn);
+$('m-metro').addEventListener('click', () => { metroOn = !metroOn; store.set(METRO_KEY, metroOn ? '1' : '0'); metroDraw(); sendSeq(); });
+metroDraw();
 
 // the randomise popup: opens over the pages and stays open while its buttons are used (next bar's pending flash shows
 // there); done, the opener again, or Escape closes it

@@ -47,13 +47,39 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(await pg.evaluate(() => $('m-rnd').hidden), 'done closes the popup');
   // the page buttons sit along the bottom, under the pages, and there's no x/y page
   check(await pg.evaluate(() => { const t = document.querySelector('.m > .m-tabs').getBoundingClientRect(), p = $('m-pages').getBoundingClientRect(), m = $('m').getBoundingClientRect();
-    return t.top >= p.bottom - 1 && m.bottom - t.bottom < 20 * mK && document.querySelectorAll('[data-m-tab]').length === 5 && !document.querySelector('[data-m-tab="xy"], [data-m-panel="xy"]'); }), 'the page buttons are along the bottom; no x/y page');
+    return t.top >= p.bottom - 1 && m.bottom - t.bottom < 20 * mK && document.querySelectorAll('[data-m-tab]').length === 6 && !document.querySelector('[data-m-tab="xy"], [data-m-panel="xy"]'); }), 'the page buttons are along the bottom; no x/y page');
   // no page scrolls; every panel fits
-  for (const t of ['seq', 'voice', 'fx', 'comp', 'presets']) {
+  for (const t of ['main', 'seq', 'voice', 'fx', 'comp', 'presets']) {
     await pg.click(`[data-m-tab="${t}"]`);
     const o = await pg.evaluate((t) => { const p = document.querySelector(`[data-m-panel="${t}"]`); return [p.scrollHeight - p.clientHeight, document.documentElement.scrollHeight - innerHeight, document.documentElement.scrollWidth - innerWidth]; }, t);
     check(o.every((v) => v <= 0), `${t}: fits the screen (${o})`);
   }
+  // the main page: the first one, every page's randomisers and save, each button whole, all inside the page
+  await pg.click('[data-m-tab="main"]');
+  check(await pg.evaluate(() => { const p = document.querySelector('[data-m-panel="main"]').getBoundingClientRect(), bs = [...document.querySelectorAll('.m-main-card .m-btn, .m-main-card .m-chk, .m-main-card .m-toggle')];
+    return PANELS[0].dataset.mPanel === 'main' && bs.length === 21 && bs.every((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.bottom <= p.bottom + 0.5 && e.scrollWidth <= e.clientWidth; }); }), 'main: every randomiser and save fit, each whole');
+  const mainBefore = await pg.evaluate(() => JSON.stringify([values[PAR.FILTER_FREQ_1], values[PAR.RESO_1], values[PAR.FILTER_DRIVE_1], values[PAR.DRIVE1]]));
+  await pg.click('.m-main-card [data-vrand="filter"]');
+  check(await pg.evaluate((b) => JSON.stringify([values[PAR.FILTER_FREQ_1], values[PAR.RESO_1], values[PAR.FILTER_DRIVE_1], values[PAR.DRIVE1]]) !== b && !document.querySelector('.m-main-card [data-undo]').disabled && mCur === 0, mainBefore), 'main: a section randomiser works there and can be undone');
+  await pg.click('.m-main-card [data-undo]');
+  check(await pg.evaluate((b) => JSON.stringify([values[PAR.FILTER_FREQ_1], values[PAR.RESO_1], values[PAR.FILTER_DRIVE_1], values[PAR.DRIVE1]]) === b, mainBefore), 'main: undo puts it back');
+  await pg.click('.m-main-card .m-nextbar');
+  check(await pg.evaluate(() => $('m-nextbar').checked && localStorage.getItem('elixir-synth-nextbar') === '1'), 'main: next bar is the popup\'s setting too');
+  await pg.click('.m-main-card .m-nextbar');
+  // shift on the main page moves the pattern as the seq page's does
+  const shBefore = await pg.evaluate(() => JSON.stringify(seq.steps.slice(0, seq.len)));
+  await pg.click('.m-main-card [data-nshift="1"]');
+  check(await pg.evaluate((b) => { const was = JSON.parse(b), n = seq.len; return JSON.stringify(seq.steps[1]) === JSON.stringify(was[0]) && JSON.stringify(seq.steps[0]) === JSON.stringify(was[n - 1]); }, shBefore), 'main: shift moves the pattern a step');
+  await pg.click('.m-main-card [data-nshift="-1"]');
+  // the metronome: a toggle kept in this browser; the player clicks on each beat with it on, and is silent with it off
+  await pg.click('#m-metro');
+  check(await pg.evaluate(() => metroOn && $('m-metro').getAttribute('aria-pressed') === 'true' && localStorage.getItem('elixir-synth-metro') === '1'), 'main: the metronome turns on and is kept');
+  await pg.click('#m-metro');
+  check(await pg.evaluate(() => {
+    const peak = (metro) => { const p = new Player(48000), L = new Float32Array(48000), R = new Float32Array(48000);
+      p.msg({ type: 'seq', playing: true, metro, len: 16, bpm: 120, vel: 100, glide: 0, accentDb: 0, steps: Array.from({ length: 16 }, () => ({ n: 0, gate: 0, acc: false, slide: false, m: 0 })) });
+      p.process(L, R); let m = 0, last = -1e9, beats = 0; for (let i = 0; i < L.length; i++) { m = Math.max(m, Math.abs(L[i])); if (Math.abs(L[i]) > 0.05 && i - last > 4000) beats++; if (Math.abs(L[i]) > 0.05) last = i; } return [m, beats]; };
+    const [on, n] = peak(true), [off] = peak(false); return !metroOn && on > 0.1 && off < 0.01 && n === 2; }), 'main: the metronome clicks on the beats (two a second at 120 bpm), silent when off');
   // the voice page: two tabs, each two sections side by side, two rows of faders in each
   await pg.click('[data-m-tab="voice"]');
   check(await pg.evaluate(() => document.querySelectorAll('#m-vsec .m-btn').length === 2 && [...document.querySelectorAll('.m-vtab')].every((t) => {
@@ -64,7 +90,7 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   {
     const snap = () => pg.evaluate(() => Object.fromEntries(DR1.map((n) => [n, values[PAR[n]]])));
     const was = await snap();
-    await pg.click('[data-vrand="filter"]');
+    await pg.click('.m-voice-card [data-vrand="filter"]');
     const now = await snap(), filt = VP_FILTER;
     check(Object.keys(now).every((n) => filt.includes(n) || now[n] === was[n]) && filt.some((n) => now[n] !== was[n])
       && await pg.evaluate(() => mVSec === 1 && !$('m-vsets').children[1].hidden), 'voice: random filter changes the filter section only, and shows it');
@@ -82,7 +108,7 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
     const o = (j) => { const [f, ...r] = JSON.parse(j); return { ...f, rest: r }; };
     const was = o(await snap());
     check(await pg.evaluate(() => document.querySelector('.m-fx-card .m-vbtns').getBoundingClientRect().left >= document.querySelector('.m-fxsets').getBoundingClientRect().right), 'fx: the randomisers sit on the right');
-    await pg.click('[data-fxrand="reverb"]');
+    await pg.click('.m-fx-card [data-fxrand="reverb"]');
     const now = o(await snap()), V = ['verb', 'vPre', 'vDecay', 'vTone', 'vEarly'];
     check(Object.keys(now).every((k) => V.includes(k) || JSON.stringify(now[k]) === JSON.stringify(was[k])) && V.some((k) => now[k] !== was[k]), 'fx: random reverb changes the reverb only');
     await pg.click('.m-fx-card [data-undo]');
@@ -197,7 +223,7 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   const p4 = await pg.evaluate(() => JSON.stringify(seq.steps.slice(48, 64)));
   await pg.click('#m-ncopy');
   check(await pg.evaluate(() => nsPage === 3 && $('m-ncopy').disabled && $('m-ncopy').textContent === 'copy to 4'), 'on page 4 copy is off');
-  await pg.click('[data-undo]');
+  await pg.click('.m-seqpage [data-undo]');
   check(await pg.evaluate((p4) => JSON.stringify(seq.steps.slice(48, 64)) === p4, p4), 'copy can be undone');
   // every algorithm makes a valid page
   check(await pg.evaluate(() => SEQ_ALGOS.every((_, a) => { seq.algo = a; for (let k = 0; k < 100; k++) { randomPage(1); const p = seq.steps.slice(16, 32);
@@ -249,6 +275,9 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(await pg.evaluate(() => tempo === 128 && seq.root === 9), 'a built-in preset loads (at the next bar)');
   await pg.click('#m-psave');
   check(await pg.evaluate(() => JSON.parse(localStorage.getItem('elixir-synth-presets')).length === 1), 'save new keeps a preset in its own storage');
+  await pg.click('[data-m-tab="main"]');
+  await pg.click('#m-msave');
+  check(await pg.evaluate(() => JSON.parse(localStorage.getItem('elixir-synth-presets')).length === 2 && $('m-mcur').textContent === pCur.name && /^Saved as/.test($('m-mnote').textContent) && !$('m-mover').disabled), 'main: save new saves a preset and names it');
   // record: a take downloads as a WAV
   await pg.keyboard.press('r'); await pg.waitForTimeout(1000);
   check(await pg.evaluate(() => !$('m-rec-t').hidden && /rec \d:\d\d/i.test($('m-rec-t').textContent)), 'R records, and the title corner shows it');
