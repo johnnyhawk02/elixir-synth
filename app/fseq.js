@@ -143,7 +143,8 @@ function fsRandomAll() {
     const q = f.seq = fsNew();
     q.len = pick([4, 8, 8, 16, 16, 16, 3, 6, 12]); q.step = pick([1, 1, 1, 2, 4, 16]); q.depth = rIn(3, 12) * 5;
     q.slew = chance(0.4) ? rIn(2, 10) * 10 : 0;
-    q.vals = FS_RAND[rIn(0, FS_RAND.length - 1)][1](q.len).map(fsOff);
+    // (never one that does nothing: a sparse one can come out empty over a short length)
+    do q.vals = FS_RAND[rIn(0, FS_RAND.length - 1)][1](q.len).map(fsOff); while (!q.vals.slice(0, q.len).some((v) => v));
     if (chance(0.3)) for (let i = 0; i < q.len; i++) q.slides[i] = chance(0.25);
   }
   fsMarks();

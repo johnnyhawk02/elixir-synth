@@ -153,6 +153,16 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 /* ---- the frame: title, pages, randomise and the page buttons ---- */
 .m-top { grid-area: top; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; padding: 10px 0 8px; }
 .m .m-title { align-self: flex-start; padding: 0; background: none; text-align: left; cursor: pointer; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
+.m-trow { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+/* the metronome, beside the title: a little metronome, filled while on; its arm swings over to the other side on each
+   beat while it plays */
+.m .m-metro { display: grid; place-items: center; flex: none; width: 40px; height: 40px; min-height: 40px; padding: 0; }
+.m-metro svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; overflow: visible; }
+.m-metro rect { fill: currentColor; }
+.m-metro-arm { transform-origin: 12px 19px; transform: rotate(-18deg); transition: transform .12s ease-out; }
+.m-metro.tock .m-metro-arm { transform: rotate(18deg); }
+.m .m-metro[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .m-metro-arm { transition: none; } }
 .m-ver { display: block; margin-top: 4px; font-size: .7em; letter-spacing: .06em; text-transform: none; opacity: .7; }
 
 /* under the title: the play button (a triangle, a square while playing), and while recording (R) REC and the time */

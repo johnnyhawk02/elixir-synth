@@ -51,7 +51,7 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   // the main page: the first one, every page's randomisers and save, each button whole, all inside the page
   await pg.click('[data-m-tab="main"]');
   check(await pg.evaluate(() => { const p = document.querySelector('[data-m-panel="main"]').getBoundingClientRect(), bs = [...document.querySelectorAll('.m-main-card .m-btn, .m-main-card .m-chk, .m-main-card .m-toggle')];
-    return PANELS[0].dataset.mPanel === 'main' && bs.length === 23 && bs.every((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.bottom <= p.bottom + 0.5 && e.scrollWidth <= e.clientWidth; }); }), 'main: every randomiser and save fit, each whole');
+    return PANELS[0].dataset.mPanel === 'main' && bs.length === 22 && bs.every((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.bottom <= p.bottom + 0.5 && e.scrollWidth <= e.clientWidth; }); }), 'main: every randomiser and save fit, each whole');
   const mainBefore = await pg.evaluate(() => JSON.stringify([values[PAR.FILTER_FREQ_1], values[PAR.RESO_1], values[PAR.FILTER_DRIVE_1], values[PAR.DRIVE1]]));
   await pg.click('.m-main-card [data-vrand="filter"]');
   check(await pg.evaluate((b) => JSON.stringify([values[PAR.FILTER_FREQ_1], values[PAR.RESO_1], values[PAR.FILTER_DRIVE_1], values[PAR.DRIVE1]]) !== b && !document.querySelector('.m-main-card [data-undo]').disabled && mCur === 0, mainBefore), 'main: a section randomiser works there and can be undone');
@@ -86,7 +86,8 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   await pg.evaluate(() => { seq.algo = 0; seq.density = 100; sendSeq(); drawAll(); });
   // the metronome: a toggle kept in this browser; the player clicks on each beat with it on, and is silent with it off
   await pg.click('#m-metro');
-  check(await pg.evaluate(() => metroOn && $('m-metro').getAttribute('aria-pressed') === 'true' && localStorage.getItem('elixir-synth-metro') === '1'), 'main: the metronome turns on and is kept');
+  check(await pg.evaluate(() => metroOn && $('m-metro').getAttribute('aria-pressed') === 'true' && localStorage.getItem('elixir-synth-metro') === '1'), 'the metronome (beside the title) turns on and is kept');
+  check(await pg.evaluate(() => { const m = $('m-metro').getBoundingClientRect(), t = $('m-title').getBoundingClientRect(); return m.left >= t.right && m.top < t.bottom && m.right <= $('m-side').getBoundingClientRect().left; }), 'the metronome sits beside the title');
   await pg.click('#m-metro');
   check(await pg.evaluate(() => {
     const peak = (metro) => { const p = new Player(48000), L = new Float32Array(48000), R = new Float32Array(48000);

@@ -107,6 +107,8 @@ for (const id of ['m-fxa2', 'm-fxa3']) $(id).addEventListener('click', (e) => mR
 const metroDraw = () => $('m-metro').setAttribute('aria-pressed', metroOn);
 $('m-metro').addEventListener('click', () => { metroOn = !metroOn; store.set(METRO_KEY, metroOn ? '1' : '0'); metroDraw(); sendSeq(); });
 metroDraw();
+// (its arm swings on each beat as it's heard, while it's on)
+eventHandlers.push((ev) => { if (ev.type === 'step' && ev.step % 4 === 0 && metroOn) whenHeard(() => $('m-metro').classList.toggle('tock')); });
 
 // prefs: a tap on the title opens them (screen colours, preset tempo, version); done, the title again or Escape closes
 function mPrefs(on) { $('m-prefs').hidden = !on; $('m-title').setAttribute('aria-expanded', on); if (on) mDepth(); }

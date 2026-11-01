@@ -18,7 +18,10 @@
 
 <main class="m" id="m">
   <header class="m-top">
-    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v@VER@</small></button>
+    <div class="m-trow">
+      <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v@VER@</small></button>
+      <button class="m-btn m-metro" id="m-metro" type="button" aria-pressed="false" aria-label="metronome" title="metronome"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="m-metro-body" d="M9 2.5h6l4.5 19h-15z"/><path d="M6.5 16.5h11"/><g class="m-metro-arm"><path d="M12 19V5.5"/><rect x="10.3" y="8" width="3.4" height="3" rx=".5"/></g></svg></button>
+    </div>
     <div class="m-tport">
       <button class="m-btn m-play" id="m-play" type="button" aria-pressed="false" aria-label="play (space)" title="play (space)"><i aria-hidden="true"></i></button>
       <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
@@ -37,7 +40,6 @@
         <button class="m-btn m-big" id="m-mall" type="button">everything</button>
         <label class="m-chk m-nextbar"><input id="m-nextbar" type="checkbox"><i aria-hidden="true"></i>next bar</label>
         <button class="m-btn" data-undo type="button" disabled>undo</button>
-        <button class="m-toggle" id="m-metro" type="button" aria-pressed="false">metronome</button>
         <button class="m-btn" id="m-fsrand" type="button">knob seqs</button>
         <button class="m-btn" id="m-fsoff" type="button">knob seqs off</button>
       </div>

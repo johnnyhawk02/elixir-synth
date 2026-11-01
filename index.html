@@ -168,6 +168,16 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 /* ---- the frame: title, pages, randomise and the page buttons ---- */
 .m-top { grid-area: top; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; padding: 10px 0 8px; }
 .m .m-title { align-self: flex-start; padding: 0; background: none; text-align: left; cursor: pointer; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
+.m-trow { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+/* the metronome, beside the title: a little metronome, filled while on; its arm swings over to the other side on each
+   beat while it plays */
+.m .m-metro { display: grid; place-items: center; flex: none; width: 40px; height: 40px; min-height: 40px; padding: 0; }
+.m-metro svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; overflow: visible; }
+.m-metro rect { fill: currentColor; }
+.m-metro-arm { transform-origin: 12px 19px; transform: rotate(-18deg); transition: transform .12s ease-out; }
+.m-metro.tock .m-metro-arm { transform: rotate(18deg); }
+.m .m-metro[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .m-metro-arm { transition: none; } }
 .m-ver { display: block; margin-top: 4px; font-size: .7em; letter-spacing: .06em; text-transform: none; opacity: .7; }
 
 /* under the title: the play button (a triangle, a square while playing), and while recording (R) REC and the time */
@@ -434,7 +444,10 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v95</small></button>
+    <div class="m-trow">
+      <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v96</small></button>
+      <button class="m-btn m-metro" id="m-metro" type="button" aria-pressed="false" aria-label="metronome" title="metronome"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="m-metro-body" d="M9 2.5h6l4.5 19h-15z"/><path d="M6.5 16.5h11"/><g class="m-metro-arm"><path d="M12 19V5.5"/><rect x="10.3" y="8" width="3.4" height="3" rx=".5"/></g></svg></button>
+    </div>
     <div class="m-tport">
       <button class="m-btn m-play" id="m-play" type="button" aria-pressed="false" aria-label="play (space)" title="play (space)"><i aria-hidden="true"></i></button>
       <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
@@ -453,7 +466,6 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn m-big" id="m-mall" type="button">everything</button>
         <label class="m-chk m-nextbar"><input id="m-nextbar" type="checkbox"><i aria-hidden="true"></i>next bar</label>
         <button class="m-btn" data-undo type="button" disabled>undo</button>
-        <button class="m-toggle" id="m-metro" type="button" aria-pressed="false">metronome</button>
         <button class="m-btn" id="m-fsrand" type="button">knob seqs</button>
         <button class="m-btn" id="m-fsoff" type="button">knob seqs off</button>
       </div>
@@ -593,7 +605,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
         <label class="m-chk"><input id="m-bigbuf" type="checkbox"><i aria-hidden="true"></i>bigger audio buffer (slower to respond, try it if the sound breaks up)</label>
         <output class="m-aload" id="m-aload">audio: not started</output>
-        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v95, 1 Nov, 19:12</footer>
+        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v96, 1 Nov, 21:30</footer>
       </div>
     </section>
   </div>
@@ -5828,7 +5840,8 @@ function fsRandomAll() {
     const q = f.seq = fsNew();
     q.len = pick([4, 8, 8, 16, 16, 16, 3, 6, 12]); q.step = pick([1, 1, 1, 2, 4, 16]); q.depth = rIn(3, 12) * 5;
     q.slew = chance(0.4) ? rIn(2, 10) * 10 : 0;
-    q.vals = FS_RAND[rIn(0, FS_RAND.length - 1)][1](q.len).map(fsOff);
+    // (never one that does nothing: a sparse one can come out empty over a short length)
+    do q.vals = FS_RAND[rIn(0, FS_RAND.length - 1)][1](q.len).map(fsOff); while (!q.vals.slice(0, q.len).some((v) => v));
     if (chance(0.3)) for (let i = 0; i < q.len; i++) q.slides[i] = chance(0.25);
   }
   fsMarks();
@@ -5982,6 +5995,8 @@ for (const id of ['m-fxa2', 'm-fxa3']) $(id).addEventListener('click', (e) => mR
 const metroDraw = () => $('m-metro').setAttribute('aria-pressed', metroOn);
 $('m-metro').addEventListener('click', () => { metroOn = !metroOn; store.set(METRO_KEY, metroOn ? '1' : '0'); metroDraw(); sendSeq(); });
 metroDraw();
+// (its arm swings on each beat as it's heard, while it's on)
+eventHandlers.push((ev) => { if (ev.type === 'step' && ev.step % 4 === 0 && metroOn) whenHeard(() => $('m-metro').classList.toggle('tock')); });
 
 // prefs: a tap on the title opens them (screen colours, preset tempo, version); done, the title again or Escape closes
 function mPrefs(on) { $('m-prefs').hidden = !on; $('m-title').setAttribute('aria-expanded', on); if (on) mDepth(); }
