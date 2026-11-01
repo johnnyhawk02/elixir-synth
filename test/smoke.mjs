@@ -50,6 +50,11 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
     const o = await pg.evaluate((t) => { const p = document.querySelector(`[data-m-panel="${t}"]`); return [p.scrollHeight - p.clientHeight, document.documentElement.scrollHeight - innerHeight, document.documentElement.scrollWidth - innerWidth]; }, t);
     check(o.every((v) => v <= 0), `${t}: fits the screen (${o})`);
   }
+  // the voice page: two tabs, each two sections side by side, two rows of faders in each
+  await pg.click('[data-m-tab="voice"]');
+  check(await pg.evaluate(() => document.querySelectorAll('#m-vsec .m-btn').length === 2 && [...document.querySelectorAll('.m-vtab')].every((t) => {
+    const [a, b] = [...t.querySelectorAll('.m-vpart')].map((e) => e.getBoundingClientRect()); return !b || (Math.abs(a.top - b.top) < 1 && a.right <= b.left + 1); })
+    && [...document.querySelectorAll('.m-vset')].length === 4), 'voice: two tabs of two sections side by side');
   // targets: every button at least 36 px high in the 1000 x 600 layout
   const small = await pg.evaluate(() => [...document.querySelectorAll('.m button, .m .m-btn')].filter((e) => { const r = e.getBoundingClientRect(); return r.width && r.height / mK < 36; }).map((e) => e.textContent.trim()));
   check(!small.length, `buttons at least 36 px high ${small.length ? small.join(', ') : ''}`);

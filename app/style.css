@@ -231,13 +231,16 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-nalgo { display: block; margin-top: 4px; font-size: .85em; letter-spacing: 0; opacity: .8; }
 .m .m-seqbtns .m-btn, .m .m-fxbtns .m-btn { flex-direction: column; min-height: 0; font-size: min(var(--fs-xs), 15.6px) !important; padding: 0 2px; }
 
-/* ---- voice: the section tabs (tone, shape, filter, mod), then that section's faders four by three ---- */
+/* ---- voice: two tabs (tone + shape, filter + mod), each two sections side by side, two rows of faders in each ---- */
 .m-voice-card { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; min-height: 0; padding: 10px 2px; }
-.m-vsec { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; align-items: end; border-bottom: 2px solid var(--ink); }
+.m-vsec { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; align-items: end; border-bottom: 2px solid var(--ink); }
 .m .m-vsec .m-btn { min-height: 44px; margin-bottom: -2px; border-color: transparent; border-bottom: 0; border-radius: 4px 4px 0 0; box-shadow: none; opacity: .8; }
 .m .m-vsec .m-btn[aria-selected="true"] { position: relative; z-index: 1; background: var(--panel) !important; color: var(--ink) !important; border-color: var(--ink); opacity: 1; text-shadow: inherit; }
-.m-vsets { display: grid; min-height: 0; margin-top: -10px; padding: 14px 4px 6px; border: 2px solid var(--ink); border-top: 0; }
-.m-vset { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 8px 4px; min-height: 0; }
+.m-vsets { display: grid; min-height: 0; margin-top: -10px; padding: 6px 4px 6px; border: 2px solid var(--ink); border-top: 0; }
+.m-vtab { display: grid; gap: 0; min-height: 0; }
+.m-vpart { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 2px; min-height: 0; min-width: 0; padding: 0 8px; }
+.m-vpart + .m-vpart { border-left: var(--rule); }
+.m-vset { grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 8px 4px; min-height: 0; }
 
 /* ---- x/y: the two picks, then the pad: a dot grid with a square cursor ---- */
 .m-xy-card { display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 8px; min-height: 0; padding: 10px 2px; }
