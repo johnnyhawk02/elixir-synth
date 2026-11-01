@@ -131,11 +131,13 @@
     <section class="m-card m-seq-card" role="dialog" aria-labelledby="m-fs-name">
       <div class="m-chead"><b><span id="m-fs-name"></span> seq</b><output id="m-fs-val"></output><button class="m-toggle" id="m-fs-on" type="button" aria-pressed="true">on</button></div>
       <div class="m-seq-steps" id="m-fs-steps" aria-label="steps"></div>
-      <div class="m-seq-lenrow"><span>length</span><div class="m-seq-len" id="m-fs-len" role="slider" aria-label="length"><i></i></div><output id="m-fs-len-out"></output></div>
-      <div class="m-seq-lenrow"><span>slew</span><div class="m-seq-len" id="m-fs-slew" role="slider" aria-label="slew"><i></i></div><output id="m-fs-slew-out"></output></div>
-      <div class="m-seq-lenrow"><span>speed</span><div class="m-seq-len" id="m-fs-speed" role="slider" aria-label="speed"><i></i></div><output id="m-fs-speed-out"></output></div>
-      <div class="m-seq-lenrow"><span>depth</span><div class="m-seq-len" id="m-fs-depth" role="slider" aria-label="depth"><i></i></div><output id="m-fs-depth-out"></output></div>
+      <div class="m-seq-low">
+      <div class="m-seq-lenrow"><span>length</span><div class="m-seq-len" id="m-fs-len" role="slider" aria-label="length" aria-orientation="vertical"><i></i></div><output id="m-fs-len-out"></output></div>
+      <div class="m-seq-lenrow"><span>slew</span><div class="m-seq-len" id="m-fs-slew" role="slider" aria-label="slew" aria-orientation="vertical"><i></i></div><output id="m-fs-slew-out"></output></div>
+      <div class="m-seq-lenrow"><span>speed</span><div class="m-seq-len" id="m-fs-speed" role="slider" aria-label="speed" aria-orientation="vertical"><i></i></div><output id="m-fs-speed-out"></output></div>
+      <div class="m-seq-lenrow"><span>depth</span><div class="m-seq-len" id="m-fs-depth" role="slider" aria-label="depth" aria-orientation="vertical"><i></i></div><output id="m-fs-depth-out"></output></div>
       <div class="m-seq-btns"><button class="m-btn m-big" id="m-fs-rand" type="button">randomise</button><button class="m-btn m-seq-type" id="m-fs-type" type="button" aria-label="kind of randomise (tap to change)"></button><button class="m-btn" id="m-fs-slide" type="button" aria-pressed="false" aria-label="slide: a touch on the steps switches their slides">slide</button><button class="m-btn" id="m-fs-close" type="button">done</button></div>
+      </div>
     </section>
   </div>
 

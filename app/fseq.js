@@ -98,9 +98,9 @@ fseqUse = (all) => {
   const stop = () => { painting = false; slideTo = null; };
   box.addEventListener('pointerup', stop); box.addEventListener('pointercancel', stop);
 }
-// length, slew, speed and depth: horizontal bars
+// length, slew, speed and depth: vertical faders, the bottom 0 and the top all the way
 function fsBar(bar, setFrac) {
-  const at = (e) => { const r = bar.getBoundingClientRect(); setFrac(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width))); fsDraw(); };
+  const at = (e) => { const r = bar.getBoundingClientRect(); setFrac(Math.max(0, Math.min(1, (r.bottom - e.clientY) / r.height))); fsDraw(); };
   let held = false;
   bar.addEventListener('pointerdown', (e) => { bar.setPointerCapture(e.pointerId); held = true; at(e); });
   bar.addEventListener('pointermove', (e) => { if (held) at(e); });

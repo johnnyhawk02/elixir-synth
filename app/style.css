@@ -312,7 +312,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
    then randomise and done ---- */
 .m-seq { position: absolute; left: 8px; right: 8px; top: 136px; bottom: 8px; z-index: 10; pointer-events: none; display: flex; align-items: stretch; justify-content: center; }
 .m-seq[hidden] { display: none; }
-.m-seq-card { width: 100%; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto auto auto auto; gap: 12px;
+.m-seq-card { width: 100%; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr); gap: 12px;
   pointer-events: auto; box-shadow: 0 -8px 30px rgba(0, 0, 0, .5), inset 0 3px 10px rgba(0, 0, 0, .28); }
 .m-seq .m-chead { gap: 10px; }
 .m-seq .m-chead output { flex: 1; text-align: right; color: var(--muted); font-size: var(--fs-s); }
@@ -326,18 +326,21 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-seq-steps i.off { opacity: .25; }
 .m-seq-steps i.now { outline: 2px solid var(--ink); outline-offset: 2px; }
 /* a horizontal bar (also the randomisers' settings) */
-.m-seq-lenrow { display: grid; grid-template-columns: 4.5em 1fr 5.5em; gap: 12px; align-items: center; text-transform: uppercase; }
-.m-seq-lenrow output { min-width: 5.5em; text-align: right; }
-.m-seq-len { --f: 1; position: relative; height: 36px; touch-action: none; border: 2px solid var(--ink); border-radius: 2px;
-  background: repeating-linear-gradient(to right, var(--ghost) 0 5px, transparent 5px 8px) 4px 4px / calc(100% - 8px) calc(100% - 8px) no-repeat; }
-.m-seq-len i { position: absolute; left: 4px; top: 4px; bottom: 4px; width: calc((100% - 8px) * var(--w, 1));
-  background: repeating-linear-gradient(to right, var(--ink) 0 5px, transparent 5px 8px); }
-.m-seq-btns { display: grid; grid-template-columns: 1.3fr 1fr 0.9fr 0.9fr; gap: 8px; }
+/* under the steps: length, slew, speed and depth as vertical faders (the value over, the name under), then the buttons */
+.m-seq-low { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.6fr); gap: 12px; min-height: 0; border-top: var(--rule); padding-top: 8px; }
+.m-seq-lenrow { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 4px; justify-items: center; min-height: 0; text-transform: uppercase; }
+.m-seq-lenrow span { order: 3; font-size: min(var(--fs-xs), 15.2px); }
+.m-seq-lenrow output { order: 1; white-space: nowrap; font-size: min(var(--fs-xs), 15.2px); }
+.m-seq-len { --f: 1; order: 2; position: relative; width: min(52px, 100%); min-height: 0; touch-action: none; border: 2px solid var(--ink); border-radius: 2px;
+  background: repeating-linear-gradient(to top, var(--ghost) 0 5px, transparent 5px 8px) 4px 4px / calc(100% - 8px) calc(100% - 8px) no-repeat; }
+.m-seq-len i { position: absolute; left: 4px; right: 4px; bottom: 4px; height: calc((100% - 8px) * var(--w, 1));
+  background: repeating-linear-gradient(to top, var(--ink) 0 5px, transparent 5px 8px); }
+.m-seq-btns { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; min-height: 0; }
 .m .m-seq-btns .m-btn[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
 .m-seq-steps i b { display: none; position: absolute; right: 3px; top: 3px; z-index: 1; padding: 0 4px; font-size: 12px; line-height: 16px; background: var(--ink); color: var(--panel); border-radius: 2px; }
 .m-seq-steps i.slide b { display: block; }
 .m .m-seq-type { font-size: min(var(--fs-xs), 15.7px) !important; padding: 0 2px; letter-spacing: 0; }
-.m-seq-btns .m-btn { min-height: 52px; }
+.m-seq-btns .m-btn { min-height: 0; }
 
 /* ---- LCD fade: liquid crystal is slow, so segments come on quickly and linger a moment going off. The faders' and
    meters' lit segments, the step bars and the inverted buttons and tabs ease rather than jump (off slower than on);

@@ -327,7 +327,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
    then randomise and done ---- */
 .m-seq { position: absolute; left: 8px; right: 8px; top: 136px; bottom: 8px; z-index: 10; pointer-events: none; display: flex; align-items: stretch; justify-content: center; }
 .m-seq[hidden] { display: none; }
-.m-seq-card { width: 100%; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto auto auto auto; gap: 12px;
+.m-seq-card { width: 100%; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr); gap: 12px;
   pointer-events: auto; box-shadow: 0 -8px 30px rgba(0, 0, 0, .5), inset 0 3px 10px rgba(0, 0, 0, .28); }
 .m-seq .m-chead { gap: 10px; }
 .m-seq .m-chead output { flex: 1; text-align: right; color: var(--muted); font-size: var(--fs-s); }
@@ -341,18 +341,21 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-seq-steps i.off { opacity: .25; }
 .m-seq-steps i.now { outline: 2px solid var(--ink); outline-offset: 2px; }
 /* a horizontal bar (also the randomisers' settings) */
-.m-seq-lenrow { display: grid; grid-template-columns: 4.5em 1fr 5.5em; gap: 12px; align-items: center; text-transform: uppercase; }
-.m-seq-lenrow output { min-width: 5.5em; text-align: right; }
-.m-seq-len { --f: 1; position: relative; height: 36px; touch-action: none; border: 2px solid var(--ink); border-radius: 2px;
-  background: repeating-linear-gradient(to right, var(--ghost) 0 5px, transparent 5px 8px) 4px 4px / calc(100% - 8px) calc(100% - 8px) no-repeat; }
-.m-seq-len i { position: absolute; left: 4px; top: 4px; bottom: 4px; width: calc((100% - 8px) * var(--w, 1));
-  background: repeating-linear-gradient(to right, var(--ink) 0 5px, transparent 5px 8px); }
-.m-seq-btns { display: grid; grid-template-columns: 1.3fr 1fr 0.9fr 0.9fr; gap: 8px; }
+/* under the steps: length, slew, speed and depth as vertical faders (the value over, the name under), then the buttons */
+.m-seq-low { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.6fr); gap: 12px; min-height: 0; border-top: var(--rule); padding-top: 8px; }
+.m-seq-lenrow { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 4px; justify-items: center; min-height: 0; text-transform: uppercase; }
+.m-seq-lenrow span { order: 3; font-size: min(var(--fs-xs), 15.2px); }
+.m-seq-lenrow output { order: 1; white-space: nowrap; font-size: min(var(--fs-xs), 15.2px); }
+.m-seq-len { --f: 1; order: 2; position: relative; width: min(52px, 100%); min-height: 0; touch-action: none; border: 2px solid var(--ink); border-radius: 2px;
+  background: repeating-linear-gradient(to top, var(--ghost) 0 5px, transparent 5px 8px) 4px 4px / calc(100% - 8px) calc(100% - 8px) no-repeat; }
+.m-seq-len i { position: absolute; left: 4px; right: 4px; bottom: 4px; height: calc((100% - 8px) * var(--w, 1));
+  background: repeating-linear-gradient(to top, var(--ink) 0 5px, transparent 5px 8px); }
+.m-seq-btns { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; min-height: 0; }
 .m .m-seq-btns .m-btn[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
 .m-seq-steps i b { display: none; position: absolute; right: 3px; top: 3px; z-index: 1; padding: 0 4px; font-size: 12px; line-height: 16px; background: var(--ink); color: var(--panel); border-radius: 2px; }
 .m-seq-steps i.slide b { display: block; }
 .m .m-seq-type { font-size: min(var(--fs-xs), 15.7px) !important; padding: 0 2px; letter-spacing: 0; }
-.m-seq-btns .m-btn { min-height: 52px; }
+.m-seq-btns .m-btn { min-height: 0; }
 
 /* ---- LCD fade: liquid crystal is slow, so segments come on quickly and linger a moment going off. The faders' and
    meters' lit segments, the step bars and the inverted buttons and tabs ease rather than jump (off slower than on);
@@ -370,7 +373,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v71</small></b>
+    <b class="m-title">elixir<small class="m-ver">synth v72</small></b>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
     <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
   </header>
@@ -449,7 +452,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v71, 1 Nov, 12:40</footer>
+      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v72, 1 Nov, 12:43</footer>
     </section>
   </div>
   </div>
@@ -483,11 +486,13 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
     <section class="m-card m-seq-card" role="dialog" aria-labelledby="m-fs-name">
       <div class="m-chead"><b><span id="m-fs-name"></span> seq</b><output id="m-fs-val"></output><button class="m-toggle" id="m-fs-on" type="button" aria-pressed="true">on</button></div>
       <div class="m-seq-steps" id="m-fs-steps" aria-label="steps"></div>
-      <div class="m-seq-lenrow"><span>length</span><div class="m-seq-len" id="m-fs-len" role="slider" aria-label="length"><i></i></div><output id="m-fs-len-out"></output></div>
-      <div class="m-seq-lenrow"><span>slew</span><div class="m-seq-len" id="m-fs-slew" role="slider" aria-label="slew"><i></i></div><output id="m-fs-slew-out"></output></div>
-      <div class="m-seq-lenrow"><span>speed</span><div class="m-seq-len" id="m-fs-speed" role="slider" aria-label="speed"><i></i></div><output id="m-fs-speed-out"></output></div>
-      <div class="m-seq-lenrow"><span>depth</span><div class="m-seq-len" id="m-fs-depth" role="slider" aria-label="depth"><i></i></div><output id="m-fs-depth-out"></output></div>
+      <div class="m-seq-low">
+      <div class="m-seq-lenrow"><span>length</span><div class="m-seq-len" id="m-fs-len" role="slider" aria-label="length" aria-orientation="vertical"><i></i></div><output id="m-fs-len-out"></output></div>
+      <div class="m-seq-lenrow"><span>slew</span><div class="m-seq-len" id="m-fs-slew" role="slider" aria-label="slew" aria-orientation="vertical"><i></i></div><output id="m-fs-slew-out"></output></div>
+      <div class="m-seq-lenrow"><span>speed</span><div class="m-seq-len" id="m-fs-speed" role="slider" aria-label="speed" aria-orientation="vertical"><i></i></div><output id="m-fs-speed-out"></output></div>
+      <div class="m-seq-lenrow"><span>depth</span><div class="m-seq-len" id="m-fs-depth" role="slider" aria-label="depth" aria-orientation="vertical"><i></i></div><output id="m-fs-depth-out"></output></div>
       <div class="m-seq-btns"><button class="m-btn m-big" id="m-fs-rand" type="button">randomise</button><button class="m-btn m-seq-type" id="m-fs-type" type="button" aria-label="kind of randomise (tap to change)"></button><button class="m-btn" id="m-fs-slide" type="button" aria-pressed="false" aria-label="slide: a touch on the steps switches their slides">slide</button><button class="m-btn" id="m-fs-close" type="button">done</button></div>
+      </div>
     </section>
   </div>
 
@@ -5354,9 +5359,9 @@ fseqUse = (all) => {
   const stop = () => { painting = false; slideTo = null; };
   box.addEventListener('pointerup', stop); box.addEventListener('pointercancel', stop);
 }
-// length, slew, speed and depth: horizontal bars
+// length, slew, speed and depth: vertical faders, the bottom 0 and the top all the way
 function fsBar(bar, setFrac) {
-  const at = (e) => { const r = bar.getBoundingClientRect(); setFrac(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width))); fsDraw(); };
+  const at = (e) => { const r = bar.getBoundingClientRect(); setFrac(Math.max(0, Math.min(1, (r.bottom - e.clientY) / r.height))); fsDraw(); };
   let held = false;
   bar.addEventListener('pointerdown', (e) => { bar.setPointerCapture(e.pointerId); held = true; at(e); });
   bar.addEventListener('pointermove', (e) => { if (held) at(e); });
