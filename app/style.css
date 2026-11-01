@@ -150,7 +150,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 /* ---- the frame: title line, transport, pages, page buttons ---- */
 .m-top { grid-area: top; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; padding: 10px 0 8px; border-bottom: var(--rule); }
-.m-title { font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
+.m .m-title { align-self: flex-start; padding: 0; background: none; text-align: left; cursor: pointer; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 .m-ver { display: block; margin-top: 4px; font-size: .7em; letter-spacing: .06em; text-transform: none; opacity: .7; }
 /* (the page buttons show which page is open, so its name isn't needed on the title line) */
 .m-pagename { display: none; white-space: nowrap; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
@@ -183,6 +183,12 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-rnd .m-rand-card { width: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; pointer-events: auto;
   box-shadow: 0 -8px 30px rgba(0, 0, 0, .5), inset 0 3px 10px rgba(0, 0, 0, .28); }
 .m-rnd .m-chead { gap: 16px; text-transform: uppercase; }
+/* prefs: under the title, the same sheet as the randomisers */
+.m-seq.m-prefs { top: 136px; bottom: auto; height: auto; }
+.m-prefs .m-rand-card { grid-template-rows: auto auto; }
+.m-prefs .m-chead .m-btn { min-height: 40px; min-width: 120px; font-size: var(--fs-s) !important; }
+.m-prefs-body { display: grid; gap: 16px; align-content: start; }
+.m-prefs .m-foot { text-align: left; }
 .m-rand { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 10px; min-width: 0; min-height: 0; }
 .m-rand .m-btn { min-height: 0; min-width: 0; padding: 0 2px; letter-spacing: .04em; overflow: hidden; }
 .m .m-rand .m-btn { font-size: var(--fs-m) !important; white-space: nowrap; }
@@ -277,7 +283,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 #m-comp.off { opacity: .4; }
 
 /* ---- prst: save at the top, the list between (it scrolls), the file buttons and credits at the foot ---- */
-.m-presets-card { display: grid; grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto; gap: 6px; min-height: 0; padding: 8px 2px; }
+.m-presets-card { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 6px; min-height: 0; padding: 8px 2px; }
 /* save new, and save over the loaded preset */
 .m-psaves { display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; }
 .m-psaves .m-btn { min-height: 56px; font-size: var(--fs-xs) !important; padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -165,7 +165,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 /* ---- the frame: title line, transport, pages, page buttons ---- */
 .m-top { grid-area: top; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; padding: 10px 0 8px; border-bottom: var(--rule); }
-.m-title { font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
+.m .m-title { align-self: flex-start; padding: 0; background: none; text-align: left; cursor: pointer; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 .m-ver { display: block; margin-top: 4px; font-size: .7em; letter-spacing: .06em; text-transform: none; opacity: .7; }
 /* (the page buttons show which page is open, so its name isn't needed on the title line) */
 .m-pagename { display: none; white-space: nowrap; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
@@ -198,6 +198,12 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-rnd .m-rand-card { width: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; pointer-events: auto;
   box-shadow: 0 -8px 30px rgba(0, 0, 0, .5), inset 0 3px 10px rgba(0, 0, 0, .28); }
 .m-rnd .m-chead { gap: 16px; text-transform: uppercase; }
+/* prefs: under the title, the same sheet as the randomisers */
+.m-seq.m-prefs { top: 136px; bottom: auto; height: auto; }
+.m-prefs .m-rand-card { grid-template-rows: auto auto; }
+.m-prefs .m-chead .m-btn { min-height: 40px; min-width: 120px; font-size: var(--fs-s) !important; }
+.m-prefs-body { display: grid; gap: 16px; align-content: start; }
+.m-prefs .m-foot { text-align: left; }
 .m-rand { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 10px; min-width: 0; min-height: 0; }
 .m-rand .m-btn { min-height: 0; min-width: 0; padding: 0 2px; letter-spacing: .04em; overflow: hidden; }
 .m .m-rand .m-btn { font-size: var(--fs-m) !important; white-space: nowrap; }
@@ -292,7 +298,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 #m-comp.off { opacity: .4; }
 
 /* ---- prst: save at the top, the list between (it scrolls), the file buttons and credits at the foot ---- */
-.m-presets-card { display: grid; grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto; gap: 6px; min-height: 0; padding: 8px 2px; }
+.m-presets-card { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 6px; min-height: 0; padding: 8px 2px; }
 /* save new, and save over the loaded preset */
 .m-psaves { display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; }
 .m-psaves .m-btn { min-height: 56px; font-size: var(--fs-xs) !important; padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -376,7 +382,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v42</small></b>
+    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v31</small></button>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
     <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
   </header>
@@ -458,8 +464,6 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
   <div class="m-panel" data-m-panel="presets">
     <section class="m-card m-presets-card">
       <div class="m-psaves"><button class="m-btn m-big" id="m-psave" type="button">save new</button><button class="m-btn" id="m-pover" type="button">save over</button></div>
-      <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
-      <div class="m-lcd" id="m-lcd" role="group" aria-label="screen colours"><span>screen</span></div>
       <p class="m-note" id="m-pnote" aria-live="polite"></p>
       <ul class="m-plist" id="m-plist"></ul>
       <div class="m-pio">
@@ -467,7 +471,6 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v42, 1 Nov, 13:52</footer>
     </section>
   </div>
   </div>
@@ -480,6 +483,17 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
     <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>
     <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
   </nav>
+
+  <div class="m-seq m-rnd m-prefs" id="m-prefs" hidden>
+    <section class="m-card m-rand-card" role="dialog" aria-label="preferences">
+      <div class="m-chead"><b>prefs</b><button class="m-btn" id="m-prefs-close" type="button">done</button></div>
+      <div class="m-prefs-body">
+        <div class="m-lcd" id="m-lcd" role="group" aria-label="screen colours"><span>screen</span></div>
+        <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
+        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v31, 1 Nov, 13:56</footer>
+      </div>
+    </section>
+  </div>
 
   <div class="m-seq m-rnd" id="m-rnd" hidden>
     <section class="m-card m-rand-card" role="dialog" aria-label="randomise">
@@ -5550,10 +5564,14 @@ for (const id of ['m-fxa', 'm-fxa2']) $(id).addEventListener('click', (e) => mRa
 
 // the randomise popup: opens over the pages and stays open while its buttons are used (next bar's pending flash shows
 // there); done, the opener again, or Escape closes it
-function mRnd(on) { $('m-rnd').hidden = !on; $('m-rnd-open').setAttribute('aria-expanded', on); $('m-rnd-open').classList.toggle('on', on); if (on) mDepth(); }
+function mRnd(on) { if (on && $('m-prefs')) mPrefs(false); $('m-rnd').hidden = !on; $('m-rnd-open').setAttribute('aria-expanded', on); $('m-rnd-open').classList.toggle('on', on); if (on) mDepth(); }
 $('m-rnd-open').addEventListener('click', () => mRnd($('m-rnd').hidden));
 $('m-rnd-close').addEventListener('click', () => mRnd(false));
-addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('m-rnd').hidden) mRnd(false); });
+// prefs: a tap on the title opens them (screen colours, preset tempo, version); done, the title again or Escape closes
+function mPrefs(on) { $('m-prefs').hidden = !on; $('m-title').setAttribute('aria-expanded', on); if (on) { mRnd(false); mDepth(); } }
+$('m-title').addEventListener('click', () => mPrefs($('m-prefs').hidden));
+$('m-prefs-close').addEventListener('click', () => mPrefs(false));
+addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!$('m-rnd').hidden) mRnd(false); if (!$('m-prefs').hidden) mPrefs(false); } });
 
 // ---- presets: everything (the sound, perf macros, notes, tempo, effects, master and the fader sequencers) under a
 // two-word name, kept in this browser under elixir-synth's own key. Save new, save over the loaded one, load, delete,

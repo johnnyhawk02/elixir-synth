@@ -18,7 +18,7 @@
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v@VER@</small></b>
+    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v@VER@</small></button>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
     <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
   </header>
@@ -100,8 +100,6 @@
   <div class="m-panel" data-m-panel="presets">
     <section class="m-card m-presets-card">
       <div class="m-psaves"><button class="m-btn m-big" id="m-psave" type="button">save new</button><button class="m-btn" id="m-pover" type="button">save over</button></div>
-      <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
-      <div class="m-lcd" id="m-lcd" role="group" aria-label="screen colours"><span>screen</span></div>
       <p class="m-note" id="m-pnote" aria-live="polite"></p>
       <ul class="m-plist" id="m-plist"></ul>
       <div class="m-pio">
@@ -109,7 +107,6 @@
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v@VER@, @BUILT@</footer>
     </section>
   </div>
   </div>
@@ -122,6 +119,17 @@
     <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>
     <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
   </nav>
+
+  <div class="m-seq m-rnd m-prefs" id="m-prefs" hidden>
+    <section class="m-card m-rand-card" role="dialog" aria-label="preferences">
+      <div class="m-chead"><b>prefs</b><button class="m-btn" id="m-prefs-close" type="button">done</button></div>
+      <div class="m-prefs-body">
+        <div class="m-lcd" id="m-lcd" role="group" aria-label="screen colours"><span>screen</span></div>
+        <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
+        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v@VER@, @BUILT@</footer>
+      </div>
+    </section>
+  </div>
 
   <div class="m-seq m-rnd" id="m-rnd" hidden>
     <section class="m-card m-rand-card" role="dialog" aria-label="randomise">

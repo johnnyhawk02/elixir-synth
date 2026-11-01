@@ -47,6 +47,7 @@ no play or record buttons: R starts and stops a recording.
 - **MSTR**: distortion (tube, fold or rat) on the whole mix, then the compressor.
 - **PRST**: presets, kept in this browser: save new, save over, load, delete, import and export. While playing, a
   preset comes in at the next bar.
+- **Prefs**: tap the ELIXIR title. Screen colours, whether loading a preset uses its tempo, and the version.
 
 Hold any fader for half a second to open its step sequencer: 2 to 16 steps, depth, slew, speed, draw with a finger,
 randomise, on or off. Presets keep them.

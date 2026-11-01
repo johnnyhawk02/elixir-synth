@@ -107,7 +107,11 @@ for (const id of ['m-fxa', 'm-fxa2']) $(id).addEventListener('click', (e) => mRa
 
 // the randomise popup: opens over the pages and stays open while its buttons are used (next bar's pending flash shows
 // there); done, the opener again, or Escape closes it
-function mRnd(on) { $('m-rnd').hidden = !on; $('m-rnd-open').setAttribute('aria-expanded', on); $('m-rnd-open').classList.toggle('on', on); if (on) mDepth(); }
+function mRnd(on) { if (on && $('m-prefs')) mPrefs(false); $('m-rnd').hidden = !on; $('m-rnd-open').setAttribute('aria-expanded', on); $('m-rnd-open').classList.toggle('on', on); if (on) mDepth(); }
 $('m-rnd-open').addEventListener('click', () => mRnd($('m-rnd').hidden));
 $('m-rnd-close').addEventListener('click', () => mRnd(false));
-addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('m-rnd').hidden) mRnd(false); });
+// prefs: a tap on the title opens them (screen colours, preset tempo, version); done, the title again or Escape closes
+function mPrefs(on) { $('m-prefs').hidden = !on; $('m-title').setAttribute('aria-expanded', on); if (on) { mRnd(false); mDepth(); } }
+$('m-title').addEventListener('click', () => mPrefs($('m-prefs').hidden));
+$('m-prefs-close').addEventListener('click', () => mPrefs(false));
+addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!$('m-rnd').hidden) mRnd(false); if (!$('m-prefs').hidden) mPrefs(false); } });
