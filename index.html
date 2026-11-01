@@ -219,7 +219,8 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 /* random, alter and undo: a column down the right, as on the voice and fx pages */
 .m-seqpage > .m-seqbtns { grid-column: 2; grid-row: 1 / -1; grid-template-rows: 80px; grid-auto-rows: 52px; align-content: start; }
 /* the pages: four tabs (the one playing underlined) and the copy button */
-.m-npages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.4fr) minmax(0, 1.6fr) minmax(0, 2.6fr); gap: 4px; }
+.m-npages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.4fr) minmax(0, 1.6fr) minmax(0, 1.6fr) minmax(0, 2.6fr); gap: 4px; }
+.m-nshift { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 .m .m-npages .m-btn[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
 .m-steps[hidden] { display: none; }
 .m-noct { display: grid; grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr); gap: 4px; align-items: center; }
@@ -403,6 +404,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" type="button" role="tab" data-page="3" aria-selected="false">4</button>
         <button class="m-btn" type="button" id="m-ncopy">copy to 2</button>
         <button class="m-btn" type="button" id="m-nlane" aria-pressed="false" aria-label="show the morph lane under the notes">morph</button>
+        <span class="m-nshift" role="group" aria-label="shift"><button class="m-btn" type="button" id="m-nshift-l" aria-label="shift the pattern left">←</button><button class="m-btn" type="button" id="m-nshift-r" aria-label="shift the pattern right">→</button></span>
         <span class="m-noct" role="group" aria-label="octave"><button class="m-btn" type="button" id="m-noct-dn" aria-label="octave down">oct −</button><output id="m-noct-out">0</output><button class="m-btn" type="button" id="m-noct-up" aria-label="octave up">oct +</button></span>
       </div>
       <div class="m-steps" id="m-steps" role="grid" aria-label="the sixteen steps of the page"></div>
@@ -492,7 +494,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
       <div class="m-prefs-body">
         <div class="m-lcd" id="m-lcd" role="group" aria-label="screen colours"><span>screen</span></div>
         <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
-        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v44, 1 Nov, 14:02</footer>
+        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v44, 1 Nov, 14:05</footer>
       </div>
     </section>
   </div>
@@ -5095,6 +5097,15 @@ const nsShow = (pg) => { nsPage = pg; nsDraw(); nsNow(); };
 $('m-npages').addEventListener('click', (e) => { const b = e.target.closest('[data-page]'); if (b) nsShow(+b.dataset.page); });
 // octave down and up: the whole sequence, every page
 const nsOct = (k) => { seq.oct = Math.max(OCT_MIN, Math.min(OCT_MAX, seq.oct + k)); nsChanged(); };
+// shift: the whole sequence (the steps within its length, every lane: note, gate, accent, slide, morph) a step left
+// or right, wrapping round at the length
+function nsShift(k) {
+  const n = seq.len, was = seq.steps.slice(0, n);
+  for (let s = 0; s < n; s++) seq.steps[s] = was[(s - k + n) % n];
+  nsChanged();
+}
+$('m-nshift-l').addEventListener('click', () => nsShift(-1));
+$('m-nshift-r').addEventListener('click', () => nsShift(1));
 $('m-noct-dn').addEventListener('click', () => nsOct(-1));
 $('m-noct-up').addEventListener('click', () => nsOct(1));
 // hear a note as it's set, while stopped

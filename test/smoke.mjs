@@ -150,6 +150,12 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   r = await box('.m-gstep >> nth=5');
   await pg.mouse.click(r.x + r.width / 2, r.y + r.height - 3);
   check(await pg.evaluate(() => seq.steps.length === 64 && seq.steps[21].gate === 0), 'page 2 edits its own steps');
+  // shift: right moves every step one later (the last wraps to the first), left puts it back
+  const sh0 = await pg.evaluate(() => JSON.stringify(seq.steps.slice(0, seq.len)));
+  await pg.click('#m-nshift-r');
+  check(await pg.evaluate((sh0) => { const a = JSON.parse(sh0), n = seq.len; return JSON.stringify(seq.steps[1]) === JSON.stringify(a[0]) && JSON.stringify(seq.steps[0]) === JSON.stringify(a[n - 1]); }, sh0), 'shift right moves the pattern a step later, wrapping at the length');
+  await pg.click('#m-nshift-l');
+  check(await pg.evaluate((sh0) => JSON.stringify(seq.steps.slice(0, seq.len)) === sh0, sh0), 'shift left puts it back');
   // octave buttons: the whole sequence moves an octave, held to -2 .. +2; the top of a step is two octaves up
   const n0 = await pg.evaluate(() => degSemis(seq.steps[0].d));
   await pg.click('#m-noct-up');

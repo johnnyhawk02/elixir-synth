@@ -54,6 +54,15 @@ const nsShow = (pg) => { nsPage = pg; nsDraw(); nsNow(); };
 $('m-npages').addEventListener('click', (e) => { const b = e.target.closest('[data-page]'); if (b) nsShow(+b.dataset.page); });
 // octave down and up: the whole sequence, every page
 const nsOct = (k) => { seq.oct = Math.max(OCT_MIN, Math.min(OCT_MAX, seq.oct + k)); nsChanged(); };
+// shift: the whole sequence (the steps within its length, every lane: note, gate, accent, slide, morph) a step left
+// or right, wrapping round at the length
+function nsShift(k) {
+  const n = seq.len, was = seq.steps.slice(0, n);
+  for (let s = 0; s < n; s++) seq.steps[s] = was[(s - k + n) % n];
+  nsChanged();
+}
+$('m-nshift-l').addEventListener('click', () => nsShift(-1));
+$('m-nshift-r').addEventListener('click', () => nsShift(1));
 $('m-noct-dn').addEventListener('click', () => nsOct(-1));
 $('m-noct-up').addEventListener('click', () => nsOct(1));
 // hear a note as it's set, while stopped
