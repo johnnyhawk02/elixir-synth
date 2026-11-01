@@ -289,11 +289,11 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-fx-card .m-vbtns { grid-row: 1; }
 /* (the seq and fx columns have fewer buttons than the voice's: theirs keep one size, top-aligned) */
 .m-fx-card .m-vbtns, .m-seqpage > .m-seqbtns { grid-template-rows: 74px; grid-auto-rows: 52px; align-content: start; }
-.m-fxsets { display: grid; grid-template-columns: 5fr 5fr 3fr; min-height: 0; }
+.m-fxsets { display: grid; grid-template-columns: 5fr 5fr 3fr 5fr; min-height: 0; }
 .m-fxsets .m-vpart { padding: 0 6px; }
 .m-fxsets .m-vpart:first-child { padding-left: 2px; }
 .m-fxsets .m-vpart:last-child { padding-right: 2px; }
-.m-fxhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; }
+.m-fxhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 40px; }
 .m-fxhead b { font-weight: 400; text-transform: uppercase; letter-spacing: .08em; font-size: var(--fs-m); padding-left: 4px; }
 .m-fxhead .m-chk { min-height: 36px; gap: 8px; }
 .m-fxhead .m-chk i { width: 22px; height: 22px; }
@@ -302,6 +302,13 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-row { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
 #m-echo, #m-verb { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 #m-ring { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* the duck: the fx ducked by the dry voice; its meter between the name and its on/off */
+#m-duck { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+#m-duck.off { opacity: .4; }
+.m-fxhead .m-gr { flex: 1; grid-template-columns: 1fr; }
+.m-fxhead .m-toggle { min-width: 48px; min-height: 40px; }
+/* (four sections share the fx page: their names a size smaller, so feedback, predelay and release fit) */
+.m .m-fxsets .m-row .m-flab { font-size: min(.8rem, 12px); }
 
 /* ---- mstr: the distortion, then the compressor, each a heading and a row ---- */
 .m-comp-card { display: grid; grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr); gap: 6px; min-height: 0; padding: 8px 6px 8px 4px; }

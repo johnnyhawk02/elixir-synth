@@ -53,6 +53,11 @@ class Player {
     this.distMix = 0; this.distAt = 0;
     this.busIn = new Float32Array(128); this.busOut = new Int16Array(128);
     this.compEnv = 0; this.gr = 0;
+    // the ducker: the fx returns (echo, ring mod, reverb) turned down by the dry voice, a sidechain on top of the fx.
+    // Off, the returns go straight into the mix as before (to the bit); on, they're summed in W first, then ducked
+    this.duck = { on: false, amt: 70, thresh: -18, atk: 1, hold: 50, rel: 250 };
+    this.W = [new Float32Array(64), new Float32Array(64)];
+    this.duckEnv = 0; this.duckHold = 0; this.dk = 0;
     this.events = [];
     this._render(this.A); this._render(this.B);
   }
@@ -71,6 +76,7 @@ class Player {
       this.ring.ringmod.osc.waveform = m.ring.wave;
       this.ring.setParameter(0, m.ring.freq / 127);
       if (m.verb) m.verb.forEach((v, i) => this.verb.setParameter(i, v / 127));
+      if (m.duck) { Object.assign(this.duck, m.duck); if (!this.duck.on) { this.duckEnv = 0; this.duckHold = 0; } }
       this.sendE = m.sendE; this.sendR = m.sendR; this.sendV = m.sendV || 0; this.echoWidth = m.width / 100;
     } else if (m.type === 'rec') {
       this.rec = { L: new Float32Array(16384), R: new Float32Array(16384), n: 0 };
@@ -150,9 +156,9 @@ class Player {
         // the sequence plays through its length (the pages in turn) and starts again; a bar is still 16 steps
         this.doStep(this.pos);
         if (this.metro && this.step % 4 === 0) { this.clickN = 0; this.clickF = this.step === 0 ? 1760 : 1175; }
-        this.events.push({ type: 'step', step: this.pos % 16, page: Math.floor(this.pos / 16), bar: this.bar, gr: this.gr });
+        this.events.push({ type: 'step', step: this.pos % 16, page: Math.floor(this.pos / 16), bar: this.bar, gr: this.gr, dk: this.dk });
         this.pos = (this.pos + 1) % this.len;
-        this.gr = 0;
+        this.gr = 0; this.dk = 0;
         this.step = (this.step + 1) % 16;
         if (this.step === 0) this.bar++;
         this.toNext += len;
@@ -173,6 +179,9 @@ class Player {
     this.clock += 64;
     const out = this.e.renderBlock(), e = this.e, v = e.drums[0];
     const [L, R] = dst;
+    // the fx returns go into W: the mix itself, or (ducking) a bus of their own
+    const D = this.duck, ducking = D.on;
+    const [WL, WR] = ducking ? this.W : dst;
     // the voice, its gain ramped over the block; a retrigger starts at its new gain straight away, the engine's declick
     // taking up the step (a ramp's corners would be heard on a dull sound)
     const g1 = this.gainTo * this.gate, g0 = this.retrig ? g1 : this.gain, dg = (g1 - g0) / 64;
@@ -193,17 +202,19 @@ class Player {
     // (with nothing sent, the ring mod's output is silence: its carrier just moves on)
     const bo = this.busOut, rg = this.sendR * g1;
     if (!rg && this.ring.idleRing(this.fxRng)) bo.fill(0); else this.busFeed(this.ring, rg, o, v);
+    if (ducking) { WL.fill(0); WR.fill(0); }
     for (let i = 0; i < 64; i++) {
-      L[i] += (bo[2 * i] * RING_MAKEUP + fx[2 * i]) / 32768; R[i] += (bo[2 * i + 1] * RING_MAKEUP + fx[2 * i + 1]) / 32768;
+      WL[i] += (bo[2 * i] * RING_MAKEUP + fx[2 * i]) / 32768; WR[i] += (bo[2 * i + 1] * RING_MAKEUP + fx[2 * i + 1]) / 32768;
     }
     // (once nothing is sent and its tail has been silent for a while, it rests until something is sent again)
     const vg = this.sendV * g1;
     if (vg || this.verbQuiet < 256) {
       this.busFeed(this.verb, vg, o, v);
       let quiet = !vg;
-      for (let i = 0; i < 64; i++) { L[i] += bo[2 * i] / 32768; R[i] += bo[2 * i + 1] / 32768; if (bo[2 * i]) quiet = false; }
+      for (let i = 0; i < 64; i++) { WL[i] += bo[2 * i] / 32768; WR[i] += bo[2 * i + 1] / 32768; if (bo[2 * i]) quiet = false; }
       this.verbQuiet = quiet ? this.verbQuiet + 1 : 0;
     }
+    if (ducking) this.duckFx(L, R, o, g0, dg);
     // the distortion, a master insert: the whole mix through the firmware's distortion, blended in at its mix amount,
     // ramped across the block; at 0 it's bypassed
     if (this.distMix || this.distAt) {
@@ -242,6 +253,31 @@ class Player {
       for (let i = 0; i < 64; i++, this.clickN++) { const s = Math.sin(w * this.clickN) * Math.exp(-d * this.clickN) * 0.3; L[i] += s; R[i] += s; }
       if (this.clickN > LXR.REAL_FS * 0.04) this.clickN = -1;
     }
+  }
+  // the ducker: the dry voice (as heard, before its pan) is the key. Its peak level is followed sample by sample: up at
+  // the attack (0: at once), held at its top for the hold, then down at the release. The fx are turned down in
+  // proportion to that level, all the way (by the amount) once it reaches the threshold, so the ducking takes the
+  // voice's own shape: a linear gain, nothing per sample but a few multiplies
+  duckFx(L, R, o, g0, dg) {
+    const D = this.duck, [WL, WR] = this.W, FS = LXR.REAL_FS;
+    const ca = D.atk > 0 ? Math.exp(-1000 / (D.atk * FS)) : 0, cr = Math.exp(-1000 / (Math.max(1, D.rel) * FS));
+    // (the voice's samples are on the int16 scale: the threshold is taken there)
+    const holdN = Math.round(D.hold * FS / 1000), inv = 1 / (32768 * Math.pow(10, D.thresh / 20)), depth = D.amt / 100;
+    let env = this.duckEnv, hold = this.duckHold, top = 0;
+    for (let i = 0; i < 64; i++) {
+      const k = Math.abs(o[i] * (g0 + dg * i));
+      if (k >= env) { env = k + ca * (env - k); hold = holdN; }
+      else if (hold > 0) hold--;
+      else env = k + cr * (env - k);
+      const d = Math.min(1, env * inv);
+      if (d > top) top = d;
+      const g = 1 - depth * d;
+      L[i] += WL[i] * g; R[i] += WR[i] * g;
+    }
+    this.duckEnv = env < 1e-9 ? 0 : env; this.duckHold = hold;
+    // the meter: the deepest ducking in dB this step
+    const db = -20 * Math.log10(Math.max(1e-2, 1 - depth * top));
+    if (db > this.dk) this.dk = db;
   }
   // a send bus: voice v's block o at the send's gain, saturated to int16, through the bus into this.busOut
   busFeed(bus, gain, o, v) {

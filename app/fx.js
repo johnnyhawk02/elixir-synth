@@ -21,6 +21,26 @@ mixF('m-ring', 'send', fx, 'ring', { min: 0, max: 100, show: sendPct, dflt: 0 })
 mixF('m-ring', 'wave', fx, 'ringWave', { min: 0, max: RING_W.length - 1, show: (v) => RING_W[v], dflt: 0 });
 mixF('m-ring', 'freq', fx, 'ringFreq', { min: 0, max: 127, dflt: 40 });
 
+// the duck, on top of the fx: the echo, ring mod and reverb returns turned down while the dry voice plays (its level is
+// the sidechain), fully (by the amount) once the voice reaches the threshold; attack, hold and release shape it
+const duckF = (label, key, lo, hi, step, show) => mixF('m-duck', label, fx, key, { min: lo, max: hi, step, show, dflt: FX0[key] });
+duckF('amount', 'dAmt', 0, 100, 1, (v) => v + '%');
+duckF('thresh', 'dThresh', -48, 0, 1, (v) => v + ' dB');
+duckF('attack', 'dAtk', 0, 50, 1, (v) => v + ' ms');
+duckF('hold', 'dHold', 0, 500, 10, (v) => v + ' ms');
+duckF('release', 'dRel', 10, 1000, 10, (v) => v + ' ms');
+$('m-duck-on').addEventListener('click', () => { fx.duck = !fx.duck; sendMix(); drawAll(); });
+drawHooks.push(() => { $('m-duck-on').setAttribute('aria-pressed', fx.duck); $('m-duck-on').textContent = fx.duck ? 'on' : 'off'; $('m-duck').classList.toggle('off', !fx.duck); });
+// its meter: how far the fx were ducked each step (24 dB fills it), only while the fx page is on screen
+let dkShown = -1;
+eventHandlers.push((ev) => {
+  if (ev.type !== 'step' || document.hidden || PANELS[mCur].dataset.mPanel !== 'fx') return;
+  const k = Math.round(Math.min(1, (ev.dk || 0) / 24) * 40) / 40;
+  if (k === dkShown) return;
+  dkShown = k; $('m-dk').style.setProperty('--gr', k);
+});
+stopHooks.push(() => { dkShown = 0; $('m-dk').style.setProperty('--gr', 0); });
+
 // ---- master, in signal order: the distortion on the whole mix (mix 0 bypasses it; tube, fold or rat), then the compressor ----
 const DIST_T = LXR.DIST_NAMES.map((n) => n.toLowerCase());
 mixF('m-dist', 'mix', dist, 'mix', { min: 0, max: 100, show: sendPct, dflt: 0 });

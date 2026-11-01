@@ -134,7 +134,9 @@ function sendSeq() {
 // ---- effects and master: echo, reverb and ring mod sends; the echo's tone, feedback and ping pong are the engine's own
 // FX bus settings (in the sound); the reverb's are the firmware's four reverb parameters (0..127); the distortion and
 // compressor on the whole mix ----
-const FX0 = { send: 0, ring: 0, width: 100, ringWave: 0, ringFreq: 40, verb: 0, vPre: 16, vDecay: 100, vTone: 60, vEarly: 64 };
+const FX0 = { send: 0, ring: 0, width: 100, ringWave: 0, ringFreq: 40, verb: 0, vPre: 16, vDecay: 100, vTone: 60, vEarly: 64,
+  // the ducker on the fx returns, keyed by the dry voice: off, amount (%), threshold (dB), attack, hold, release (ms)
+  duck: false, dAmt: 70, dThresh: -18, dAtk: 1, dHold: 50, dRel: 250 };
 const fx = { ...FX0 };
 const DIST0 = { mix: 0, type: 0, p: [70, 64, 80, 90] };
 const dist = structuredClone(DIST0);
@@ -167,7 +169,8 @@ function sendMix() {
   const out = fx.send > 0 ? LXR.MIXER_ROUTING_FX_BUS : 0;
   if (values[PAR.AUDIO_OUT1] !== out) setValue(PAR.AUDIO_OUT1, out);
   send({ type: 'mix', master: { ...master }, dist, ring: { wave: fx.ringWave, freq: fx.ringFreq }, sendE: fx.send / 100, sendR: fx.ring / 100, width: fx.width,
-    sendV: fx.verb / 100, verb: [fx.vPre, fx.vDecay, fx.vTone, fx.vEarly] });
+    sendV: fx.verb / 100, verb: [fx.vPre, fx.vDecay, fx.vTone, fx.vEarly],
+    duck: { on: fx.duck, amt: fx.dAmt, thresh: fx.dThresh, atk: fx.dAtk, hold: fx.dHold, rel: fx.dRel } });
 }
 
 // ---- audio ----
