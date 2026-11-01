@@ -260,12 +260,15 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-vset { grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 8px 4px; min-height: 0; }
 
 
-/* ---- fx: the echo row and the ring mod row, each its name over its faders, then random, alter, undo ---- */
-.m-fx-card { display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; min-height: 0; padding: 8px 2px; }
+/* ---- fx: the echo, the reverb and the ring mod side by side (as the voice page's sections), each its name over one
+   row of full-height faders, then random, alter, undo ---- */
+.m-fx-card { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 8px; min-height: 0; padding: 8px 2px; }
+.m-fxsets { display: grid; grid-template-columns: 5fr 5fr 3fr; min-height: 0; }
+.m-fxsets .m-vpart { padding: 0 6px; }
+.m-fxsets .m-vpart:first-child { padding-left: 2px; }
+.m-fxsets .m-vpart:last-child { padding-right: 2px; }
 .m-fxbtns { grid-template-rows: none; grid-template-columns: 1.3fr 1fr 1fr; }
 .m .m-fxbtns .m-btn { min-height: 52px; }
-.m-fx-row { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 2px; min-height: 0; }
-.m-fx-row + .m-fx-row { border-top: var(--rule); padding-top: 6px; }
 .m-fxhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; }
 .m-fxhead b { font-weight: 400; text-transform: uppercase; letter-spacing: .08em; font-size: var(--fs-m); padding-left: 4px; }
 .m-fxhead .m-chk { min-height: 36px; gap: 8px; }
@@ -273,7 +276,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 /* five to a row everywhere small faders sit in rows, so the columns line up */
 .m-row { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
 #m-echo, #m-comp, #m-verb { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-#m-ring { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+#m-ring { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 /* ---- mstr: the distortion, then the compressor, each a heading and a row ---- */
 .m-comp-card { display: grid; grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr); gap: 6px; min-height: 0; padding: 8px 6px 8px 4px; }
@@ -359,7 +362,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v24</small></b>
+    <b class="m-title">elixir<small class="m-ver">synth v58</small></b>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
     <div class="m-trans">
       <button class="m-play" id="m-play" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M7 4.5v15l13-7.5z"/><rect class="i-stop" x="5.5" y="5.5" width="13" height="13" rx="2"/></svg><span>play</span></button>
@@ -405,9 +408,11 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
   <div class="m-panel" data-m-panel="fx">
     <section class="m-card m-fx-card">
-      <div class="m-fx-row"><div class="m-fxhead"><b>echo</b><label class="m-chk"><input id="m-pp" type="checkbox"><i aria-hidden="true"></i>ping pong</label></div><div class="m-faders m-row" id="m-echo"></div></div>
-      <div class="m-fx-row"><div class="m-fxhead"><b>reverb</b></div><div class="m-faders m-row" id="m-verb"></div></div>
-      <div class="m-fx-row"><div class="m-fxhead"><b>ring mod</b></div><div class="m-faders m-row" id="m-ring"></div></div>
+      <div class="m-fxsets">
+        <div class="m-vpart"><div class="m-fxhead"><b>echo</b><label class="m-chk"><input id="m-pp" type="checkbox"><i aria-hidden="true"></i>ping pong</label></div><div class="m-faders m-row" id="m-echo"></div></div>
+        <div class="m-vpart"><div class="m-fxhead"><b>reverb</b></div><div class="m-faders m-row" id="m-verb"></div></div>
+        <div class="m-vpart"><div class="m-fxhead"><b>ring mod</b></div><div class="m-faders m-row" id="m-ring"></div></div>
+      </div>
       <div class="m-fxbtns">
         <button class="m-btn m-big" id="m-fxr2" type="button">random</button>
         <button class="m-btn" id="m-fxa2" type="button">alter</button>
@@ -436,7 +441,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v24, 1 Nov, 08:10</footer>
+      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v58, 1 Nov, 08:13</footer>
     </section>
   </div>
   </div>

@@ -245,12 +245,15 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-vset { grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 8px 4px; min-height: 0; }
 
 
-/* ---- fx: the echo row and the ring mod row, each its name over its faders, then random, alter, undo ---- */
-.m-fx-card { display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; min-height: 0; padding: 8px 2px; }
+/* ---- fx: the echo, the reverb and the ring mod side by side (as the voice page's sections), each its name over one
+   row of full-height faders, then random, alter, undo ---- */
+.m-fx-card { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 8px; min-height: 0; padding: 8px 2px; }
+.m-fxsets { display: grid; grid-template-columns: 5fr 5fr 3fr; min-height: 0; }
+.m-fxsets .m-vpart { padding: 0 6px; }
+.m-fxsets .m-vpart:first-child { padding-left: 2px; }
+.m-fxsets .m-vpart:last-child { padding-right: 2px; }
 .m-fxbtns { grid-template-rows: none; grid-template-columns: 1.3fr 1fr 1fr; }
 .m .m-fxbtns .m-btn { min-height: 52px; }
-.m-fx-row { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 2px; min-height: 0; }
-.m-fx-row + .m-fx-row { border-top: var(--rule); padding-top: 6px; }
 .m-fxhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; }
 .m-fxhead b { font-weight: 400; text-transform: uppercase; letter-spacing: .08em; font-size: var(--fs-m); padding-left: 4px; }
 .m-fxhead .m-chk { min-height: 36px; gap: 8px; }
@@ -258,7 +261,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 /* five to a row everywhere small faders sit in rows, so the columns line up */
 .m-row { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
 #m-echo, #m-comp, #m-verb { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-#m-ring { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+#m-ring { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 /* ---- mstr: the distortion, then the compressor, each a heading and a row ---- */
 .m-comp-card { display: grid; grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr); gap: 6px; min-height: 0; padding: 8px 6px 8px 4px; }
