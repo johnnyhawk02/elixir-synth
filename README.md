@@ -82,11 +82,11 @@ sample with the firmware, since the firmware never builds it.
 |---|---|
 | `index.html` | the whole app in one file, built by `build.mjs` |
 | `index.src.html` | the page's markup |
-| `app/` | the page's code: `style.css`, `player.js` (the audio thread), then `core`, `ui`, `noteseq`, `fseq`, `presets`, `record`, `pwa` |
+| `app/` | the page's code: `style.css`, `player.js` (the audio thread), then `core` (state, audio, shared helpers), `ui` (pages, faders), `perf`, `voice`, `fx`, `noteseq`, `fseq`, `random`, `presets`, `record`, `lcd` (screen colours), `pwa` |
 | `lxr.js`, `lxr-tables.js`, `lxr-ui-data.js`, `lxr-clicks.js` | the engine |
 | `presets/` | the built-in presets, in the format the presets page exports |
 | `sw.js`, `manifest.webmanifest`, `icons/` | the offline app |
-| `test/` | `engine.mjs` (sound, in Node) and `smoke.mjs` (the page, in Chromium at three window sizes) |
+| `test/` | `engine.mjs` (sound, in Node), `sound.mjs` (every preset's audio hashed, so a refactor can't change the sound) and `smoke.mjs` (the page, in Chromium at three window sizes) |
 | `verify.mjs`, `ref/` | the sample-for-sample comparison with the firmware |
 
 ## Build and test
@@ -94,6 +94,7 @@ sample with the firmware, since the firmware never builds it.
 ```sh
 node build.mjs               # rebuild index.html
 node test/engine.mjs         # bit-exact semitones, cents, the sequencer, the presets' levels
+node test/sound.mjs          # the sound unchanged, bit for bit (--write records it, only when a change is meant)
 node test/smoke.mjs          # the page at 1000 x 600, 1600 x 900 and 700 x 520 (needs Playwright)
 ```
 
