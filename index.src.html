@@ -20,10 +20,7 @@
   <header class="m-top">
     <b class="m-title">elixir<small class="m-ver">synth v@VER@</small></b>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
-    <div class="m-trans">
-      <button class="m-play" id="m-play" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M7 4.5v15l13-7.5z"/><rect class="i-stop" x="5.5" y="5.5" width="13" height="13" rx="2"/></svg><span>play</span></button>
-      <button class="m-rec" id="m-rec" type="button" aria-pressed="false" aria-label="Record"><i></i><span id="m-rec-t">rec</span></button>
-    </div>
+    <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
   </header>
 
   <div class="m-side" id="m-side" aria-label="perform">

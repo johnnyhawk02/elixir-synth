@@ -85,11 +85,11 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-btn { min-height: 56px; font-size: var(--fs-m) !important; }
 .m-big { font-size: 1.1rem !important; }
 .m-toggle { min-width: 64px; min-height: 36px; font-size: var(--fs-s) !important; }
-.m .m-btn, .m .m-rec, .m .m-toggle, .m .m-pload, .m-tabs button {
+.m .m-btn, .m .m-toggle, .m .m-pload, .m-tabs button {
   background: transparent !important; border: 2px solid var(--ink); border-radius: 3px; font-weight: 400; text-transform: uppercase; letter-spacing: .06em; }
-.m .m-btn:active, .m .m-big, .m .m-play, .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"], .m .m-plist li.cur .m-pload, .m .m-rec.on, .m .m-rnd-open[aria-expanded="true"] {
+.m .m-btn:active, .m .m-big, .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"], .m .m-plist li.cur .m-pload, .m .m-rnd-open[aria-expanded="true"] {
   background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
-.m .m-big:active, .m .m-play:active { transform: none; background: transparent !important; color: var(--ink) !important; }
+.m .m-big:active { transform: none; background: transparent !important; color: var(--ink) !important; }
 .m .m-btn:disabled { opacity: .3; }
 
 /* a checkbox drawn as an LCD box: a ticked one is filled */
@@ -168,21 +168,12 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 /* (the page buttons show which page is open, so its name isn't needed on the title line) */
 .m-pagename { display: none; white-space: nowrap; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 
-/* play and rec, under the title */
-.m-trans { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; align-items: stretch; flex: none; }
-.m-play { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 6px; background: var(--ink) !important;
-  color: var(--panel) !important; font-weight: 400; text-transform: uppercase; }
-.m .m-play { border: 2px solid var(--ink); border-radius: 3px; letter-spacing: .1em; font-size: var(--fs-m) !important; }
-.m-play svg { width: 16px; height: 16px; fill: currentColor; }
-.m-play .i-stop, .m-play[aria-pressed="true"] .i-play { display: none; }
-.m-play[aria-pressed="true"] .i-stop { display: inline; }
-.m .m-rec { display: grid; grid-auto-flow: column; justify-content: center; place-items: center; align-content: center; gap: min(10px, 8.2px) !important; min-height: 40px; padding: 0 6px; }
-.m-rec i { width: 14px; height: 14px; border-radius: 2px; background: var(--ink); }
-.m-rec span { font-family: var(--mono); font-size: var(--fs-s); font-variant-numeric: tabular-nums; }
-.m-rec.on i { width: 14px; height: 14px; border-radius: 4px; background: var(--panel); animation: m-blink 1s steps(1) infinite; }
-@keyframes m-blink { 50% { opacity: .35; } }
-@media (prefers-reduced-motion: reduce) { .m-rec.on i { animation: none; } }
-.m .m-rec:disabled { opacity: .35; }
+/* recording (R): REC and the time under the title, blinking */
+.m-recind { align-self: flex-start; padding: 6px 10px; border: 2px solid var(--ink); border-radius: 3px; background: var(--ink); color: var(--panel);
+  font-family: var(--mono); font-size: var(--fs-m); text-transform: uppercase; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.m-recind.on { animation: m-blink 1s steps(1) infinite; }
+@keyframes m-blink { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .m-recind.on { animation: none; } }
 /* the pages sit side by side on the right; swipe across them or tap a page button. Each page is one screen, no scrolling */
 .m-pages { grid-area: pages; display: grid; grid-auto-flow: column; grid-auto-columns: 100%; column-gap: 16px; min-height: 0; padding: 6px 0; overflow: hidden;
   overscroll-behavior-x: contain; scrollbar-width: none; touch-action: none; }
@@ -352,22 +343,19 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
    type changes as it does on a real LCD, at once ---- */
 .m .m-vtrack i, .m .m-gr i b { transition: height .09s cubic-bezier(.2, .7, .3, 1), width .09s cubic-bezier(.2, .7, .3, 1); }
 .m .m-seq-steps i::after, .m .m-seq-steps i::before { transition: height .09s cubic-bezier(.2, .7, .3, 1); }
-.m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-trans button { transition: background-color .22s ease-out, color .22s ease-out, opacity .22s ease-out; }
-.m .m-btn:active, .m .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"], .m .m-play[aria-pressed="true"] { transition-duration: .06s; }
+.m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button { transition: background-color .22s ease-out, color .22s ease-out, opacity .22s ease-out; }
+.m .m-btn:active, .m .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"] { transition-duration: .06s; }
 .m .m-seq-steps i.now { transition: outline-color .2s ease-out, left .07s linear, bottom .07s linear; }
 /* a fader moved by MIDI follows the knob straight away */
 .m .m-vf.cc .m-vtrack i { transition: none; }
-@media (prefers-reduced-motion: reduce) { .m .m-vtrack i, .m .m-gr i b, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-trans button { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .m .m-vtrack i, .m .m-gr i b, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button { transition: none; } }
 </style>
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v58</small></b>
+    <b class="m-title">elixir<small class="m-ver">synth v15</small></b>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
-    <div class="m-trans">
-      <button class="m-play" id="m-play" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M7 4.5v15l13-7.5z"/><rect class="i-stop" x="5.5" y="5.5" width="13" height="13" rx="2"/></svg><span>play</span></button>
-      <button class="m-rec" id="m-rec" type="button" aria-pressed="false" aria-label="Record"><i></i><span id="m-rec-t">rec</span></button>
-    </div>
+    <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
   </header>
 
   <div class="m-side" id="m-side" aria-label="perform">
@@ -441,7 +429,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v58, 1 Nov, 08:13</footer>
+      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v15, 1 Nov, 08:20</footer>
     </section>
   </div>
   </div>
@@ -4694,17 +4682,17 @@ $('m').addEventListener('contextmenu', (e) => e.preventDefault());
 // ---- transport ----
 function setPlaying(on) {
   playing = on;
-  $('m-play').setAttribute('aria-pressed', on); $('m-play').querySelector('span').textContent = on ? 'stop' : 'play';
   sendSeq();
   if (!on) stopHooks.forEach((h) => h());
 }
 const stopHooks = [];
-$('m-play').addEventListener('click', async () => { await startAudio(); setPlaying(!playing); });
-// the space bar starts and stops (but still types in a text box); it never presses the button that has the focus
+const togglePlay = async () => { await startAudio(); setPlaying(!playing); };
+// there are no transport buttons (a plugin's host has its own): the space bar starts and stops, and R starts and
+// stops a recording (both still type in a text box); space never presses the button that has the focus
 addEventListener('keydown', (e) => {
-  if (e.code !== 'Space' || e.target.closest('input[type="text"], textarea, select')) return;
-  e.preventDefault();
-  if (!e.repeat) $('m-play').click();
+  if (e.target.closest('input[type="text"], textarea, select') || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) togglePlay(); }
+  else if (e.code === 'KeyR' && !e.repeat) recToggle();
 }, true);
 addEventListener('keyup', (e) => { if (e.code === 'Space' && !e.target.closest('input[type="text"], textarea, select')) e.preventDefault(); }, true);
 // ---- faders: vertical, readout on top and label under; dragging moves the value from where it is (a touch doesn't jump
@@ -4992,7 +4980,7 @@ addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('m-rnd').hidde
 // by the CSS), worked out from where it sits on its own page, and again when the screen's size changes ----
 function mDepth() {
   const m = $('m').getBoundingClientRect();
-  for (const el of document.querySelectorAll('.m-vf, .m-btn, .m-toggle, .m-pload, .m-tabs button, .m-chead, .m-title, .m-trans button, .m-seq-lenrow, .m-step')) {
+  for (const el of document.querySelectorAll('.m-vf, .m-btn, .m-toggle, .m-pload, .m-tabs button, .m-chead, .m-title, .m-seq-lenrow, .m-step')) {
     const r = el.getBoundingClientRect();
     if (!r.width) continue;
     const x = (((r.left + r.width / 2 - m.left) % m.width) + m.width) % m.width / m.width, y = (r.top + r.height / 2 - m.top) / m.height;
@@ -5466,20 +5454,21 @@ $('m-pexport').addEventListener('click', async () => {
 });
 pDraw();
 
-// ---- record: one press starts a take at once (and starts playing), the next stops it and downloads it as a WAV
-// (44.1 kHz, 16-bit, the finished mix) ----
+// ---- record: R starts a take at once (and starts playing), R again stops it and downloads it as a WAV (44.1 kHz,
+// 16-bit, the finished mix). While it runs, the title corner shows REC and the time ----
 let recState = 'off', recChunks = [], recT0 = 0, recTimer = 0, takeNo = 0;
 function recUi() {
   const on = recState === 'on';
-  $('m-rec').setAttribute('aria-pressed', on); $('m-rec').classList.toggle('on', on);
+  const ind = $('m-rec-t');
+  ind.hidden = recState === 'off'; ind.classList.toggle('on', on);
   clearInterval(recTimer);
   if (on) {
-    const tick = () => { const t = Math.max(0, (performance.now() - recT0) / 1000); $('m-rec-t').textContent = `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`; };
+    const tick = () => { const t = Math.max(0, (performance.now() - recT0) / 1000); ind.textContent = `rec ${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`; };
     tick(); recTimer = setInterval(tick, 250);
-  } else $('m-rec-t').textContent = recState === 'saving' ? 'saving' : 'rec';
+  } else ind.textContent = recState === 'saving' ? 'saving' : '';
 }
 const recSend = (m) => { if (node) node.port.postMessage(m); else if (fallback) fallback.msg(m); };
-$('m-rec').addEventListener('click', async () => {
+async function recToggle() {
   if (recState === 'off') {
     await startAudio();
     recChunks = []; recState = 'on'; recT0 = performance.now();
@@ -5487,7 +5476,7 @@ $('m-rec').addEventListener('click', async () => {
     if (!playing) setPlaying(true);
   } else if (recState === 'on') { recState = 'saving'; recSend({ type: 'recStop' }); }
   recUi();
-});
+}
 eventHandlers.push((ev) => {
   if (ev.type === 'recData') recChunks.push(ev);
   else if (ev.type === 'rec' && ev.state === 'done') finishTake(ev);

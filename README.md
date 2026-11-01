@@ -16,8 +16,8 @@ The screen is landscape, 5:3, laid out once at 1000 x 600 and scaled as a whole 
 showing round it where the window is a different shape. That is how the plugin's window will resize.
 
 Perf is on show all the time. The other pages share the space under its dials: tap the page buttons along the bottom of the window, or swipe across
-them. The space bar starts and stops. Dragging a fader, a dial or the steps never turns the page. Play and
-record sit under the title at the top left.
+them. The space bar starts and stops. Dragging a fader, a dial or the steps never turns the page. There are
+no play or record buttons: R starts and stops a recording.
 
 - **PERF** (always on show): eight dials in a line along the top right, and the randomise button (bottom left, beside the page buttons), which opens a popup of everything, sound, alter, notes, random fx, alter fx, undo, and
   *next bar* (while playing, a randomise waits for the next bar). Drag a dial up or down to turn it. A MIDI controller
@@ -50,7 +50,7 @@ record sit under the title at the top left.
 Hold any fader for half a second to open its step sequencer: 2 to 16 steps, depth, slew, speed, draw with a finger,
 randomise, on or off. Presets keep them.
 
-**REC** records the finished mix from the moment you press it and downloads a WAV when you press it again.
+**R** records the finished mix from the moment you press it (REC and the time show under the title) and downloads a WAV when you press it again.
 
 ## The engine
 

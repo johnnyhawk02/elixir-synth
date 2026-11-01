@@ -55,17 +55,17 @@ $('m').addEventListener('contextmenu', (e) => e.preventDefault());
 // ---- transport ----
 function setPlaying(on) {
   playing = on;
-  $('m-play').setAttribute('aria-pressed', on); $('m-play').querySelector('span').textContent = on ? 'stop' : 'play';
   sendSeq();
   if (!on) stopHooks.forEach((h) => h());
 }
 const stopHooks = [];
-$('m-play').addEventListener('click', async () => { await startAudio(); setPlaying(!playing); });
-// the space bar starts and stops (but still types in a text box); it never presses the button that has the focus
+const togglePlay = async () => { await startAudio(); setPlaying(!playing); };
+// there are no transport buttons (a plugin's host has its own): the space bar starts and stops, and R starts and
+// stops a recording (both still type in a text box); space never presses the button that has the focus
 addEventListener('keydown', (e) => {
-  if (e.code !== 'Space' || e.target.closest('input[type="text"], textarea, select')) return;
-  e.preventDefault();
-  if (!e.repeat) $('m-play').click();
+  if (e.target.closest('input[type="text"], textarea, select') || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) togglePlay(); }
+  else if (e.code === 'KeyR' && !e.repeat) recToggle();
 }, true);
 addEventListener('keyup', (e) => { if (e.code === 'Space' && !e.target.closest('input[type="text"], textarea, select')) e.preventDefault(); }, true);
 // ---- faders: vertical, readout on top and label under; dragging moves the value from where it is (a touch doesn't jump
@@ -353,7 +353,7 @@ addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('m-rnd').hidde
 // by the CSS), worked out from where it sits on its own page, and again when the screen's size changes ----
 function mDepth() {
   const m = $('m').getBoundingClientRect();
-  for (const el of document.querySelectorAll('.m-vf, .m-btn, .m-toggle, .m-pload, .m-tabs button, .m-chead, .m-title, .m-trans button, .m-seq-lenrow, .m-step')) {
+  for (const el of document.querySelectorAll('.m-vf, .m-btn, .m-toggle, .m-pload, .m-tabs button, .m-chead, .m-title, .m-seq-lenrow, .m-step')) {
     const r = el.getBoundingClientRect();
     if (!r.width) continue;
     const x = (((r.left + r.width / 2 - m.left) % m.width) + m.width) % m.width / m.width, y = (r.top + r.height / 2 - m.top) / m.height;

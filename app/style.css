@@ -70,11 +70,11 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-btn { min-height: 56px; font-size: var(--fs-m) !important; }
 .m-big { font-size: 1.1rem !important; }
 .m-toggle { min-width: 64px; min-height: 36px; font-size: var(--fs-s) !important; }
-.m .m-btn, .m .m-rec, .m .m-toggle, .m .m-pload, .m-tabs button {
+.m .m-btn, .m .m-toggle, .m .m-pload, .m-tabs button {
   background: transparent !important; border: 2px solid var(--ink); border-radius: 3px; font-weight: 400; text-transform: uppercase; letter-spacing: .06em; }
-.m .m-btn:active, .m .m-big, .m .m-play, .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"], .m .m-plist li.cur .m-pload, .m .m-rec.on, .m .m-rnd-open[aria-expanded="true"] {
+.m .m-btn:active, .m .m-big, .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"], .m .m-plist li.cur .m-pload, .m .m-rnd-open[aria-expanded="true"] {
   background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
-.m .m-big:active, .m .m-play:active { transform: none; background: transparent !important; color: var(--ink) !important; }
+.m .m-big:active { transform: none; background: transparent !important; color: var(--ink) !important; }
 .m .m-btn:disabled { opacity: .3; }
 
 /* a checkbox drawn as an LCD box: a ticked one is filled */
@@ -153,21 +153,12 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 /* (the page buttons show which page is open, so its name isn't needed on the title line) */
 .m-pagename { display: none; white-space: nowrap; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 
-/* play and rec, under the title */
-.m-trans { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; align-items: stretch; flex: none; }
-.m-play { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 6px; background: var(--ink) !important;
-  color: var(--panel) !important; font-weight: 400; text-transform: uppercase; }
-.m .m-play { border: 2px solid var(--ink); border-radius: 3px; letter-spacing: .1em; font-size: var(--fs-m) !important; }
-.m-play svg { width: 16px; height: 16px; fill: currentColor; }
-.m-play .i-stop, .m-play[aria-pressed="true"] .i-play { display: none; }
-.m-play[aria-pressed="true"] .i-stop { display: inline; }
-.m .m-rec { display: grid; grid-auto-flow: column; justify-content: center; place-items: center; align-content: center; gap: min(10px, 8.2px) !important; min-height: 40px; padding: 0 6px; }
-.m-rec i { width: 14px; height: 14px; border-radius: 2px; background: var(--ink); }
-.m-rec span { font-family: var(--mono); font-size: var(--fs-s); font-variant-numeric: tabular-nums; }
-.m-rec.on i { width: 14px; height: 14px; border-radius: 4px; background: var(--panel); animation: m-blink 1s steps(1) infinite; }
-@keyframes m-blink { 50% { opacity: .35; } }
-@media (prefers-reduced-motion: reduce) { .m-rec.on i { animation: none; } }
-.m .m-rec:disabled { opacity: .35; }
+/* recording (R): REC and the time under the title, blinking */
+.m-recind { align-self: flex-start; padding: 6px 10px; border: 2px solid var(--ink); border-radius: 3px; background: var(--ink); color: var(--panel);
+  font-family: var(--mono); font-size: var(--fs-m); text-transform: uppercase; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.m-recind.on { animation: m-blink 1s steps(1) infinite; }
+@keyframes m-blink { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .m-recind.on { animation: none; } }
 /* the pages sit side by side on the right; swipe across them or tap a page button. Each page is one screen, no scrolling */
 .m-pages { grid-area: pages; display: grid; grid-auto-flow: column; grid-auto-columns: 100%; column-gap: 16px; min-height: 0; padding: 6px 0; overflow: hidden;
   overscroll-behavior-x: contain; scrollbar-width: none; touch-action: none; }
@@ -337,9 +328,9 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
    type changes as it does on a real LCD, at once ---- */
 .m .m-vtrack i, .m .m-gr i b { transition: height .09s cubic-bezier(.2, .7, .3, 1), width .09s cubic-bezier(.2, .7, .3, 1); }
 .m .m-seq-steps i::after, .m .m-seq-steps i::before { transition: height .09s cubic-bezier(.2, .7, .3, 1); }
-.m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-trans button { transition: background-color .22s ease-out, color .22s ease-out, opacity .22s ease-out; }
-.m .m-btn:active, .m .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"], .m .m-play[aria-pressed="true"] { transition-duration: .06s; }
+.m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button { transition: background-color .22s ease-out, color .22s ease-out, opacity .22s ease-out; }
+.m .m-btn:active, .m .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"] { transition-duration: .06s; }
 .m .m-seq-steps i.now { transition: outline-color .2s ease-out, left .07s linear, bottom .07s linear; }
 /* a fader moved by MIDI follows the knob straight away */
 .m .m-vf.cc .m-vtrack i { transition: none; }
-@media (prefers-reduced-motion: reduce) { .m .m-vtrack i, .m .m-gr i b, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-trans button { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .m .m-vtrack i, .m .m-gr i b, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button { transition: none; } }

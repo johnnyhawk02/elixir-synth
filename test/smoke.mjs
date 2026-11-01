@@ -135,7 +135,7 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   await pg.click('#m-nrand');
   check(await pg.isEnabled('#m-nalter ~ [data-undo]'), 'random notes can be undone');
   // play runs the steps
-  await pg.click('#m-play'); await pg.waitForTimeout(1200);
+  await pg.keyboard.press('Space'); await pg.waitForTimeout(1200);
   check(await pg.evaluate(() => document.querySelectorAll('.m-step.now').length === 1), 'playing lights the step');
   // presets: load a built-in one, save a new one
   await pg.click('[data-m-tab="presets"]');
@@ -145,9 +145,10 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   await pg.click('#m-psave');
   check(await pg.evaluate(() => JSON.parse(localStorage.getItem('elixir-synth-presets')).length === 1), 'save new keeps a preset in its own storage');
   // record: a take downloads as a WAV
-  await pg.click('#m-rec'); await pg.waitForTimeout(1000);
+  await pg.keyboard.press('r'); await pg.waitForTimeout(1000);
+  check(await pg.evaluate(() => !$('m-rec-t').hidden && /rec \d:\d\d/i.test($('m-rec-t').textContent)), 'R records, and the title corner shows it');
   const dl = pg.waitForEvent('download', { timeout: 10000 }).catch(() => null);
-  await pg.click('#m-rec');
+  await pg.keyboard.press('r');
   const d = await dl;
   check(!!d && /\.wav$/.test(d.suggestedFilename()), `record downloads ${d ? d.suggestedFilename() : 'nothing'}`);
   check(!errs.length, `no page errors ${errs.join('; ')}`);

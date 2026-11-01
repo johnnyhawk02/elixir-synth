@@ -1,17 +1,18 @@
-// ---- record: one press starts a take at once (and starts playing), the next stops it and downloads it as a WAV
-// (44.1 kHz, 16-bit, the finished mix) ----
+// ---- record: R starts a take at once (and starts playing), R again stops it and downloads it as a WAV (44.1 kHz,
+// 16-bit, the finished mix). While it runs, the title corner shows REC and the time ----
 let recState = 'off', recChunks = [], recT0 = 0, recTimer = 0, takeNo = 0;
 function recUi() {
   const on = recState === 'on';
-  $('m-rec').setAttribute('aria-pressed', on); $('m-rec').classList.toggle('on', on);
+  const ind = $('m-rec-t');
+  ind.hidden = recState === 'off'; ind.classList.toggle('on', on);
   clearInterval(recTimer);
   if (on) {
-    const tick = () => { const t = Math.max(0, (performance.now() - recT0) / 1000); $('m-rec-t').textContent = `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`; };
+    const tick = () => { const t = Math.max(0, (performance.now() - recT0) / 1000); ind.textContent = `rec ${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`; };
     tick(); recTimer = setInterval(tick, 250);
-  } else $('m-rec-t').textContent = recState === 'saving' ? 'saving' : 'rec';
+  } else ind.textContent = recState === 'saving' ? 'saving' : '';
 }
 const recSend = (m) => { if (node) node.port.postMessage(m); else if (fallback) fallback.msg(m); };
-$('m-rec').addEventListener('click', async () => {
+async function recToggle() {
   if (recState === 'off') {
     await startAudio();
     recChunks = []; recState = 'on'; recT0 = performance.now();
@@ -19,7 +20,7 @@ $('m-rec').addEventListener('click', async () => {
     if (!playing) setPlaying(true);
   } else if (recState === 'on') { recState = 'saving'; recSend({ type: 'recStop' }); }
   recUi();
-});
+}
 eventHandlers.push((ev) => {
   if (ev.type === 'recData') recChunks.push(ev);
   else if (ev.type === 'rec' && ev.state === 'done') finishTake(ev);
