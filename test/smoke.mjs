@@ -51,7 +51,7 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   // the main page: the first one, every page's randomisers and save, each button whole, all inside the page
   await pg.click('[data-m-tab="main"]');
   check(await pg.evaluate(() => { const p = document.querySelector('[data-m-panel="main"]').getBoundingClientRect(), bs = [...document.querySelectorAll('.m-main-card .m-btn, .m-main-card .m-chk, .m-main-card .m-toggle')];
-    return PANELS[0].dataset.mPanel === 'main' && bs.length === 21 && bs.every((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.bottom <= p.bottom + 0.5 && e.scrollWidth <= e.clientWidth; }); }), 'main: every randomiser and save fit, each whole');
+    return PANELS[0].dataset.mPanel === 'main' && bs.length === 23 && bs.every((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.bottom <= p.bottom + 0.5 && e.scrollWidth <= e.clientWidth; }); }), 'main: every randomiser and save fit, each whole');
   const mainBefore = await pg.evaluate(() => JSON.stringify([values[PAR.FILTER_FREQ_1], values[PAR.RESO_1], values[PAR.FILTER_DRIVE_1], values[PAR.DRIVE1]]));
   await pg.click('.m-main-card [data-vrand="filter"]');
   check(await pg.evaluate((b) => JSON.stringify([values[PAR.FILTER_FREQ_1], values[PAR.RESO_1], values[PAR.FILTER_DRIVE_1], values[PAR.DRIVE1]]) !== b && !document.querySelector('.m-main-card [data-undo]').disabled && mCur === 0, mainBefore), 'main: a section randomiser works there and can be undone');
@@ -65,6 +65,13 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   await pg.click('.m-main-card [data-nshift="1"]');
   check(await pg.evaluate((b) => { const was = JSON.parse(b), n = seq.len; return JSON.stringify(seq.steps[1]) === JSON.stringify(was[0]) && JSON.stringify(seq.steps[0]) === JSON.stringify(was[n - 1]); }, shBefore), 'main: shift moves the pattern a step');
   await pg.click('.m-main-card [data-nshift="-1"]');
+  // knob seqs: new sequencers on one to three faders (their faders marked), undo puts back none, off clears them
+  await pg.click('#m-fsrand');
+  check(await pg.evaluate(() => { const on = mFaders.filter((f) => f.seq && f.seq.on); return on.length >= 1 && on.length <= 3 && on.every((f) => f.el.classList.contains('seq') && f.seq.vals.slice(0, f.seq.len).some((v) => v)); }), 'main: knob seqs makes new fader sequencers');
+  await pg.click('.m-main-card [data-undo]');
+  check(await pg.evaluate(() => !mFaders.some((f) => f.seq && f.seq.on)), 'main: knob seqs can be undone');
+  await pg.click('#m-fsrand'); await pg.click('#m-fsoff');
+  check(await pg.evaluate(() => !mFaders.some((f) => f.seq) && !document.querySelector('.m-vf.seq')), 'main: knob seqs off clears them');
   // length on the main page is the seq page's length
   await pg.evaluate(() => { seq.len = 64; drawAll(); });
   { const r = await box('#m-mlen .m-vtrack'); await drag(r.x + r.width / 2, r.y + 4, r.x + r.width / 2, r.y + 4 + r.height * (64 - 33) / 63, 6); }

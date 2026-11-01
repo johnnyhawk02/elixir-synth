@@ -127,6 +127,29 @@ const FS_TYPE_KEY = 'elixir-synth-seqrand';
 let fsType = Math.max(0, FS_RAND.findIndex(([n]) => n === store.get(FS_TYPE_KEY)));
 $('m-fs-type').addEventListener('click', () => { fsType = (fsType + 1) % FS_RAND.length; store.set(FS_TYPE_KEY, FS_RAND[fsType][0]); fsDraw(); });
 $('m-fs-rand').addEventListener('click', () => { const q = fsF.seq; q.vals = FS_RAND[fsType][1](q.len).map(fsOff); q.on = true; fsDraw(); });
+// the main page's knob seq randomiser: the knob sequencers all cleared, then new ones on one to three of the faders
+// worth moving (the filter most often), each of a random kind, length, speed, depth and slew, now and then with a
+// slide or two; knob seqs off clears them all. Both can be undone
+const FS_TARGETS = ['m-voice-filter:cutoff', 'm-voice-filter:cutoff', 'm-voice-filter:cutoff', 'm-voice-filter:reso', 'm-voice-filter:flt drive',
+  'm-voice-tone:pwm', 'm-voice-tone:fm amt', 'm-voice-tone:fm amt', 'm-voice-tone:fm freq', 'm-voice-shape:decay', 'm-voice-shape:pitch amt',
+  'm-voice-filter:srate', 'm-voice-filter:drive', 'm-echo:send', 'm-echo:feedback', 'm-verb:send', 'm-ring:freq'];
+function fsClearAll() { for (const f of mFaders) { fsRelease(f); f.seq = null; } if (fsF) $('m-fs-close').click(); fsMarks(); }
+function fsRandomAll() {
+  fsClearAll();
+  const keys = new Set();
+  for (let n = rIn(1, 3); keys.size < n;) keys.add(pick(FS_TARGETS));
+  for (const key of keys) {
+    const f = mFaders.find((x) => x.key === key); if (!f) continue;
+    const q = f.seq = fsNew();
+    q.len = pick([4, 8, 8, 16, 16, 16, 3, 6, 12]); q.step = pick([1, 1, 1, 2, 4, 16]); q.depth = rIn(3, 12) * 5;
+    q.slew = chance(0.4) ? rIn(2, 10) * 10 : 0;
+    q.vals = FS_RAND[rIn(0, FS_RAND.length - 1)][1](q.len).map(fsOff);
+    if (chance(0.3)) for (let i = 0; i < q.len; i++) q.slides[i] = chance(0.25);
+  }
+  fsMarks();
+}
+$('m-fsrand').addEventListener('click', (e) => mRandomise(e.currentTarget, fsRandomAll));
+$('m-fsoff').addEventListener('click', (e) => mRandomise(e.currentTarget, fsClearAll));
 $('m-fs-on').addEventListener('click', () => { fsF.seq.on = !fsF.seq.on; if (!fsF.seq.on) fsRelease(fsF); fsDraw(); });
 $('m-fs-slide').addEventListener('click', () => { fsSlideMode = !fsSlideMode; fsDraw(); });
 $('m-fs-close').addEventListener('click', () => { $('m-fs').hidden = true; fsF = null; fsSlideMode = false; });
