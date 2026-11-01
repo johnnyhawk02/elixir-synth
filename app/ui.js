@@ -4,7 +4,6 @@
 // ---- pages: perf stays on the left; the others sit on the right, one at a time: swipe across them, or tap a page button. A swipe starts anywhere but on a fader, the
 // steps or a list, so dragging those never turns the page ----
 const mPages = $('m-pages'), PANELS = [...mPages.querySelectorAll('[data-m-panel]')];
-const PAGE_NAMES = { seq: 'notes', voice: 'voice', fx: 'effects', comp: 'master', presets: 'presets' };
 // the screen is laid out once at 1000 x 600 and scaled as a whole to fit the window, as a plugin window resizes
 const M_W = 1000, M_H = 600;
 let mK = 1;
@@ -16,7 +15,6 @@ function mGo(i, smooth) {
   mCur = Math.max(0, Math.min(PANELS.length - 1, i));
   const t = PANELS[mCur].dataset.mPanel;
   mPages.scrollTo({ left: PANELS[mCur].offsetLeft - PANELS[0].offsetLeft, behavior: smooth ? 'smooth' : 'instant' });
-  $('m-pagename').textContent = PAGE_NAMES[t];
   document.querySelectorAll('[data-m-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.mTab === t));
   pageHooks.forEach((h) => h(t));
 }

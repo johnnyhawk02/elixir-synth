@@ -3,7 +3,7 @@
    One pane of blue backlit LCD in a black bezel on a dark case, like a character module: the pixels lit near-white on
    the blue, a faint ghost of the unlit ones, a soft glow round the lit ones, and a pixel font throughout. Buttons are outlined
    boxes that invert when pressed or chosen; faders and meters are segmented bar graphs. Sections inside the screen
-   are parted by thin ink lines; the sheets that open over it (sequencer, settings, chooser, loop length) are panes of
+   are parted by thin ink lines; the sheets that open over it (a knob's sequencer, randomise, prefs) are panes of
    their own. Nothing scrolls but the presets list and the pop-ups' lists.
    The screen is landscape, 5:3, laid out once at 1000 x 600 and scaled to fit the window (--k, set by mFit in ui.js),
    with the dark case showing round it; so it reads the same at any size, as a plugin window that resizes does. */
@@ -56,7 +56,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
    (--d, set per control by mDepth in ui.js: 1 at the bottom left, about 1.7 at the top right) */
 .m, .m button, .m-title, .m .m-flab, .m .m-vf output { --d: 1; text-shadow: 0 0 calc(2.5px * var(--d)) rgb(var(--ink-rgb) / calc(var(--glow, 1) * (.38 + .1 * var(--d)))); }
 .m .m-vtrack i, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-gr i b { filter: drop-shadow(calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgb(var(--shade-rgb) / .17)); }
-.m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-seq-len { box-shadow: calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgb(var(--shade-rgb) / .14); }
+.m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button { box-shadow: calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgb(var(--shade-rgb) / .14); }
 .m .m-tabs button:not([aria-selected="true"]) { box-shadow: none; }
 
 /* cards: the sheets are glass of their own; the sections inside the screen are bare */
@@ -91,7 +91,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-chead b { font-size: var(--fs-m); }
 .m .m-chead b { font-weight: 400; text-transform: uppercase; letter-spacing: .08em; }
 
-/* a meter (the sidechain's duck, the compressor's reduction), segmented */
+/* a meter (the compressor's gain reduction), segmented */
 .m-gr { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; font-size: var(--fs-s); }
 .m .m-gr i { height: 14px; border-radius: 0; overflow: hidden; display: flex; justify-content: flex-end;
   background: repeating-linear-gradient(to left, var(--ghost) 0 5px, transparent 5px 8px); }
@@ -115,7 +115,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m .m-vtrack.mod { overflow: visible; }
 .m .m-vtrack.mod b { display: block; left: -3px; right: -3px; height: 4px; border-radius: 0; bottom: calc(var(--b) * (100% - 4px)); background: var(--ink); box-shadow: 0 0 0 2px var(--panel); }
 
-/* the big faders (perf): a two-line readout, tracks as tall as the page */
+/* the perf dials' base (they're .m-vf too): a two-line readout over, the label under */
 #m-perf .m-vf { display: flex; flex-direction: column; align-items: center; min-height: 0; gap: 3px; }
 #m-perf .m-vf output { font-size: min(var(--fs-xs), 16px); line-height: 1; color: var(--ink); height: 2.5em; display: flex; align-items: flex-end; justify-content: center; flex: none; align-self: stretch; }
 .m #m-perf .m-flab { font-size: min(var(--fs-xs), 16px); letter-spacing: -.02em; white-space: nowrap; line-height: 1.2; }
@@ -148,12 +148,10 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m .m-row .m-flab, .m .m-vset .m-flab, .m .m-seqf .m-flab { font-size: min(1.05rem, 15.2px); letter-spacing: 0; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .m .m-row .m-vtrack, .m .m-vset .m-vtrack, .m .m-seqf .m-vtrack { width: min(52px, 100%); flex: 1; height: auto; min-height: 12px; }
 
-/* ---- the frame: title line, transport, pages, page buttons ---- */
-.m-top { grid-area: top; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; padding: 10px 0 8px; border-bottom: var(--rule); }
+/* ---- the frame: title, pages, randomise and the page buttons ---- */
+.m-top { grid-area: top; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; padding: 10px 0 8px; }
 .m .m-title { align-self: flex-start; padding: 0; background: none; text-align: left; cursor: pointer; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 .m-ver { display: block; margin-top: 4px; font-size: .7em; letter-spacing: .06em; text-transform: none; opacity: .7; }
-/* (the page buttons show which page is open, so its name isn't needed on the title line) */
-.m-pagename { display: none; white-space: nowrap; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 
 /* recording (R): REC and the time under the title, blinking */
 .m-recind { align-self: flex-start; padding: 6px 10px; border: 2px solid var(--ink); border-radius: 3px; background: var(--ink); color: var(--panel);
@@ -161,20 +159,22 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-recind.on { animation: m-blink 1s steps(1) infinite; }
 @keyframes m-blink { 50% { opacity: .55; } }
 @media (prefers-reduced-motion: reduce) { .m-recind.on { animation: none; } }
-/* the pages sit side by side on the right; swipe across them or tap a page button. Each page is one screen, no scrolling */
+/* the pages sit side by side under the dials, one in view; swipe across them or tap a page button. Each page is one
+   screen, no scrolling. One rule the full width over them (under the dials) and one under them (over the page buttons) */
 .m-pages { grid-area: pages; display: grid; grid-auto-flow: column; grid-auto-columns: 100%; column-gap: 16px; min-height: 0; padding: 6px 0; overflow: hidden;
+  border-top: var(--rule); border-bottom: var(--rule);
   overscroll-behavior-x: contain; scrollbar-width: none; touch-action: none; }
 .m-pages::-webkit-scrollbar { display: none; }
 .m-panel { display: grid; grid-template-rows: 1fr; gap: 12px; align-content: stretch; min-height: 0; overflow: hidden; }
 
 /* the page buttons, one line of five along the bottom, under the pages */
-.m > .m-tabs { grid-area: tabs; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 6px 0 0; border-top: var(--rule); }
+.m > .m-tabs { grid-area: tabs; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 6px 0 0; }
 .m-tabs button { border-color: transparent; min-width: 0; }
 .m-tabs button[aria-selected="true"] { border-color: var(--ink); }
 .m .m-tabs button { min-height: 40px; padding: 0; font-size: 1.3rem !important; letter-spacing: .04em; }
 
-/* ---- perf, always on show: eight dials in a line along the top right, and the randomise column down the left ---- */
-.m-side { grid-area: dials; display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; overflow: hidden; border-bottom: var(--rule); }
+/* ---- perf, always on show: eight dials in a line along the top right ---- */
+.m-side { grid-area: dials; display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; overflow: hidden; }
 .m-play-card { display: grid; min-height: 0; padding: 6px 0 4px; }
 #m-perf { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 2px; min-height: 0; }
 /* the randomise button, left of the page buttons along the bottom, and its popup: next bar, then the seven buttons and done, four across */
@@ -183,7 +183,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-rnd .m-rand-card { width: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; pointer-events: auto;
   box-shadow: 0 -8px 30px rgba(0, 0, 0, .5), inset 0 3px 10px rgba(0, 0, 0, .28); }
 .m-rnd .m-chead { gap: 16px; text-transform: uppercase; }
-/* prefs: under the title, the same sheet as the randomisers */
+/* prefs: under the dials, the same sheet as the randomisers */
 .m-seq.m-prefs { top: 136px; bottom: auto; height: auto; }
 .m-prefs .m-rand-card { grid-template-rows: auto auto; }
 .m-prefs .m-chead .m-btn { min-height: 40px; min-width: 120px; font-size: var(--fs-s) !important; }
@@ -198,12 +198,12 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m .m-btn.pending { animation: m-flash .5s steps(1) infinite; }
 @media (prefers-reduced-motion: reduce) { .m .m-btn.pending { animation: none; outline: 2px dashed var(--ink); outline-offset: 2px; } }
 
-/* ---- seq: what a touch sets, the sixteen steps in one line, then root, scale, accent, glide and the buttons ---- */
+/* ---- seq: the page buttons and tools, the sixteen steps in one line, the gate (or morph) lane, then the faders ---- */
 .m-seqpage { display: grid; grid-template-rows: auto minmax(0, 1.6fr) minmax(0, 0.9fr) 134px; grid-template-columns: minmax(0, 1fr) 118px; gap: 8px 10px; min-height: 0; padding: 6px 2px; }
 .m-seqpage > * { grid-column: 1; }
 /* random, alter and undo: a column down the right, as on the voice and fx pages */
-.m-seqpage > .m-seqbtns { grid-column: 2; grid-row: 1 / -1; grid-template-rows: 80px; grid-auto-rows: 52px; align-content: start; }
-/* the pages: four tabs (the one playing underlined) and the copy button */
+.m-seqpage > .m-seqbtns { grid-column: 2; grid-row: 1 / -1; }
+/* the pages: four tabs (the one playing underlined), copy, morph, shift and octave */
 .m-npages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.4fr) minmax(0, 1.6fr) minmax(0, 1.6fr) minmax(0, 2.6fr); gap: 4px; }
 .m-nshift { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 .m .m-npages .m-btn[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
@@ -260,9 +260,11 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 
 /* ---- fx: the echo, the reverb and the ring mod side by side (as the voice page's sections), each its name over one
-   row of full-height faders, then random, alter, undo ---- */
+   row of full-height faders; the randomisers down the right ---- */
 .m-fx-card { display: grid; grid-template-columns: minmax(0, 1fr) 118px; gap: 10px; min-height: 0; padding: 8px 2px; }
 .m-fx-card .m-vbtns { grid-row: 1; }
+/* (the seq and fx columns have fewer buttons than the voice's: theirs keep one size, top-aligned) */
+.m-fx-card .m-vbtns, .m-seqpage > .m-seqbtns { grid-template-rows: 74px; grid-auto-rows: 52px; align-content: start; }
 .m-fxsets { display: grid; grid-template-columns: 5fr 5fr 3fr; min-height: 0; }
 .m-fxsets .m-vpart { padding: 0 6px; }
 .m-fxsets .m-vpart:first-child { padding-left: 2px; }
@@ -271,9 +273,10 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-fxhead b { font-weight: 400; text-transform: uppercase; letter-spacing: .08em; font-size: var(--fs-m); padding-left: 4px; }
 .m-fxhead .m-chk { min-height: 36px; gap: 8px; }
 .m-fxhead .m-chk i { width: 22px; height: 22px; }
-/* five to a row everywhere small faders sit in rows, so the columns line up */
+/* small faders in a row, one column each (mstr: six to a row in both rows, so the compressor's line up under the
+   distortion's) */
 .m-row { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
-#m-echo, #m-comp, #m-verb { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+#m-echo, #m-verb { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 #m-ring { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 /* ---- mstr: the distortion, then the compressor, each a heading and a row ---- */
@@ -285,11 +288,11 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-comp-card .m-toggle { min-width: 56px; min-height: 40px; }
 #m-comp.off { opacity: .4; }
 
-/* ---- prst: save at the top, the list between (it scrolls), the file buttons and credits at the foot ---- */
+/* ---- prst: save at the top, the list between (it scrolls), the file buttons at the foot ---- */
 .m-presets-card { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 6px; min-height: 0; padding: 8px 2px; }
 /* save new, and save over the loaded preset */
 .m-psaves { display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; }
-.m-psaves .m-btn { min-height: 56px; font-size: var(--fs-xs) !important; padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-psaves .m-btn { min-height: 52px; font-size: var(--fs-xs) !important; padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* a passing note under them, taking no room while empty */
 .m-note { margin: 0; min-height: 1.2em; font-size: var(--fs-s); color: var(--muted); }
 .m-lcd { display: grid; grid-template-columns: 5.5em repeat(5, minmax(0, 1fr)); gap: 6px; align-items: center; text-transform: uppercase; font-size: var(--fs-xs); }
@@ -308,20 +311,18 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m .m-plist li.pending .m-pload { animation: m-flash .5s steps(1) infinite; }
 @keyframes m-flash { 50% { opacity: .25; } }
 @media (prefers-reduced-motion: reduce) { .m .m-plist li.pending .m-pload { animation: none; outline: 2px dashed var(--ink); outline-offset: 2px; } }
-.m-pdel { border-radius: 10px; background: none; color: var(--muted) !important; }
+.m-pdel { background: none; color: var(--muted) !important; }
 .m .m-pdel { min-height: 46px; min-width: 40px; padding: 0; text-align: center; font-size: 1.2rem !important; text-transform: uppercase; }
 .m-pio { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; }
-.m-pio .m-btn { min-height: 46px; font-size: var(--fs-xs) !important; white-space: nowrap; letter-spacing: 0; padding: 0 4px; }
+.m-pio .m-btn { min-height: 52px; font-size: var(--fs-xs) !important; white-space: nowrap; letter-spacing: 0; padding: 0 4px; }
 .m-file { display: grid; place-items: center; cursor: pointer; position: relative; overflow: hidden; }
 .m-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; }
-.m-install { margin-top: 10px; }
 .m-install[hidden] { display: none; }
 .m-foot { color: var(--muted); text-align: center; padding: 0; font-size: .95rem; line-height: 1.2; }
 .m-foot a { color: inherit; }
 
-/* ---- the fader step sequencer: a sheet over the pages, leaving perf, play and record beside it free; sixteen
-   step bars in two rows (the ones past the length faint), length, slew, speed and depth as horizontal segmented bars,
-   then randomise and done ---- */
+/* ---- the knob step sequencer: a sheet over the pages, leaving the dials above it free; sixteen step bars in one
+   row (the ones past the length faint), then length, slew, speed and depth as faders, and the buttons ---- */
 .m-seq { position: absolute; left: 8px; right: 8px; top: 136px; bottom: 8px; z-index: 10; pointer-events: none; display: flex; align-items: stretch; justify-content: center; }
 .m-seq[hidden] { display: none; }
 .m-seq-card { width: 100%; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr); gap: 12px;
@@ -337,22 +338,21 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-seq-steps i::before { top: 50%; height: calc(var(--dn) * 50%); background: repeating-linear-gradient(to bottom, var(--ink) 0 5px, transparent 5px 8px); }
 .m-seq-steps i.off { opacity: .25; }
 .m-seq-steps i.now { outline: 2px solid var(--ink); outline-offset: 2px; }
-/* a horizontal bar (also the randomisers' settings) */
 /* under the steps: length, slew, speed and depth as vertical faders (the value over, the name under), then the buttons */
 .m-seq-low { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.6fr); gap: 12px; min-height: 0; border-top: var(--rule); padding-top: 8px; }
-.m-seq-lenrow { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 4px; justify-items: center; min-height: 0; text-transform: uppercase; }
-.m-seq-lenrow span { order: 3; font-size: min(var(--fs-xs), 15.2px); }
-.m-seq-lenrow output { order: 1; white-space: nowrap; font-size: min(var(--fs-xs), 15.2px); }
-.m-seq-len { --f: 1; order: 2; position: relative; width: min(52px, 100%); min-height: 0; touch-action: none; border: 2px solid var(--ink); border-radius: 2px;
-  background: repeating-linear-gradient(to top, var(--ghost) 0 5px, transparent 5px 8px) 4px 4px / calc(100% - 8px) calc(100% - 8px) no-repeat; }
-.m-seq-len i { position: absolute; left: 4px; right: 4px; bottom: 4px; height: calc((100% - 8px) * var(--w, 1));
-  background: repeating-linear-gradient(to top, var(--ink) 0 5px, transparent 5px 8px); }
+.m-seq-lenrow { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 2px; justify-items: center; min-height: 0; }
+.m-seq-lenrow span { order: 3; font-size: min(1.05rem, 15.2px); text-transform: uppercase; }
+.m-seq-lenrow output { order: 1; white-space: nowrap; font-size: min(var(--fs-xs), 16.1px); line-height: 1; }
+.m-seq-len { --f: 1; order: 2; position: relative; width: min(52px, 100%); min-height: 0; touch-action: none; cursor: ns-resize; border-radius: 2px; overflow: hidden;
+  background: repeating-linear-gradient(to top, var(--ghost) 0 5px, transparent 5px 8px); background-position: bottom; }
+.m-seq-len i { position: absolute; left: 0; right: 0; bottom: 0; height: round(down, calc(var(--w, 1) * 100%), 8px);
+  background: repeating-linear-gradient(to top, var(--ink) 0 5px, transparent 5px 8px); background-position: bottom; }
 .m-seq-btns { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; min-height: 0; }
 .m .m-seq-btns .m-btn[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
 .m-seq-steps i b { display: none; position: absolute; right: 3px; top: 3px; z-index: 1; padding: 0 4px; font-size: 12px; line-height: 16px; background: var(--ink); color: var(--panel); border-radius: 2px; }
 .m-seq-steps i.slide b { display: block; }
-.m .m-seq-type { font-size: min(var(--fs-xs), 15.7px) !important; padding: 0 2px; letter-spacing: 0; }
-.m-seq-btns .m-btn { min-height: 0; }
+/* the four buttons in one type size, as the randomiser columns' */
+.m .m-seq-btns .m-btn { min-height: 0; padding: 0 2px; font-size: min(var(--fs-xs), 15.6px) !important; }
 
 /* ---- LCD fade: liquid crystal is slow, so segments come on quickly and linger a moment going off. The faders' and
    meters' lit segments, the step bars and the inverted buttons and tabs ease rather than jump (off slower than on);
