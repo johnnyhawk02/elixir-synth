@@ -3,7 +3,7 @@
 // oct + move the whole sequence an octave. A page's steps sit in one line of sixteen: a step's height is its note,
 // two octaves of the scale (a touch on a resting step brings it on), and the A and S under it switch its accent and
 // slide (tap, or drag along the row). Under the notes, a lane of the steps' gate times: bottom rests, then a quarter
-// to all of the step, top rings. Under that: root, scale, accent, glide and algo, and random, alter, undo ----
+// to all of the step, top rings. Under that: root, scale, accent, density (thins the playing steps, off-beats first), glide and algo, and random, alter, undo ----
 let nsPage = 0;
 const nsStep = (i) => seq.steps[nsPage * 16 + i];
 const nsCells = Array.from({ length: 16 }, (_, i) => {
@@ -18,8 +18,10 @@ const nsGates = Array.from({ length: 16 }, (_, i) => {
   $('m-gates').append(c); return c;
 });
 function nsDraw() {
+  const thin = thinned();
   nsCells.forEach((c, i) => {
     const st = nsStep(i);
+    c.classList.toggle('thin', thin[nsPage * 16 + i]); nsGates[i].classList.toggle('thin', thin[nsPage * 16 + i]);
     c.querySelector('.m-sn').textContent = st.gate ? noteName(stepNote(st)) : '—';
     c.style.setProperty('--f', (Math.min(st.d, degMax()) + 1) / (degMax() + 1));
     c.classList.toggle('rest', !st.gate); c.classList.toggle('acc', st.acc); c.classList.toggle('slide', st.slide);
@@ -99,6 +101,7 @@ const ROOTS = NOTE_NAMES;
 mFader($('m-seqf'), 'root', { min: 0, max: 11, get: () => seq.root, set: (v) => { seq.root = v; sendSeq(); nsDraw(); }, show: (v) => ROOTS[v], dflt: 0 });
 mFader($('m-seqf'), 'scale', { min: 0, max: SCALES.length - 1, get: () => seq.scale, set: (v) => { seq.scale = v; sendSeq(); nsDraw(); }, show: (v) => SCALES[v][0], dflt: SEQ0.scale });
 mFader($('m-seqf'), 'accent', { min: 0, max: 12, get: () => seq.accent, set: (v) => { seq.accent = v; sendSeq(); }, show: (v) => `+${v}dB`, dflt: SEQ0.accent });
+mFader($('m-seqf'), 'density', { min: 0, max: 100, step: 5, get: () => seq.density, set: (v) => { seq.density = v; sendSeq(); nsDraw(); }, show: (v) => v + '%', dflt: 100 });
 mFader($('m-seqf'), 'glide', { min: 0, max: 100, step: 5, get: () => seq.glide, set: (v) => { seq.glide = v; sendSeq(); }, show: (v) => v + '%', dflt: SEQ0.glide });
 
 // random: a new line for a page, made by the algorithm picked on the algo fader (kept in the preset). Each makes 16

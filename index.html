@@ -232,9 +232,12 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 /* the gate lane: a bar for each step's gate, its length under it */
 .m-gstep { grid-template-rows: minmax(0, 1fr) auto; }
 .m-gstep.rest .m-sbar { opacity: 1; }
+/* a step density thins out: still shown, dashed and dimmed */
+.m-step.thin { border-style: dashed; }
+.m-step.thin .m-sn, .m-step.thin .m-sbar { opacity: .35; }
 .m-sm b:hover { background: var(--tint-2); }
 .m-seqlow { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; min-height: 0; border-top: var(--rule); padding-top: 6px; }
-.m-seqf { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
+.m-seqf { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
 .m-seqbtns, .m-fxbtns { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 6px; min-height: 0; }
 .m-nalgo { display: block; margin-top: 4px; font-size: .85em; letter-spacing: 0; opacity: .8; }
 .m .m-seqbtns .m-btn, .m .m-fxbtns .m-btn { flex-direction: column; min-height: 0; font-size: min(var(--fs-xs), 15.6px) !important; padding: 0 2px; }
@@ -353,7 +356,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v15</small></b>
+    <b class="m-title">elixir<small class="m-ver">synth v27</small></b>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
     <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
   </header>
@@ -429,7 +432,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v15, 1 Nov, 08:20</footer>
+      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v27, 1 Nov, 08:41</footer>
     </section>
   </div>
   </div>
@@ -4497,7 +4500,7 @@ const SCALES = [['major', [0, 2, 4, 5, 7, 9, 11]], ['minor', [0, 2, 3, 5, 7, 8, 
 const degMax = (sc = seq.scale) => 2 * SCALES[sc][1].length;
 // the octave buttons move the whole sequence, OCT_MIN to OCT_MAX octaves from where its notes are written
 const OCT_MIN = -2, OCT_MAX = 2;
-const SEQ0 = { root: 0, scale: 1, oct: 0, accent: 6, glide: 35, vel: 100, algo: 0,
+const SEQ0 = { root: 0, scale: 1, oct: 0, density: 100, accent: 6, glide: 35, vel: 100, algo: 0,
   steps: [[0, 4, 1, 0], [0, 2, 0, 0], [7, 3, 0, 1], [8, 4, 0, 0], [0, 0, 0, 0], [3, 3, 1, 0], [0, 2, 0, 0], [5, 4, 0, 1],
     [4, 4, 0, 0], [0, 2, 1, 0], [0, 0, 0, 0], [7, 3, 0, 0], [6, 4, 1, 1], [7, 4, 0, 0], [2, 2, 0, 0], [0, 3, 0, 0]].map(([d, gate, acc, slide]) => ({ d, gate, acc: !!acc, slide: !!slide })) };
 const PAGES = 4, NSTEPS = PAGES * 16;
@@ -4509,9 +4512,22 @@ const seq = structuredClone(SEQ0);
 const degSemis = (d, sc = seq.scale, root = seq.root, oct = seq.oct) => { const s = SCALES[sc][1]; return root + 12 * oct + s[d % s.length] + 12 * Math.floor(d / s.length); };
 const stepNote = (st) => values[PAR.COARSE1] + degSemis(st.d);
 let playing = false, tempo = 120;
+// density: the share of each page's playing steps that sound; the rest are thinned out, the off-beat 16ths first and
+// the downbeats last, so the line thins to its bones (and comes back the same way) as the fader comes down
+const DENSITY_ORDER = [0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15];
+function thinned() {
+  const out = new Array(NSTEPS).fill(false);
+  for (let pg = 0; pg < PAGES; pg++) {
+    const on = DENSITY_ORDER.map((i) => pg * 16 + i).filter((s) => seq.steps[s].gate);
+    const keep = Math.round(on.length * seq.density / 100);
+    on.slice(keep).forEach((s) => { out[s] = true; });
+  }
+  return out;
+}
 function sendSeq() {
+  const thin = thinned();
   send({ type: 'seq', playing, bpm: tempo, vel: seq.vel, glide: seq.glide / 100, accentDb: seq.accent,
-    steps: seq.steps.map((st) => ({ n: degSemis(st.d), gate: st.gate, acc: st.acc, slide: st.slide })) });
+    steps: seq.steps.map((st, s) => ({ n: degSemis(st.d), gate: thin[s] ? 0 : st.gate, acc: st.acc, slide: st.slide })) });
 }
 
 // ---- effects and master: echo, reverb and ring mod sends; the echo's tone, feedback and ping pong are the engine's own
@@ -4994,7 +5010,7 @@ addEventListener('resize', mDepth);
 // oct + move the whole sequence an octave. A page's steps sit in one line of sixteen: a step's height is its note,
 // two octaves of the scale (a touch on a resting step brings it on), and the A and S under it switch its accent and
 // slide (tap, or drag along the row). Under the notes, a lane of the steps' gate times: bottom rests, then a quarter
-// to all of the step, top rings. Under that: root, scale, accent, glide and algo, and random, alter, undo ----
+// to all of the step, top rings. Under that: root, scale, accent, density (thins the playing steps, off-beats first), glide and algo, and random, alter, undo ----
 let nsPage = 0;
 const nsStep = (i) => seq.steps[nsPage * 16 + i];
 const nsCells = Array.from({ length: 16 }, (_, i) => {
@@ -5009,8 +5025,10 @@ const nsGates = Array.from({ length: 16 }, (_, i) => {
   $('m-gates').append(c); return c;
 });
 function nsDraw() {
+  const thin = thinned();
   nsCells.forEach((c, i) => {
     const st = nsStep(i);
+    c.classList.toggle('thin', thin[nsPage * 16 + i]); nsGates[i].classList.toggle('thin', thin[nsPage * 16 + i]);
     c.querySelector('.m-sn').textContent = st.gate ? noteName(stepNote(st)) : '—';
     c.style.setProperty('--f', (Math.min(st.d, degMax()) + 1) / (degMax() + 1));
     c.classList.toggle('rest', !st.gate); c.classList.toggle('acc', st.acc); c.classList.toggle('slide', st.slide);
@@ -5090,6 +5108,7 @@ const ROOTS = NOTE_NAMES;
 mFader($('m-seqf'), 'root', { min: 0, max: 11, get: () => seq.root, set: (v) => { seq.root = v; sendSeq(); nsDraw(); }, show: (v) => ROOTS[v], dflt: 0 });
 mFader($('m-seqf'), 'scale', { min: 0, max: SCALES.length - 1, get: () => seq.scale, set: (v) => { seq.scale = v; sendSeq(); nsDraw(); }, show: (v) => SCALES[v][0], dflt: SEQ0.scale });
 mFader($('m-seqf'), 'accent', { min: 0, max: 12, get: () => seq.accent, set: (v) => { seq.accent = v; sendSeq(); }, show: (v) => `+${v}dB`, dflt: SEQ0.accent });
+mFader($('m-seqf'), 'density', { min: 0, max: 100, step: 5, get: () => seq.density, set: (v) => { seq.density = v; sendSeq(); nsDraw(); }, show: (v) => v + '%', dflt: 100 });
 mFader($('m-seqf'), 'glide', { min: 0, max: 100, step: 5, get: () => seq.glide, set: (v) => { seq.glide = v; sendSeq(); }, show: (v) => v + '%', dflt: SEQ0.glide });
 
 // random: a new line for a page, made by the algorithm picked on the algo fader (kept in the preset). Each makes 16

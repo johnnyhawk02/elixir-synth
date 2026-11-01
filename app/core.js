@@ -83,7 +83,7 @@ const SCALES = [['major', [0, 2, 4, 5, 7, 9, 11]], ['minor', [0, 2, 3, 5, 7, 8, 
 const degMax = (sc = seq.scale) => 2 * SCALES[sc][1].length;
 // the octave buttons move the whole sequence, OCT_MIN to OCT_MAX octaves from where its notes are written
 const OCT_MIN = -2, OCT_MAX = 2;
-const SEQ0 = { root: 0, scale: 1, oct: 0, accent: 6, glide: 35, vel: 100, algo: 0,
+const SEQ0 = { root: 0, scale: 1, oct: 0, density: 100, accent: 6, glide: 35, vel: 100, algo: 0,
   steps: [[0, 4, 1, 0], [0, 2, 0, 0], [7, 3, 0, 1], [8, 4, 0, 0], [0, 0, 0, 0], [3, 3, 1, 0], [0, 2, 0, 0], [5, 4, 0, 1],
     [4, 4, 0, 0], [0, 2, 1, 0], [0, 0, 0, 0], [7, 3, 0, 0], [6, 4, 1, 1], [7, 4, 0, 0], [2, 2, 0, 0], [0, 3, 0, 0]].map(([d, gate, acc, slide]) => ({ d, gate, acc: !!acc, slide: !!slide })) };
 const PAGES = 4, NSTEPS = PAGES * 16;
@@ -95,9 +95,22 @@ const seq = structuredClone(SEQ0);
 const degSemis = (d, sc = seq.scale, root = seq.root, oct = seq.oct) => { const s = SCALES[sc][1]; return root + 12 * oct + s[d % s.length] + 12 * Math.floor(d / s.length); };
 const stepNote = (st) => values[PAR.COARSE1] + degSemis(st.d);
 let playing = false, tempo = 120;
+// density: the share of each page's playing steps that sound; the rest are thinned out, the off-beat 16ths first and
+// the downbeats last, so the line thins to its bones (and comes back the same way) as the fader comes down
+const DENSITY_ORDER = [0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15];
+function thinned() {
+  const out = new Array(NSTEPS).fill(false);
+  for (let pg = 0; pg < PAGES; pg++) {
+    const on = DENSITY_ORDER.map((i) => pg * 16 + i).filter((s) => seq.steps[s].gate);
+    const keep = Math.round(on.length * seq.density / 100);
+    on.slice(keep).forEach((s) => { out[s] = true; });
+  }
+  return out;
+}
 function sendSeq() {
+  const thin = thinned();
   send({ type: 'seq', playing, bpm: tempo, vel: seq.vel, glide: seq.glide / 100, accentDb: seq.accent,
-    steps: seq.steps.map((st) => ({ n: degSemis(st.d), gate: st.gate, acc: st.acc, slide: st.slide })) });
+    steps: seq.steps.map((st, s) => ({ n: degSemis(st.d), gate: thin[s] ? 0 : st.gate, acc: st.acc, slide: st.slide })) });
 }
 
 // ---- effects and master: echo, reverb and ring mod sends; the echo's tone, feedback and ping pong are the engine's own

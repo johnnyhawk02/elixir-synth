@@ -120,6 +120,10 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   const s0 = await pg.evaluate(() => [seq.steps[16 + 6].slide, seq.steps[16 + 6].acc, seq.steps[16 + 6].gate]);
   await pg.click('.m-step >> nth=6 >> .m-sm .s'); await pg.click('.m-step >> nth=6 >> .m-sm .a');
   check(await pg.evaluate((s0) => { const st = seq.steps[16 + 6]; return st.slide === !s0[0] && st.acc === !s0[1] && st.gate === s0[2]; }, s0), 'the A and S under a step switch its accent and slide');
+  // density: at 50% half of each page's playing steps sound, the downbeat kept; back at 100% all of them
+  check(await pg.evaluate(() => { seq.density = 50; const t = thinned(), on = seq.steps.slice(0, 16).filter((x) => x.gate).length;
+    const kept = seq.steps.slice(0, 16).filter((x, i) => x.gate && !t[i]).length; const ok = kept === Math.round(on / 2) && (!seq.steps[0].gate || !t[0]);
+    seq.density = 100; return ok && !thinned().some(Boolean); }), 'density thins the playing steps, off-beats first');
   await pg.click('#m-ncopy');
   check(await pg.evaluate(() => { const k = [1, 2, 3].map((p) => seq.steps.slice(p * 16, p * 16 + 16).filter((st, i) => JSON.stringify(st) !== JSON.stringify(seq.steps[i])).length); return k.every((n) => n <= 5) && k.some((n) => n > 0); }), 'copy: pages 2 to 4 are page 1, slightly varied');
   // every algorithm makes a valid page
