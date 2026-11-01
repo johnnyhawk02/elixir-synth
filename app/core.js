@@ -95,13 +95,13 @@ const seq = structuredClone(SEQ0);
 const degSemis = (d, sc = seq.scale, root = seq.root, oct = seq.oct) => { const s = SCALES[sc][1]; return root + 12 * oct + s[d % s.length] + 12 * Math.floor(d / s.length); };
 const stepNote = (st) => values[PAR.COARSE1] + degSemis(st.d);
 let playing = false, tempo = 120;
-// density: the share of each page's playing steps that sound; the rest are thinned out, the off-beat 16ths first and
+// density: the share of each page's playing steps (those within the length) that sound; the rest are thinned out, the off-beat 16ths first and
 // the downbeats last, so the line thins to its bones (and comes back the same way) as the fader comes down
 const DENSITY_ORDER = [0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15];
 function thinned() {
   const out = new Array(NSTEPS).fill(false);
   for (let pg = 0; pg < PAGES; pg++) {
-    const on = DENSITY_ORDER.map((i) => pg * 16 + i).filter((s) => seq.steps[s].gate);
+    const on = DENSITY_ORDER.map((i) => pg * 16 + i).filter((s) => s < seq.len && seq.steps[s].gate);
     const keep = Math.round(on.length * seq.density / 100);
     on.slice(keep).forEach((s) => { out[s] = true; });
   }

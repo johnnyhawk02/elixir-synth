@@ -359,7 +359,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v30</small></b>
+    <b class="m-title">elixir<small class="m-ver">synth v31</small></b>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
     <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
   </header>
@@ -435,7 +435,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v30, 1 Nov, 09:44</footer>
+      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v31, 1 Nov, 09:46</footer>
     </section>
   </div>
   </div>
@@ -4517,13 +4517,13 @@ const seq = structuredClone(SEQ0);
 const degSemis = (d, sc = seq.scale, root = seq.root, oct = seq.oct) => { const s = SCALES[sc][1]; return root + 12 * oct + s[d % s.length] + 12 * Math.floor(d / s.length); };
 const stepNote = (st) => values[PAR.COARSE1] + degSemis(st.d);
 let playing = false, tempo = 120;
-// density: the share of each page's playing steps that sound; the rest are thinned out, the off-beat 16ths first and
+// density: the share of each page's playing steps (those within the length) that sound; the rest are thinned out, the off-beat 16ths first and
 // the downbeats last, so the line thins to its bones (and comes back the same way) as the fader comes down
 const DENSITY_ORDER = [0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15];
 function thinned() {
   const out = new Array(NSTEPS).fill(false);
   for (let pg = 0; pg < PAGES; pg++) {
-    const on = DENSITY_ORDER.map((i) => pg * 16 + i).filter((s) => seq.steps[s].gate);
+    const on = DENSITY_ORDER.map((i) => pg * 16 + i).filter((s) => s < seq.len && seq.steps[s].gate);
     const keep = Math.round(on.length * seq.density / 100);
     on.slice(keep).forEach((s) => { out[s] = true; });
   }
@@ -5013,37 +5013,36 @@ function mDepth() {
 }
 addEventListener('resize', mDepth);
 
-// ---- the seq page: the note sequencer. Four pages of sixteen steps, played in turn a bar each; the page tabs pick
-// the page shown (the one playing is underlined), and copy puts the page shown onto the next one; oct - and
-// oct + move the whole sequence an octave. A page's steps sit in one line of sixteen: a step's height is its note,
-// two octaves of the scale (a touch on a resting step brings it on), and the A and S under it switch its accent and
-// slide (tap, or drag along the row). Length sets how many steps play (1 to 64, catching at 16, 32 and 48). Under the notes, a lane of the steps' gate times: bottom rests, then a quarter
-// to all of the step, top rings. Under that: root, scale, accent, density (thins the playing steps, off-beats first), glide and algo, and random, alter, undo ----
+// ---- the seq page: the note sequencer. Four pages of sixteen steps; length says how many of them play (1 to 64,
+// through the pages in turn). Along the top: the page tabs (the one playing underlined, those past the length faded),
+// copy (the page shown onto the next) and oct - / oct + (the whole sequence an octave). Then the page's sixteen steps:
+// a step's height is its note, two octaves of the scale (a touch on a resting step brings it on), and the A and S under
+// it switch its accent and slide (tap, or drag along the row). Under the notes, a lane of the steps' gate times
+// (bottom rests, then a quarter to all of the step, top rings). Under that the faders (root, scale, accent, length,
+// density, glide, algo) and random, alter, undo ----
 let nsPage = 0;
-const nsStep = (i) => seq.steps[nsPage * 16 + i];
-const nsCells = Array.from({ length: 16 }, (_, i) => {
-  const c = document.createElement('div'); c.className = 'm-step'; c.dataset.i = i; c.setAttribute('role', 'gridcell');
-  c.innerHTML = '<span class="m-sn"></span><i class="m-sbar"></i><span class="m-sm"><b class="a" role="button" aria-label="accent">A</b><b class="s" role="button" aria-label="slide">S</b></span>';
-  $('m-steps').append(c); return c;
+const nsAbs = (i) => nsPage * 16 + i;
+const nsStep = (i) => seq.steps[nsAbs(i)];
+// a change to the sequence: to the player, and onto the page
+const nsChanged = () => { sendSeq(); nsDraw(); };
+const nsRow = (id, cls, html) => Array.from({ length: 16 }, (_, i) => {
+  const c = document.createElement('div'); c.className = cls; c.dataset.i = i; c.setAttribute('role', 'gridcell');
+  c.innerHTML = html; $(id).append(c); return c;
 });
+const nsCells = nsRow('m-steps', 'm-step',
+  '<span class="m-sn"></span><i class="m-sbar"></i><span class="m-sm"><b class="a" role="button" aria-label="accent">A</b><b class="s" role="button" aria-label="slide">S</b></span>');
+const nsGates = nsRow('m-gates', 'm-step m-gstep', '<i class="m-sbar"></i><span class="m-sn"></span>');
 const GATE_NAMES = ['rest', '¼', '½', '¾', 'full', 'ring'];
-const nsGates = Array.from({ length: 16 }, (_, i) => {
-  const c = document.createElement('div'); c.className = 'm-step m-gstep'; c.dataset.i = i; c.setAttribute('role', 'gridcell');
-  c.innerHTML = '<i class="m-sbar"></i><span class="m-sn"></span>';
-  $('m-gates').append(c); return c;
-});
 function nsDraw() {
-  const thin = thinned();
+  const thin = thinned(), top = degMax();
   nsCells.forEach((c, i) => {
-    const st = nsStep(i);
-    c.classList.toggle('thin', thin[nsPage * 16 + i]); nsGates[i].classList.toggle('thin', thin[nsPage * 16 + i]);
-    const out = nsPage * 16 + i >= seq.len; c.classList.toggle('out', out); nsGates[i].classList.toggle('out', out);
-    c.querySelector('.m-sn').textContent = st.gate ? noteName(stepNote(st)) : '—';
-    c.style.setProperty('--f', (Math.min(st.d, degMax()) + 1) / (degMax() + 1));
-    c.classList.toggle('rest', !st.gate); c.classList.toggle('acc', st.acc); c.classList.toggle('slide', st.slide);
-    c.setAttribute('aria-label', `step ${i + 1}: ${st.gate ? noteName(stepNote(st)) : 'rest'}${st.acc ? ', accent' : ''}${st.slide ? ', slide' : ''}`);
-    const g = nsGates[i];
-    g.style.setProperty('--f', st.gate / 5); g.classList.toggle('rest', !st.gate);
+    const st = nsStep(i), g = nsGates[i], name = st.gate ? noteName(stepNote(st)) : 'rest';
+    for (const el of [c, g]) { el.classList.toggle('thin', thin[nsAbs(i)]); el.classList.toggle('out', nsAbs(i) >= seq.len); el.classList.toggle('rest', !st.gate); }
+    c.classList.toggle('acc', st.acc); c.classList.toggle('slide', st.slide);
+    c.style.setProperty('--f', (Math.min(st.d, top) + 1) / (top + 1));
+    c.querySelector('.m-sn').textContent = st.gate ? name : '—';
+    c.setAttribute('aria-label', `step ${i + 1}: ${name}${st.acc ? ', accent' : ''}${st.slide ? ', slide' : ''}`);
+    g.style.setProperty('--f', st.gate / 5);
     g.querySelector('.m-sn').textContent = GATE_NAMES[st.gate];
     g.setAttribute('aria-label', `step ${i + 1} gate: ${GATE_NAMES[st.gate]}`);
   });
@@ -5053,59 +5052,57 @@ function nsDraw() {
   $('m-noct-dn').disabled = seq.oct <= OCT_MIN; $('m-noct-up').disabled = seq.oct >= OCT_MAX;
 }
 drawHooks.push(nsDraw);
-$('m-npages').addEventListener('click', (e) => { const b = e.target.closest('[data-page]'); if (b) { nsPage = +b.dataset.page; nsDraw(); nsNow(); } });
+const nsShow = (pg) => { nsPage = pg; nsDraw(); nsNow(); };
+$('m-npages').addEventListener('click', (e) => { const b = e.target.closest('[data-page]'); if (b) nsShow(+b.dataset.page); });
 // octave down and up: the whole sequence, every page
-const nsOct = (k) => { seq.oct = Math.max(OCT_MIN, Math.min(OCT_MAX, seq.oct + k)); sendSeq(); nsDraw(); };
+const nsOct = (k) => { seq.oct = Math.max(OCT_MIN, Math.min(OCT_MAX, seq.oct + k)); nsChanged(); };
 $('m-noct-dn').addEventListener('click', () => nsOct(-1));
 $('m-noct-up').addEventListener('click', () => nsOct(1));
 // hear a note as it's set, while stopped
 function nsHear(st) { if (!playing && st.gate) { startAudio(); send({ type: 'note', n: degSemis(st.d), acc: st.acc, gate: st.gate }); } }
-// a row of sixteen that a touch, or a drag across, edits: what(i, y, first) changes step i (y from 0 at the bottom to
-// 1 at the top) and says whether to play it
-function nsLane(box, what) {
+// how high a touch is on el: 0 at its bottom to 1 at its top
+const nsY = (el, e) => { const r = el.getBoundingClientRect(); return Math.max(0, Math.min(0.999, (r.bottom - e.clientY) / r.height)); };
+// a row of sixteen that a touch, or a drag across, edits: edit(i, e, first) changes step i and says whether to play it
+// (true), that it changed without a note to play (false), or that nothing changed (null)
+function nsLane(box, edit) {
   let on = false;
   const at = (e, first) => {
     const r = box.getBoundingClientRect();
     const i = Math.max(0, Math.min(15, Math.floor((e.clientX - r.left) / r.width * 16)));
-    const cr = box.children[i].getBoundingClientRect();
-    const y = Math.max(0, Math.min(1, (cr.bottom - e.clientY) / cr.height));
-    const hear = what(i, y, first, e);
+    const hear = edit(i, e, first);
     if (hear === null) return;
     if (hear || first) nsHear(nsStep(i));
-    sendSeq(); nsDraw();
+    nsChanged();
   };
   box.addEventListener('pointerdown', (e) => { box.setPointerCapture(e.pointerId); on = true; at(e, true); });
   box.addEventListener('pointermove', (e) => { if (on) at(e, false); });
   const stop = () => { on = false; };
   box.addEventListener('pointerup', stop); box.addEventListener('pointercancel', stop);
 }
-// the notes; a touch that starts on an A or S switches that, and a drag along the row sets the others the same
+// the notes; a touch that starts on the A/S row (or a little above it: the left half is A, the right S) switches that,
+// and a drag along the row sets the others the same. Otherwise the note is where the touch is on the step's bar
 {
   let flag = null;
-  nsLane($('m-steps'), (i, y, first, e) => {
+  nsLane($('m-steps'), (i, e, first) => {
     const st = nsStep(i);
     if (first) {
-      // the A/S row, with some give above it: the left half is A, the right half S
-      const m = nsCells[i].querySelector('.m-sm').getBoundingClientRect(), slop = m.height * 0.5;
-      const k = e.clientY >= m.top - slop ? (e.clientX < m.left + m.width / 2 ? 'acc' : 'slide') : null;
-      flag = k ? { k, to: null, seen: new Set() } : null;
+      const m = nsCells[i].querySelector('.m-sm').getBoundingClientRect();
+      const k = e.clientX < m.left + m.width / 2 ? 'acc' : 'slide';
+      flag = e.clientY >= m.top - m.height * 0.5 ? { k, to: !st[k], seen: new Set() } : null;
     }
     if (flag) {
       if (flag.seen.has(i)) return null;
-      if (flag.to === null) flag.to = !st[flag.k];
       flag.seen.add(i); st[flag.k] = flag.to;
       return false;
     }
-    // the note from where the touch is on the step's bar (the note name and A/S rows above and below it are its ends)
-    const br = nsCells[i].querySelector('.m-sbar').getBoundingClientRect(), yb = Math.max(0, Math.min(0.999, (br.bottom - e.clientY) / br.height));
-    const d = Math.min(degMax(), Math.floor(yb * (degMax() + 1)));
+    const d = Math.min(degMax(), Math.floor(nsY(nsCells[i].querySelector('.m-sbar'), e) * (degMax() + 1)));
     if (d !== st.d || !st.gate) { st.d = d; if (!st.gate) st.gate = 4; return true; }
     return first ? false : null;
   });
 }
 // the gate times
-nsLane($('m-gates'), (i, y, first) => {
-  const st = nsStep(i), g = Math.min(5, Math.floor(y * 6));
+nsLane($('m-gates'), (i, e, first) => {
+  const st = nsStep(i), g = Math.floor(nsY(nsGates[i], e) * 6);
   if (g !== st.gate) { st.gate = g; return true; }
   return first ? false : null;
 });
@@ -5121,15 +5118,15 @@ eventHandlers.push((ev) => {
 });
 stopHooks.push(() => { nsAt = null; nsNow(); });
 
-const ROOTS = NOTE_NAMES;
-mFader($('m-seqf'), 'root', { min: 0, max: 11, get: () => seq.root, set: (v) => { seq.root = v; sendSeq(); nsDraw(); }, show: (v) => ROOTS[v], dflt: 0 });
-mFader($('m-seqf'), 'scale', { min: 0, max: SCALES.length - 1, get: () => seq.scale, set: (v) => { seq.scale = v; sendSeq(); nsDraw(); }, show: (v) => SCALES[v][0], dflt: SEQ0.scale });
-mFader($('m-seqf'), 'accent', { min: 0, max: 12, get: () => seq.accent, set: (v) => { seq.accent = v; sendSeq(); }, show: (v) => `+${v}dB`, dflt: SEQ0.accent });
-// length: 1 to 64 steps, through the pages in turn; a drag catches at 16, 32 and 48 (a page, two, three). Steps past
-// it are shown faded
-mFader($('m-seqf'), 'length', { min: 1, max: NSTEPS, get: () => seq.len, set: (v) => { seq.len = v; sendSeq(); nsDraw(); }, show: (v) => String(v), dflt: NSTEPS, detents: [16, 32, 48], catch: 2.5 });
-mFader($('m-seqf'), 'density', { min: 0, max: 100, step: 5, get: () => seq.density, set: (v) => { seq.density = v; sendSeq(); nsDraw(); }, show: (v) => v + '%', dflt: 100 });
-mFader($('m-seqf'), 'glide', { min: 0, max: 100, step: 5, get: () => seq.glide, set: (v) => { seq.glide = v; sendSeq(); }, show: (v) => v + '%', dflt: SEQ0.glide });
+// the faders: each a setting of the sequence
+const nsFader = (label, key, o) => mFader($('m-seqf'), label, { get: () => seq[key], set: (v) => { seq[key] = v; nsChanged(); }, dflt: SEQ0[key], ...o });
+nsFader('root', 'root', { min: 0, max: 11, show: (v) => NOTE_NAMES[v] });
+nsFader('scale', 'scale', { min: 0, max: SCALES.length - 1, show: (v) => SCALES[v][0] });
+nsFader('accent', 'accent', { min: 0, max: 12, show: (v) => `+${v}dB` });
+// length: a drag catches at 16, 32 and 48 (a page, two, three)
+nsFader('length', 'len', { min: 1, max: NSTEPS, show: (v) => String(v), detents: [16, 32, 48], catch: 2.5 });
+nsFader('density', 'density', { min: 0, max: 100, step: 5, show: (v) => v + '%' });
+nsFader('glide', 'glide', { min: 0, max: 100, step: 5, show: (v) => v + '%' });
 
 // random: a new line for a page, made by the algorithm picked on the algo fader (kept in the preset). Each makes 16
 // steps of { d: degree of the scale, gate, acc, slide }, so whatever it makes stays in the key
@@ -5240,10 +5237,10 @@ $('m-ncopy').addEventListener('click', (e) => {
   if (nsPage >= PAGES - 1) return;
   const from = nsPage;
   mRandomise(e.currentTarget, () => { for (let i = 0; i < 16; i++) seq.steps[(from + 1) * 16 + i] = { ...seq.steps[from * 16 + i] }; sendSeq(); });
-  nsPage = from + 1; nsDraw(); nsNow();
+  nsShow(from + 1);
 });
 // the algorithm random uses: its number on the fader, its name on the random button
-mFader($('m-seqf'), 'algo', { min: 0, max: SEQ_ALGOS.length - 1, get: () => seq.algo, set: (v) => { seq.algo = v; drawAll(); }, show: (v) => String(v + 1), dflt: 0 });
+mFader($('m-seqf'), 'algo', { min: 0, max: SEQ_ALGOS.length - 1, get: () => seq.algo, set: (v) => { seq.algo = v; drawAll(); }, show: (v) => String(v + 1), dflt: SEQ0.algo });
 drawHooks.push(() => { $('m-nalgo').textContent = `${seq.algo + 1} ${SEQ_ALGOS[seq.algo][0]}`; });
 
 // ---- fader step sequencers: holding a fader still for half a second opens one for it: 2 to 16 steps, each an offset
