@@ -207,8 +207,10 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   const on = await pg.evaluate(() => playing);
   await pg.keyboard.press('Space'); await pg.waitForTimeout(200);
   check(on && !(await pg.evaluate(() => playing)), 'space starts and stops');
+  const seqBefore = await pg.evaluate(() => JSON.stringify(seq.steps));
   await pg.click('#m-nrand');
   check(await pg.isEnabled('#m-nalter ~ [data-undo]'), 'random notes can be undone');
+  check(await pg.evaluate((b) => { const was = JSON.parse(b); return [0, 1, 2, 3].every((pg) => JSON.stringify(seq.steps.slice(pg * 16, pg * 16 + 16)) !== JSON.stringify(was.slice(pg * 16, pg * 16 + 16))); }, seqBefore), 'random renews every page');
   // play runs the steps
   await pg.keyboard.press('Space'); await pg.waitForTimeout(1200);
   check(await pg.evaluate(() => document.querySelectorAll('.m-step.now').length === 1), 'playing lights the step');
