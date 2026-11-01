@@ -1,7 +1,7 @@
 // ---- the seq page: the note sequencer. Four pages of sixteen steps, played in turn a bar each; the page tabs pick
 // the page shown (the one playing is underlined), and copy makes pages 2 to 4 slight variations of page 1. A page's
 // steps sit in one line of sixteen, each covering two octaves of the scale, and oct - / oct + move the whole sequence an octave; the strip over them picks what a touch sets: note (the step's height is its note in the scale; a resting step comes on), gate (bottom rests, top rings),
-// accent or slide (tap, or drag across, to switch). Under them: root, scale, accent and glide, and random, alter, undo ----
+// accent or slide (tap, or drag across, to switch). The A and S under each step also switch its accent and slide in any mode. Under them: root, scale, accent and glide, and random, alter, undo ----
 let nsMode = 'note', nsPage = 0;
 const nsStep = (i) => seq.steps[nsPage * 16 + i];
 const nsCells = Array.from({ length: 16 }, (_, i) => {
@@ -61,7 +61,15 @@ function nsHear(st) { if (!playing && st.gate) { startAudio(); send({ type: 'not
     if (hear || first) nsHear(st);
     sendSeq(); nsDraw();
   };
-  box.addEventListener('pointerdown', (e) => { box.setPointerCapture(e.pointerId); paint = { seen: new Set(), to: true }; at(e, true); });
+  box.addEventListener('pointerdown', (e) => {
+    // the A and S under a step switch its accent and slide straight away, whatever the strip is set to
+    const flag = e.target.closest('.m-sm b');
+    if (flag) {
+      const st = nsStep(+flag.closest('.m-step').dataset.i), k = flag.classList.contains('a') ? 'acc' : 'slide';
+      st[k] = !st[k]; sendSeq(); nsDraw(); return;
+    }
+    box.setPointerCapture(e.pointerId); paint = { seen: new Set(), to: true }; at(e, true);
+  });
   box.addEventListener('pointermove', (e) => { if (paint) at(e, false); });
   const stop = () => { paint = null; };
   box.addEventListener('pointerup', stop); box.addEventListener('pointercancel', stop);

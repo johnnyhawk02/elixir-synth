@@ -221,8 +221,8 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-sbar { display: block; min-height: 0; background: repeating-linear-gradient(to top, var(--ghost) 0 4px, transparent 4px 6px); position: relative; }
 .m-sbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: round(down, calc(var(--f) * 100%), 6px);
   background: repeating-linear-gradient(to top, var(--ink) 0 4px, transparent 4px 6px); background-position: bottom; transition: height .09s cubic-bezier(.2, .7, .3, 1); }
-.m-sm { display: flex; justify-content: space-between; font-size: min(.95rem, 14px); line-height: 1; }
-.m-sm b { font-weight: 400; padding: 0 2px; opacity: .22; }
+.m-sm { display: flex; justify-content: space-between; font-size: min(.95rem, 14px); line-height: 1; gap: 2px; }
+.m-sm b { flex: 1; font-weight: 400; padding: 3px 0; text-align: center; opacity: .3; cursor: pointer; border-radius: 2px; }
 .m-step.acc .m-sm .a, .m-step.slide .m-sm .s { opacity: 1; background: var(--ink); color: var(--panel); text-shadow: none; }
 .m-step.rest .m-sn, .m-step.rest .m-sbar { opacity: .3; }
 .m-steps[data-mode="acc"] .m-step.acc, .m-steps[data-mode="slide"] .m-step.slide { background: var(--tint-2); }
