@@ -1,31 +1,39 @@
 // ---- the seq page: the note sequencer. Four pages of sixteen steps, played in turn a bar each; the page tabs pick
-// the page shown (the one playing is underlined), and copy makes pages 2 to 4 slight variations of page 1. A page's
-// steps sit in one line of sixteen, each covering two octaves of the scale, and oct - / oct + move the whole sequence an octave; the strip over them picks what a touch sets: note (the step's height is its note in the scale; a resting step comes on), gate (bottom rests, top rings),
-// accent or slide (tap, or drag across, to switch). The A and S under each step also switch its accent and slide in any mode. Under them: root, scale, accent and glide, and random, alter, undo ----
-let nsMode = 'note', nsPage = 0;
+// the page shown (the one playing is underlined), and copy makes pages 2 to 4 slight variations of page 1; oct - and
+// oct + move the whole sequence an octave. A page's steps sit in one line of sixteen: a step's height is its note,
+// two octaves of the scale (a touch on a resting step brings it on), and the A and S under it switch its accent and
+// slide (tap, or drag along the row). Under the notes, a lane of the steps' gate times: bottom rests, then a quarter
+// to all of the step, top rings. Under that: root, scale, accent, glide and algo, and random, alter, undo ----
+let nsPage = 0;
 const nsStep = (i) => seq.steps[nsPage * 16 + i];
 const nsCells = Array.from({ length: 16 }, (_, i) => {
   const c = document.createElement('div'); c.className = 'm-step'; c.dataset.i = i; c.setAttribute('role', 'gridcell');
-  c.innerHTML = '<span class="m-sn"></span><i class="m-sbar"></i><span class="m-sm"><b class="a">A</b><b class="s">S</b></span>';
+  c.innerHTML = '<span class="m-sn"></span><i class="m-sbar"></i><span class="m-sm"><b class="a" role="button" aria-label="accent">A</b><b class="s" role="button" aria-label="slide">S</b></span>';
   $('m-steps').append(c); return c;
+});
+const GATE_NAMES = ['rest', '¼', '½', '¾', 'full', 'ring'];
+const nsGates = Array.from({ length: 16 }, (_, i) => {
+  const c = document.createElement('div'); c.className = 'm-step m-gstep'; c.dataset.i = i; c.setAttribute('role', 'gridcell');
+  c.innerHTML = '<i class="m-sbar"></i><span class="m-sn"></span>';
+  $('m-gates').append(c); return c;
 });
 function nsDraw() {
   nsCells.forEach((c, i) => {
     const st = nsStep(i);
     c.querySelector('.m-sn').textContent = st.gate ? noteName(stepNote(st)) : '—';
-    const f = nsMode === 'gate' ? st.gate / 5 : nsMode === 'note' ? (Math.min(st.d, degMax()) + 1) / (degMax() + 1) : 0;
-    c.style.setProperty('--f', f);
+    c.style.setProperty('--f', (Math.min(st.d, degMax()) + 1) / (degMax() + 1));
     c.classList.toggle('rest', !st.gate); c.classList.toggle('acc', st.acc); c.classList.toggle('slide', st.slide);
     c.setAttribute('aria-label', `step ${i + 1}: ${st.gate ? noteName(stepNote(st)) : 'rest'}${st.acc ? ', accent' : ''}${st.slide ? ', slide' : ''}`);
+    const g = nsGates[i];
+    g.style.setProperty('--f', st.gate / 5); g.classList.toggle('rest', !st.gate);
+    g.querySelector('.m-sn').textContent = GATE_NAMES[st.gate];
+    g.setAttribute('aria-label', `step ${i + 1} gate: ${GATE_NAMES[st.gate]}`);
   });
-  $('m-steps').dataset.mode = nsMode;
-  [...$('m-modes').children].forEach((b) => b.setAttribute('aria-selected', b.dataset.mode === nsMode));
   document.querySelectorAll('#m-npages [data-page]').forEach((b) => b.setAttribute('aria-selected', +b.dataset.page === nsPage));
   $('m-noct-out').textContent = seq.oct > 0 ? `+${seq.oct}` : String(seq.oct);
   $('m-noct-dn').disabled = seq.oct <= OCT_MIN; $('m-noct-up').disabled = seq.oct >= OCT_MAX;
 }
 drawHooks.push(nsDraw);
-$('m-modes').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (b) { nsMode = b.dataset.mode; nsDraw(); } });
 $('m-npages').addEventListener('click', (e) => { const b = e.target.closest('[data-page]'); if (b) { nsPage = +b.dataset.page; nsDraw(); nsNow(); } });
 // octave down and up: the whole sequence, every page
 const nsOct = (k) => { seq.oct = Math.max(OCT_MIN, Math.min(OCT_MAX, seq.oct + k)); sendSeq(); nsDraw(); };
@@ -33,47 +41,48 @@ $('m-noct-dn').addEventListener('click', () => nsOct(-1));
 $('m-noct-up').addEventListener('click', () => nsOct(1));
 // hear a note as it's set, while stopped
 function nsHear(st) { if (!playing && st.gate) { startAudio(); send({ type: 'note', n: degSemis(st.d), acc: st.acc, gate: st.gate }); } }
-{
-  const box = $('m-steps');
-  let paint = null;
-  const cellAt = (e) => {
-    const r = box.getBoundingClientRect();
-    // the sixteen steps in one line
-    return Math.max(0, Math.min(15, Math.floor((e.clientX - r.left) / r.width * 16)));
-  };
+// a row of sixteen that a touch, or a drag across, edits: what(i, y, first) changes step i (y from 0 at the bottom to
+// 1 at the top) and says whether to play it
+function nsLane(box, what) {
+  let on = false;
   const at = (e, first) => {
-    const i = cellAt(e), st = nsStep(i), c = nsCells[i], cr = c.getBoundingClientRect();
+    const r = box.getBoundingClientRect();
+    const i = Math.max(0, Math.min(15, Math.floor((e.clientX - r.left) / r.width * 16)));
+    const cr = box.children[i].getBoundingClientRect();
     const y = Math.max(0, Math.min(1, (cr.bottom - e.clientY) / cr.height));
-    let hear = false;
-    if (nsMode === 'note') {
-      const d = Math.min(degMax(), Math.floor(y * (degMax() + 1)));
-      if (d !== st.d || !st.gate) { st.d = d; if (!st.gate) st.gate = 4; hear = true; }
-    } else if (nsMode === 'gate') {
-      const g = Math.min(5, Math.floor(y * 6));
-      if (g !== st.gate) { st.gate = g; hear = true; }
-    } else {
-      const k = nsMode === 'acc' ? 'acc' : 'slide';
-      if (first) paint.to = !st[k];
-      if (paint.seen.has(i)) return;
-      st[k] = paint.to;
-    }
-    paint.seen.add(i);
-    if (hear || first) nsHear(st);
+    const hear = what(i, y, first, e);
+    if (hear === null) return;
+    if (hear || first) nsHear(nsStep(i));
     sendSeq(); nsDraw();
   };
-  box.addEventListener('pointerdown', (e) => {
-    // the A and S under a step switch its accent and slide straight away, whatever the strip is set to
-    const flag = e.target.closest('.m-sm b');
-    if (flag) {
-      const st = nsStep(+flag.closest('.m-step').dataset.i), k = flag.classList.contains('a') ? 'acc' : 'slide';
-      st[k] = !st[k]; sendSeq(); nsDraw(); return;
-    }
-    box.setPointerCapture(e.pointerId); paint = { seen: new Set(), to: true }; at(e, true);
-  });
-  box.addEventListener('pointermove', (e) => { if (paint) at(e, false); });
-  const stop = () => { paint = null; };
+  box.addEventListener('pointerdown', (e) => { box.setPointerCapture(e.pointerId); on = true; at(e, true); });
+  box.addEventListener('pointermove', (e) => { if (on) at(e, false); });
+  const stop = () => { on = false; };
   box.addEventListener('pointerup', stop); box.addEventListener('pointercancel', stop);
 }
+// the notes; a touch that starts on an A or S switches that, and a drag along the row sets the others the same
+{
+  let flag = null;
+  nsLane($('m-steps'), (i, y, first, e) => {
+    const st = nsStep(i);
+    if (first) { const b = e.target.closest('.m-sm b'); flag = b ? { k: b.classList.contains('a') ? 'acc' : 'slide', to: null, seen: new Set() } : null; }
+    if (flag) {
+      if (flag.seen.has(i)) return null;
+      if (flag.to === null) flag.to = !st[flag.k];
+      flag.seen.add(i); st[flag.k] = flag.to;
+      return false;
+    }
+    const d = Math.min(degMax(), Math.floor(y * (degMax() + 1)));
+    if (d !== st.d || !st.gate) { st.d = d; if (!st.gate) st.gate = 4; return true; }
+    return first ? false : null;
+  });
+}
+// the gate times
+nsLane($('m-gates'), (i, y, first) => {
+  const st = nsStep(i), g = Math.min(5, Math.floor(y * 6));
+  if (g !== st.gate) { st.gate = g; return true; }
+  return first ? false : null;
+});
 // the step playing (if its page is shown) and its page, marked as they're heard
 let nsAt = null;
 function nsNow() {

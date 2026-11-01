@@ -34,7 +34,7 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(await pg.evaluate(() => { const p = $('m-side'); return p.scrollHeight <= p.clientHeight && p.scrollWidth <= p.clientWidth; }), 'perf fits beside the pages');
   // the eight perf dials in one line along the top, over the page buttons; the sixteen note steps in one line
   check(await pg.evaluate(() => { const r = [...document.querySelectorAll('#m-perf .m-dial')].map((e) => e.getBoundingClientRect()), t = document.querySelector('.m-tabs').getBoundingClientRect();
-    const s = [...document.querySelectorAll('.m-step')].map((e) => e.getBoundingClientRect());
+    const s = [...document.querySelectorAll('#m-steps .m-step')].map((e) => e.getBoundingClientRect());
     return r.length === 8 && r.every((b) => Math.abs(b.top - r[0].top) < 1 && b.bottom <= t.top) && s.length === 16 && s.every((b) => Math.abs(b.top - s[0].top) < 1); }), 'the dials and the steps are one line each');
   // the randomisers: a popup, opened and closed by its button (and done), each button whole
   check(await pg.evaluate(() => $('m-rnd').hidden), 'the randomise popup starts closed');
@@ -63,7 +63,7 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(!small.length, `buttons at least 36 px high ${small.length ? small.join(', ') : ''}`);
   // swipes, across the pages on the right
   await pg.click('[data-m-tab="seq"]');
-  let r = await box('.m-modes');
+  let r = await box('.m-npages');
   await drag(r.x + r.width - 20, r.y + 10, r.x + r.width - 20 - sr.width * 0.4, r.y + 14);
   check(await page() === 'voice', 'swipe left turns to voice');
   r = await box('.m-vsec');
@@ -88,19 +88,24 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(await pg.isVisible('#m-fs') && await pg.textContent('#m-fs-name') === 'note', 'holding a fader opens its sequencer');
   r = await box('#m-fs-rand'); await pg.click('#m-fs-rand'); await pg.click('#m-fs-close');
   check(await pg.evaluate(() => mFaders.find((f) => f.key === 'm-voice-tone:note').seq.vals.some((v) => v)), 'randomise fills its steps');
-  // the note grid: in gate mode the bottom of a step rests it; in accent mode a tap switches it
+  // the note grid: the bottom of a step's gate rests it; a tap on its A accents it
   await pg.click('[data-m-tab="seq"]');
-  await pg.click('[data-mode="gate"]');
-  r = await box('.m-step >> nth=1');
+  r = await box('.m-gstep >> nth=1');
   await pg.mouse.click(r.x + r.width / 2, r.y + r.height - 3);
-  await pg.click('[data-mode="acc"]');
-  r = await box('.m-step >> nth=2');
-  await pg.mouse.click(r.x + r.width / 2, r.y + r.height / 2);
-  check(await pg.evaluate(() => seq.steps[1].gate === 0 && seq.steps[2].acc), 'steps edit: a gate rested, an accent set');
+  await pg.click('.m-step >> nth=2 >> .m-sm .a');
+  check(await pg.evaluate((a) => seq.steps[1].gate === 0 && seq.steps[2].acc, 0), 'steps edit: a gate rested, an accent set');
+  r = await box('.m-gstep >> nth=3');
+  await pg.mouse.click(r.x + r.width / 2, r.y + 3);
+  check(await pg.evaluate(() => seq.steps[3].gate === 5 && $('m-gates').children[3].textContent === 'ring'), 'the top of a gate rings');
+  // a drag along the S row slides every step it crosses
+  await pg.evaluate(() => { for (let i = 4; i < 9; i++) seq.steps[i].slide = false; nsDraw(); });
+  const s4 = await box('.m-step >> nth=4 >> .m-sm .s'), s8 = await box('.m-step >> nth=8 >> .m-sm .s');
+  await pg.mouse.move(s4.x + s4.width / 2, s4.y + s4.height / 2); await pg.mouse.down();
+  await pg.mouse.move(s8.x + s8.width / 2, s8.y + s8.height / 2, { steps: 8 }); await pg.mouse.up();
+  check(await pg.evaluate(() => [4, 5, 6, 7, 8].every((i) => seq.steps[i].slide)), 'a drag along the S row slides the steps');
   // pages: page 2's steps are steps 17 to 32; copy makes pages 2 to 4 page 1 with a few steps changed
   await pg.click('#m-npages [data-page="1"]');
-  await pg.click('[data-mode="gate"]');
-  r = await box('.m-step >> nth=5');
+  r = await box('.m-gstep >> nth=5');
   await pg.mouse.click(r.x + r.width / 2, r.y + r.height - 3);
   check(await pg.evaluate(() => seq.steps.length === 64 && seq.steps[21].gate === 0), 'page 2 edits its own steps');
   // octave buttons: the whole sequence moves an octave, held to -2 .. +2; the top of a step is two octaves up

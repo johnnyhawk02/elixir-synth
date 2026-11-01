@@ -215,10 +215,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 @media (prefers-reduced-motion: reduce) { .m .m-btn.pending { animation: none; outline: 2px dashed var(--ink); outline-offset: 2px; } }
 
 /* ---- seq: what a touch sets, the sixteen steps in one line, then root, scale, accent, glide and the buttons ---- */
-.m-seqpage { display: grid; grid-template-rows: auto auto minmax(0, 1fr) minmax(120px, 34%); gap: 8px; min-height: 0; padding: 6px 2px; }
-.m-modes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
-.m .m-modes .m-btn { min-height: 44px; padding: 0 2px; font-size: min(var(--fs-xs), 16px) !important; letter-spacing: .02em; }
-.m .m-modes .m-btn[aria-selected="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
+.m-seqpage { display: grid; grid-template-rows: auto minmax(0, 1.6fr) minmax(0, 0.9fr) 134px; gap: 8px; min-height: 0; padding: 6px 2px; }
 /* the pages: four tabs (the one playing underlined) and the copy button */
 .m-npages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.4fr) minmax(0, 2.6fr); gap: 4px; }
 .m-noct { display: grid; grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr); gap: 4px; align-items: center; }
@@ -240,9 +237,11 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-sm b { flex: 1; font-weight: 400; padding: 3px 0; text-align: center; opacity: .3; cursor: pointer; border-radius: 2px; }
 .m-step.acc .m-sm .a, .m-step.slide .m-sm .s { opacity: 1; background: var(--ink); color: var(--panel); text-shadow: none; }
 .m-step.rest .m-sn, .m-step.rest .m-sbar { opacity: .3; }
-.m-steps[data-mode="acc"] .m-step.acc, .m-steps[data-mode="slide"] .m-step.slide { background: var(--tint-2); }
-.m-steps[data-mode="acc"] .m-sm .a, .m-steps[data-mode="slide"] .m-sm .s { font-size: 1.3em; }
 .m-step.now { outline: 3px solid var(--ink); outline-offset: 1px; }
+/* the gate lane: a bar for each step's gate, its length under it */
+.m-gstep { grid-template-rows: minmax(0, 1fr) auto; }
+.m-gstep.rest .m-sbar { opacity: 1; }
+.m-sm b:hover { background: var(--tint-2); }
 .m-seqlow { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; min-height: 0; border-top: var(--rule); padding-top: 6px; }
 .m-seqf { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
 .m-seqbtns, .m-fxbtns { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 6px; min-height: 0; }
@@ -360,7 +359,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v23</small></b>
+    <b class="m-title">elixir<small class="m-ver">synth v24</small></b>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
     <div class="m-trans">
       <button class="m-play" id="m-play" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M7 4.5v15l13-7.5z"/><rect class="i-stop" x="5.5" y="5.5" width="13" height="13" rx="2"/></svg><span>play</span></button>
@@ -375,12 +374,6 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
   <div class="m-pages" id="m-pages">
   <div class="m-panel" data-m-panel="seq">
     <section class="m-card m-seqpage">
-      <div class="m-modes" id="m-modes" role="tablist" aria-label="what a step edit sets">
-        <button class="m-btn" type="button" role="tab" data-mode="note" aria-selected="true">note</button>
-        <button class="m-btn" type="button" role="tab" data-mode="gate" aria-selected="false">gate</button>
-        <button class="m-btn" type="button" role="tab" data-mode="acc" aria-selected="false">accent</button>
-        <button class="m-btn" type="button" role="tab" data-mode="slide" aria-selected="false">slide</button>
-      </div>
       <div class="m-npages" id="m-npages" role="tablist" aria-label="page">
         <button class="m-btn" type="button" role="tab" data-page="0" aria-selected="true">1</button>
         <button class="m-btn" type="button" role="tab" data-page="1" aria-selected="false">2</button>
@@ -390,6 +383,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <span class="m-noct" role="group" aria-label="octave"><button class="m-btn" type="button" id="m-noct-dn" aria-label="octave down">oct −</button><output id="m-noct-out">0</output><button class="m-btn" type="button" id="m-noct-up" aria-label="octave up">oct +</button></span>
       </div>
       <div class="m-steps" id="m-steps" role="grid" aria-label="the sixteen steps of the page"></div>
+      <div class="m-steps m-gates" id="m-gates" role="grid" aria-label="the sixteen steps' gate times"></div>
       <div class="m-seqlow">
         <div class="m-faders m-seqf" id="m-seqf"></div>
         <div class="m-seqbtns">
@@ -442,7 +436,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v23, 1 Nov, 08:02</footer>
+      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v24, 1 Nov, 08:10</footer>
     </section>
   </div>
   </div>
@@ -5003,33 +4997,41 @@ function mDepth() {
 addEventListener('resize', mDepth);
 
 // ---- the seq page: the note sequencer. Four pages of sixteen steps, played in turn a bar each; the page tabs pick
-// the page shown (the one playing is underlined), and copy makes pages 2 to 4 slight variations of page 1. A page's
-// steps sit in one line of sixteen, each covering two octaves of the scale, and oct - / oct + move the whole sequence an octave; the strip over them picks what a touch sets: note (the step's height is its note in the scale; a resting step comes on), gate (bottom rests, top rings),
-// accent or slide (tap, or drag across, to switch). The A and S under each step also switch its accent and slide in any mode. Under them: root, scale, accent and glide, and random, alter, undo ----
-let nsMode = 'note', nsPage = 0;
+// the page shown (the one playing is underlined), and copy makes pages 2 to 4 slight variations of page 1; oct - and
+// oct + move the whole sequence an octave. A page's steps sit in one line of sixteen: a step's height is its note,
+// two octaves of the scale (a touch on a resting step brings it on), and the A and S under it switch its accent and
+// slide (tap, or drag along the row). Under the notes, a lane of the steps' gate times: bottom rests, then a quarter
+// to all of the step, top rings. Under that: root, scale, accent, glide and algo, and random, alter, undo ----
+let nsPage = 0;
 const nsStep = (i) => seq.steps[nsPage * 16 + i];
 const nsCells = Array.from({ length: 16 }, (_, i) => {
   const c = document.createElement('div'); c.className = 'm-step'; c.dataset.i = i; c.setAttribute('role', 'gridcell');
-  c.innerHTML = '<span class="m-sn"></span><i class="m-sbar"></i><span class="m-sm"><b class="a">A</b><b class="s">S</b></span>';
+  c.innerHTML = '<span class="m-sn"></span><i class="m-sbar"></i><span class="m-sm"><b class="a" role="button" aria-label="accent">A</b><b class="s" role="button" aria-label="slide">S</b></span>';
   $('m-steps').append(c); return c;
+});
+const GATE_NAMES = ['rest', '¼', '½', '¾', 'full', 'ring'];
+const nsGates = Array.from({ length: 16 }, (_, i) => {
+  const c = document.createElement('div'); c.className = 'm-step m-gstep'; c.dataset.i = i; c.setAttribute('role', 'gridcell');
+  c.innerHTML = '<i class="m-sbar"></i><span class="m-sn"></span>';
+  $('m-gates').append(c); return c;
 });
 function nsDraw() {
   nsCells.forEach((c, i) => {
     const st = nsStep(i);
     c.querySelector('.m-sn').textContent = st.gate ? noteName(stepNote(st)) : '—';
-    const f = nsMode === 'gate' ? st.gate / 5 : nsMode === 'note' ? (Math.min(st.d, degMax()) + 1) / (degMax() + 1) : 0;
-    c.style.setProperty('--f', f);
+    c.style.setProperty('--f', (Math.min(st.d, degMax()) + 1) / (degMax() + 1));
     c.classList.toggle('rest', !st.gate); c.classList.toggle('acc', st.acc); c.classList.toggle('slide', st.slide);
     c.setAttribute('aria-label', `step ${i + 1}: ${st.gate ? noteName(stepNote(st)) : 'rest'}${st.acc ? ', accent' : ''}${st.slide ? ', slide' : ''}`);
+    const g = nsGates[i];
+    g.style.setProperty('--f', st.gate / 5); g.classList.toggle('rest', !st.gate);
+    g.querySelector('.m-sn').textContent = GATE_NAMES[st.gate];
+    g.setAttribute('aria-label', `step ${i + 1} gate: ${GATE_NAMES[st.gate]}`);
   });
-  $('m-steps').dataset.mode = nsMode;
-  [...$('m-modes').children].forEach((b) => b.setAttribute('aria-selected', b.dataset.mode === nsMode));
   document.querySelectorAll('#m-npages [data-page]').forEach((b) => b.setAttribute('aria-selected', +b.dataset.page === nsPage));
   $('m-noct-out').textContent = seq.oct > 0 ? `+${seq.oct}` : String(seq.oct);
   $('m-noct-dn').disabled = seq.oct <= OCT_MIN; $('m-noct-up').disabled = seq.oct >= OCT_MAX;
 }
 drawHooks.push(nsDraw);
-$('m-modes').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (b) { nsMode = b.dataset.mode; nsDraw(); } });
 $('m-npages').addEventListener('click', (e) => { const b = e.target.closest('[data-page]'); if (b) { nsPage = +b.dataset.page; nsDraw(); nsNow(); } });
 // octave down and up: the whole sequence, every page
 const nsOct = (k) => { seq.oct = Math.max(OCT_MIN, Math.min(OCT_MAX, seq.oct + k)); sendSeq(); nsDraw(); };
@@ -5037,47 +5039,48 @@ $('m-noct-dn').addEventListener('click', () => nsOct(-1));
 $('m-noct-up').addEventListener('click', () => nsOct(1));
 // hear a note as it's set, while stopped
 function nsHear(st) { if (!playing && st.gate) { startAudio(); send({ type: 'note', n: degSemis(st.d), acc: st.acc, gate: st.gate }); } }
-{
-  const box = $('m-steps');
-  let paint = null;
-  const cellAt = (e) => {
-    const r = box.getBoundingClientRect();
-    // the sixteen steps in one line
-    return Math.max(0, Math.min(15, Math.floor((e.clientX - r.left) / r.width * 16)));
-  };
+// a row of sixteen that a touch, or a drag across, edits: what(i, y, first) changes step i (y from 0 at the bottom to
+// 1 at the top) and says whether to play it
+function nsLane(box, what) {
+  let on = false;
   const at = (e, first) => {
-    const i = cellAt(e), st = nsStep(i), c = nsCells[i], cr = c.getBoundingClientRect();
+    const r = box.getBoundingClientRect();
+    const i = Math.max(0, Math.min(15, Math.floor((e.clientX - r.left) / r.width * 16)));
+    const cr = box.children[i].getBoundingClientRect();
     const y = Math.max(0, Math.min(1, (cr.bottom - e.clientY) / cr.height));
-    let hear = false;
-    if (nsMode === 'note') {
-      const d = Math.min(degMax(), Math.floor(y * (degMax() + 1)));
-      if (d !== st.d || !st.gate) { st.d = d; if (!st.gate) st.gate = 4; hear = true; }
-    } else if (nsMode === 'gate') {
-      const g = Math.min(5, Math.floor(y * 6));
-      if (g !== st.gate) { st.gate = g; hear = true; }
-    } else {
-      const k = nsMode === 'acc' ? 'acc' : 'slide';
-      if (first) paint.to = !st[k];
-      if (paint.seen.has(i)) return;
-      st[k] = paint.to;
-    }
-    paint.seen.add(i);
-    if (hear || first) nsHear(st);
+    const hear = what(i, y, first, e);
+    if (hear === null) return;
+    if (hear || first) nsHear(nsStep(i));
     sendSeq(); nsDraw();
   };
-  box.addEventListener('pointerdown', (e) => {
-    // the A and S under a step switch its accent and slide straight away, whatever the strip is set to
-    const flag = e.target.closest('.m-sm b');
-    if (flag) {
-      const st = nsStep(+flag.closest('.m-step').dataset.i), k = flag.classList.contains('a') ? 'acc' : 'slide';
-      st[k] = !st[k]; sendSeq(); nsDraw(); return;
-    }
-    box.setPointerCapture(e.pointerId); paint = { seen: new Set(), to: true }; at(e, true);
-  });
-  box.addEventListener('pointermove', (e) => { if (paint) at(e, false); });
-  const stop = () => { paint = null; };
+  box.addEventListener('pointerdown', (e) => { box.setPointerCapture(e.pointerId); on = true; at(e, true); });
+  box.addEventListener('pointermove', (e) => { if (on) at(e, false); });
+  const stop = () => { on = false; };
   box.addEventListener('pointerup', stop); box.addEventListener('pointercancel', stop);
 }
+// the notes; a touch that starts on an A or S switches that, and a drag along the row sets the others the same
+{
+  let flag = null;
+  nsLane($('m-steps'), (i, y, first, e) => {
+    const st = nsStep(i);
+    if (first) { const b = e.target.closest('.m-sm b'); flag = b ? { k: b.classList.contains('a') ? 'acc' : 'slide', to: null, seen: new Set() } : null; }
+    if (flag) {
+      if (flag.seen.has(i)) return null;
+      if (flag.to === null) flag.to = !st[flag.k];
+      flag.seen.add(i); st[flag.k] = flag.to;
+      return false;
+    }
+    const d = Math.min(degMax(), Math.floor(y * (degMax() + 1)));
+    if (d !== st.d || !st.gate) { st.d = d; if (!st.gate) st.gate = 4; return true; }
+    return first ? false : null;
+  });
+}
+// the gate times
+nsLane($('m-gates'), (i, y, first) => {
+  const st = nsStep(i), g = Math.min(5, Math.floor(y * 6));
+  if (g !== st.gate) { st.gate = g; return true; }
+  return first ? false : null;
+});
 // the step playing (if its page is shown) and its page, marked as they're heard
 let nsAt = null;
 function nsNow() {

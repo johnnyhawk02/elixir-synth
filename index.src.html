@@ -33,12 +33,6 @@
   <div class="m-pages" id="m-pages">
   <div class="m-panel" data-m-panel="seq">
     <section class="m-card m-seqpage">
-      <div class="m-modes" id="m-modes" role="tablist" aria-label="what a step edit sets">
-        <button class="m-btn" type="button" role="tab" data-mode="note" aria-selected="true">note</button>
-        <button class="m-btn" type="button" role="tab" data-mode="gate" aria-selected="false">gate</button>
-        <button class="m-btn" type="button" role="tab" data-mode="acc" aria-selected="false">accent</button>
-        <button class="m-btn" type="button" role="tab" data-mode="slide" aria-selected="false">slide</button>
-      </div>
       <div class="m-npages" id="m-npages" role="tablist" aria-label="page">
         <button class="m-btn" type="button" role="tab" data-page="0" aria-selected="true">1</button>
         <button class="m-btn" type="button" role="tab" data-page="1" aria-selected="false">2</button>
@@ -48,6 +42,7 @@
         <span class="m-noct" role="group" aria-label="octave"><button class="m-btn" type="button" id="m-noct-dn" aria-label="octave down">oct −</button><output id="m-noct-out">0</output><button class="m-btn" type="button" id="m-noct-up" aria-label="octave up">oct +</button></span>
       </div>
       <div class="m-steps" id="m-steps" role="grid" aria-label="the sixteen steps of the page"></div>
+      <div class="m-steps m-gates" id="m-gates" role="grid" aria-label="the sixteen steps' gate times"></div>
       <div class="m-seqlow">
         <div class="m-faders m-seqf" id="m-seqf"></div>
         <div class="m-seqbtns">

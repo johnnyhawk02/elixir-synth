@@ -200,10 +200,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 @media (prefers-reduced-motion: reduce) { .m .m-btn.pending { animation: none; outline: 2px dashed var(--ink); outline-offset: 2px; } }
 
 /* ---- seq: what a touch sets, the sixteen steps in one line, then root, scale, accent, glide and the buttons ---- */
-.m-seqpage { display: grid; grid-template-rows: auto auto minmax(0, 1fr) minmax(120px, 34%); gap: 8px; min-height: 0; padding: 6px 2px; }
-.m-modes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
-.m .m-modes .m-btn { min-height: 44px; padding: 0 2px; font-size: min(var(--fs-xs), 16px) !important; letter-spacing: .02em; }
-.m .m-modes .m-btn[aria-selected="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
+.m-seqpage { display: grid; grid-template-rows: auto minmax(0, 1.6fr) minmax(0, 0.9fr) 134px; gap: 8px; min-height: 0; padding: 6px 2px; }
 /* the pages: four tabs (the one playing underlined) and the copy button */
 .m-npages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.4fr) minmax(0, 2.6fr); gap: 4px; }
 .m-noct { display: grid; grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr); gap: 4px; align-items: center; }
@@ -225,9 +222,11 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-sm b { flex: 1; font-weight: 400; padding: 3px 0; text-align: center; opacity: .3; cursor: pointer; border-radius: 2px; }
 .m-step.acc .m-sm .a, .m-step.slide .m-sm .s { opacity: 1; background: var(--ink); color: var(--panel); text-shadow: none; }
 .m-step.rest .m-sn, .m-step.rest .m-sbar { opacity: .3; }
-.m-steps[data-mode="acc"] .m-step.acc, .m-steps[data-mode="slide"] .m-step.slide { background: var(--tint-2); }
-.m-steps[data-mode="acc"] .m-sm .a, .m-steps[data-mode="slide"] .m-sm .s { font-size: 1.3em; }
 .m-step.now { outline: 3px solid var(--ink); outline-offset: 1px; }
+/* the gate lane: a bar for each step's gate, its length under it */
+.m-gstep { grid-template-rows: minmax(0, 1fr) auto; }
+.m-gstep.rest .m-sbar { opacity: 1; }
+.m-sm b:hover { background: var(--tint-2); }
 .m-seqlow { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; min-height: 0; border-top: var(--rule); padding-top: 6px; }
 .m-seqf { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
 .m-seqbtns, .m-fxbtns { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 6px; min-height: 0; }
