@@ -63,13 +63,14 @@ Elixir Synth adds two things to it. `setDrumPitch()` moves drum 1 to a note betw
 for the pitch dial and for slides. A note on a whole semitone goes through the firmware's own trigger and is
 bit-exact; `test/engine.mjs` checks that.
 
-The audio thread (`app/player.js`) declicks retriggers. The firmware's trigger restarts the voice from silence (it
-resets the filter and the oscillator), so a note still sounding when the next one starts would jump straight to the
-new one's first sample and change direction there. The player takes both out with an offset that starts at the jump,
-leaves at the old note's slope and dies away over a few ms (critically damped, a 2 ms time constant), for the dry
-voice and every send; a retrigger also starts at its new gain (accent) at once, the offset taking up the step. Matching
-the slope matters with the filter closed down, where a near-sine has nothing on top to hide a kink. The engine's own
-output is untouched, and so is the new note once the offset has gone.
+The engine also declicks retriggers (`engine.declick`, on by default; `verify.mjs` turns it off, since the firmware
+has none). The firmware's trigger restarts the voice from silence (it resets the filter and the oscillator), so a
+note still sounding when the next one starts would jump straight to the new one's first sample and change direction
+there. The engine takes both out with an offset that starts at the jump, leaves at the old note's slope and dies away
+over a few ms (critically damped, a 2 ms time constant). The declicked voice is in `engine.voiceOut` and goes to the FX
+bus; `engine.out` stays the firmware's. Matching the slope matters with the filter closed down, where a near-sine has
+nothing on top to hide a kink. A host that scales the voice tells the trigger how the old note was last heard; the
+player (`app/player.js`) does, and starts a retrigger at its new gain (accent) at once, the offset taking up the step.
 
 And the reverb: the firmware has one (`FX/Reverb.c` and `FX/VerbTools/`), compiled out of the LXR-02 with
 `USE_REVERB 0`. `lxr.js` ports it line by line as the FX bus's `FX_REVERB`, with its quirks (a mono output, loop 2

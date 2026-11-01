@@ -88,7 +88,7 @@ function scenario(k) {
 
 const B = 8 * BLOCK; // per block: 6 voices, then the FX bus output (stereo, interleaved)
 function runJs(cmds) {
-  let eng = new LxrEngine();
+  let eng = new LxrEngine(); eng.declick = false; // the firmware has no declick
   const blocks = [];
   for (const c of cmds) {
     const [op, ...a] = c.split(' ');

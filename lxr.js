@@ -766,6 +766,7 @@ const FX_BUFFER_SIZE = 0x7fff;
 const SYNC_BUFFER_SIZE = 0x7ffff;
 const F_32768 = f(32768);
 const F_REAL_FS = f(REAL_FS);
+const DECLICK_K = Math.exp(-1 / (0.002 * REAL_FS));
 const LOW_MIN = f(0.0006 * REAL_FS), LOW_MAX = f(0.02 * REAL_FS), HI_MIN = f(0.02 * REAL_FS), HI_MAX = f(FX_BUFFER_SIZE);
 const PP_MAX = f(FX_BUFFER_SIZE * f(0.48));
 const TONE_C0 = 0.06537948995454451662, TONE_C1 = 0.92410701734426630737;
@@ -1334,6 +1335,43 @@ export class LxrEngine {
     this.fx = new FxBus(); // FxBus_init()
     this.fxOut = new Int16Array(BLOCK * 2);
     this.xmod = null; // crossfeed matrix, see setCrossMod(); null = the firmware's signal path
+    // the declick (not in the firmware; verify.mjs turns it off): each voice as heard, in this.voiceOut
+    this.declick = true;
+    this.voiceOut = Array.from({ length: 6 }, () => new Float32Array(BLOCK));
+    this._dc = Array.from({ length: 6 }, () => ({ at: null, p: 0, k: 0, m: 0 }));
+  }
+
+  /**
+   * The declick (not in the firmware). A trigger restarts its voice from silence (the filter and oscillator are
+   * reset), so a note still sounding would jump straight to the new one's first sample and change direction there;
+   * with the filter closed down, a near-sine has nothing on top to hide that. The voice's next block, in
+   * this.voiceOut[n] (this.out[n] stays the firmware's), carries on from where the old note left off, level and slope,
+   * with an offset that dies away: offset(i) = (c0 + k i) r^i, critically damped with a 2 ms time constant. The slope
+   * taken up is at most the old note's own, so a new note that starts on an edge (a square's, say) keeps it.
+   * `heard` says how the old note was last heard, when the host scales the voice: { h1, h0 } its last two samples as
+   * heard and g the gain the new note is heard at (at or under 1e-3, no declick). Without it, the voice's own last
+   * two samples at a gain of 1.
+   */
+  _declickAt(n, heard) {
+    const vo = this.voiceOut[n];
+    this._dc[n].at = heard || { h1: vo[BLOCK - 2], h0: vo[BLOCK - 1], g: 1 };
+  }
+  _declickBlock(n) {
+    const raw = this.out[n], vo = this.voiceOut[n], d = this._dc[n];
+    if (d.at) {
+      const { h1, h0, g } = d.at;
+      d.at = null;
+      if (g > 1e-3) {
+        const c0 = h0 / g - raw[0], old = (h0 - h1) / g, ds = Math.max(-Math.abs(old), Math.min(Math.abs(old), old - (raw[1] - raw[0])));
+        d.p = c0; d.k = (c0 + ds) / DECLICK_K - c0; d.m = 1;
+      } else d.m = 0;
+    }
+    if (d.m) {
+      let p = d.p, m = d.m;
+      const k = d.k;
+      for (let i = 0; i < BLOCK; i++) { vo[i] = raw[i] + p * m; p += k; m *= DECLICK_K; }
+      d.p = p; d.m = m < 1e-7 ? 0 : m;
+    } else vo.set(raw);
   }
 
   /**
@@ -1454,8 +1492,11 @@ export class LxrEngine {
     for (const o of [v.osc, v.modOsc]) { o.detune = frac ? Math.pow(2, frac / 12) : 1; osc_setBaseNote(o, base); }
   }
 
-  /** voiceControl_noteOn: voice 0..2 drums, 3 snare, 4 cymbal, 5 closed hat, 6 open hat */
-  trigger(voice, velocity = 127, note = SEQ_DEFAULT_NOTE) {
+  /**
+   * voiceControl_noteOn: voice 0..2 drums, 3 snare, 4 cymbal, 5 closed hat, 6 open hat. heard: see _declickAt()
+   */
+  trigger(voice, velocity = 127, note = SEQ_DEFAULT_NOTE, heard = null) {
+    if (this.declick) this._declickAt(Math.min(voice, 5), heard);
     if (voice < 3) this._drumTrigger(voice, velocity, note);
     else if (voice < 4) this._snareTrigger(velocity, note);
     else if (voice < 5) this._cymbalTrigger(velocity, note);
@@ -1691,6 +1732,7 @@ export class LxrEngine {
     this._metalSync(this.cymbal, 1, 4, o[4]); this._decimate(4, o[4]);
     this._metalSync(this.hat, f(0.5), 5, o[5]); this._decimate(5, o[5]);
     if (this.xmod) this._xmodAfter();
+    if (this.declick) for (let n = 0; n < 6; n++) this._declickBlock(n);
     return o;
   }
 
@@ -1699,9 +1741,9 @@ export class LxrEngine {
    * are panned into one stereo int16 buffer and run through the selected effect.
    * Returns this.fxOut: the bus's stereo output (interleaved int16) for the last renderBlock().
    * gains[n], if given, scales voice n first (mute, accent; not in the firmware).
-   * src[n], if given, is voice n's block instead of this.out[n] (elixir-synth's declicked voice; not in the firmware).
+   * With the declick on, each voice goes in as heard (this.voiceOut; not in the firmware).
    */
-  renderFx(gains = null, width = null, src = null) {
+  renderFx(gains = null, width = null) {
     const fx = this.fx, inp = fx.input, out = this.fxOut;
     inp.fill(0); out.fill(0);
     const pans = [this.drums[0], this.drums[1], this.drums[2], this.snare, this.cymbal, this.hat];
@@ -1709,9 +1751,9 @@ export class LxrEngine {
     for (let n = 0; n < 6; n++) {
       if (this.audioRouting[n] !== MIXER_ROUTING_FX_BUS) continue;
       any = true;
-      const v = pans[n], o = (src && src[n]) || this.out[n], g = gains ? gains[n] : 1;
+      const v = pans[n], o = this.declick ? this.voiceOut[n] : this.out[n], g = gains ? gains[n] : 1;
       for (let i = 0; i < BLOCK; i++) {
-        const s = g === 1 && !src ? o[i] : toI16(f(o[i] * g));
+        const s = g === 1 && !this.declick ? o[i] : toI16(f(o[i] * g));
         inp[2 * i] = qadd16(toI16(f(s * v.triggeredPanL)), inp[2 * i]);
         inp[2 * i + 1] = qadd16(toI16(f(s * v.triggeredPanR)), inp[2 * i + 1]);
       }
