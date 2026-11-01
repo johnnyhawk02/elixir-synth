@@ -224,7 +224,49 @@ const SEQ_ALGOS = [
   }],
   // 9 pure: no shaping at all: each step on its own, any note of the two octaves, any gate (a rest as likely as any
   // other), an accent and a slide each one time in two
-  ['pure', (n) => Array.from({ length: 16 }, () => st(rIn(0, 2 * n), rIn(0, 5), chance(0.5), chance(0.5)))]];
+  ['pure', (n) => Array.from({ length: 16 }, () => st(rIn(0, 2 * n), rIn(0, 5), chance(0.5), chance(0.5)))],
+  // 10 patternz: bits of a bank of acid patterns (below)
+  ['patternz', (n) => patternzPage(n, patternzPool())]];
+// patternz: a page cut up from a few of the bank's patterns: short bits taken at random, each looped, moved up or down the
+// scale and sometimes turned backwards. The notes land on the nearest of the scale's, so it stays in the key
+const patternzPool = () => Array.from({ length: rIn(2, 3) }, () => pick(PATTERNZ));
+const patternzDeg = (semi, n) => {
+  const s = SCALES[seq.scale][1], pc = ((semi % 12) + 12) % 12;
+  let at = 0;
+  s.forEach((x, i) => { if (Math.abs(x - pc) < Math.abs(s[at] - pc)) at = i; });
+  let d = at + n * Math.floor(semi / 12);
+  while (d < 0) d += n;
+  while (d > degMax()) d -= n;
+  return d;
+};
+function patternzBit(p) {
+  const len = Math.min(p.length, pick([2, 3, 4, 4, 6, 8, 8, 12, 16]));
+  let bit = [];
+  for (let k = 0; k < 8 && !bit.some((v) => v & 1); k++) { const at = rIn(0, p.length - len); bit = p.slice(at, at + len); }
+  return chance(0.2) ? bit.reverse() : bit;
+}
+function patternzPage(n, pool) {
+  const out = [];
+  while (out.length < 16) {
+    const bit = patternzBit(pick(pool)), end = Math.min(16, out.length + pick([4, 8, 8, 16]));
+    let move = pick([0, 0, 0, 2, 3, 4, n, -n]), k = 0;
+    while (out.length < end) {
+      if (k && k % bit.length === 0 && chance(0.3)) move = pick([0, 0, 1, 2, -1, n]);
+      const v = bit[k++ % bit.length], slide = !!(v & 4);
+      out.push(st(patternzDeg((v >> 3) - 24, n) + move, v & 1 ? (slide ? 4 : pick([1, 2, 2, 3])) : 0, !!(v & 2), slide));
+    }
+  }
+  if (!out.some((x) => x.gate)) out[0].gate = 3;
+  return out;
+}
+// the whole sequence: a page, the same with a few steps changed, the same moved up the scale, and a new page from the
+// same patterns to end on
+function patternzPages() {
+  const n = SCALES[seq.scale][1].length, pool = patternzPool(), a = patternzPage(n, pool), up = pick([2, 3, 4]);
+  a.forEach((x, i) => { seq.steps[i] = x; seq.steps[16 + i] = { ...x }; seq.steps[32 + i] = st(x.d + up, x.gate, x.acc, x.slide); });
+  alterPage(1, rIn(2, 3));
+  patternzPage(n, pool).forEach((x, i) => { seq.steps[48 + i] = x; });
+}
 function randomPage(pg) {
   const n = SCALES[seq.scale][1].length;
   const algo = SEQ_ALGOS[seq.algo] || SEQ_ALGOS[0];
@@ -249,9 +291,9 @@ function copyVary() {
   }
 }
 // the whole sequence, for the perf page's randomisers: a new page 1 and its variations
-function randomNotes() { randomPage(0); copyVary(); sendSeq(); }
+function randomNotes() { if (SEQ_ALGOS[seq.algo][0] === 'patternz') patternzPages(); else { randomPage(0); copyVary(); } sendSeq(); }
 // random: all 64 steps, each page a new line of its own (not a variation of page 1), whichever page is shown
-for (const b of document.querySelectorAll('[data-nrand]')) b.addEventListener('click', (e) => mRandomise(e.currentTarget, () => { for (let pg = 0; pg < PAGES; pg++) randomPage(pg); sendSeq(); }));
+for (const b of document.querySelectorAll('[data-nrand]')) b.addEventListener('click', (e) => mRandomise(e.currentTarget, () => { if (SEQ_ALGOS[seq.algo][0] === 'patternz') patternzPages(); else for (let pg = 0; pg < PAGES; pg++) randomPage(pg); sendSeq(); }));
 for (const b of document.querySelectorAll('[data-nalter]')) b.addEventListener('click', (e) => mRandomise(e.currentTarget, () => { alterPage(nsPage); sendSeq(); }));
 // copy to the next page: the page shown, exactly, onto the one after it, which is then shown (so pressing it again
 // carries on to the next); off on page 4. Undo puts the page back as it was

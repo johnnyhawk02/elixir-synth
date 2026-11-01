@@ -26,6 +26,9 @@ const presets = existsSync(presetDir) ? readdirSync(presetDir).filter((f) => /\.
   .flatMap((f) => JSON.parse(readFileSync(new URL(f, presetDir), 'utf8')).presets || []) : [];
 for (const p of presets) if (p.v !== PRESET_V) throw new Error(`presets/: ${p.name} is format v${p.v}, the page reads v${PRESET_V}`);
 
+// the seq page's patternz random: patterns/patternz.json, made by tools/import-patternz.mjs
+const patternz = JSON.parse(read('patterns/patternz.json')).patterns;
+
 // the page's own code, run in this order as one classic script (each file sees the ones before it)
 const APP = ['core', 'ui', 'perf', 'voice', 'fx', 'noteseq', 'fseq', 'random', 'presets', 'record', 'lcd', 'pwa'];
 const app = APP.map((f) => read(`app/${f}.js`)).join('\n');
@@ -35,7 +38,7 @@ const page = read('index.src.html')
   .replace('/*@PLAYER@*/\n', () => read('app/player.js'))
   .replace('/*@APP@*/\n', () => app)
   .replace('/*@ENGINE@*/\n', () => esc(bundle))
-  .replace('/*@PRESETS@*/\n', () => `const BUILTIN_PRESETS = ${esc(JSON.stringify(presets))};\n`);
+  .replace('/*@PRESETS@*/\n', () => `const BUILTIN_PRESETS = ${esc(JSON.stringify(presets))};\nconst PATTERNZ = ${JSON.stringify(patternz)};\n`);
 // the version, by the title and in the presets footer, so a phone shows which one it has: the number of the commit
 // this build goes into (one past the commits so far), and when it was built (UK time)
 let ver = 1;

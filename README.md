@@ -39,7 +39,7 @@ no play or record buttons: R starts and stops a recording.
   *Copy to n+1* copies the page shown onto the next one and moves there (it's off on page 4).
   *Length* sets how many steps play, 1 to 64 through the pages in turn; a drag catches at 16, 32 and 48. Root, scale, accent amount and
   glide time, and random, alter (the page shown) and undo. The algo fader picks how random writes a page: 1 dice,
-  2 acid, 3 euclid, 4 arp, 5 walk, 6 motif, 7 groove, 8 phrase. Presets from before there were pages play their one page
+  2 acid, 3 euclid, 4 arp, 5 walk, 6 motif, 7 groove, 8 phrase, 9 pure, 10 patternz (random bits of a bank of acid patterns, looped, moved up or down the scale, sometimes backwards, and put in the key; page 2 is page 1 changed a little, page 3 is page 1 moved up, page 4 a new cut-up). Presets from before there were pages play their one page
   on all four.
 - **VOICE**: every DR1 parameter, on four tabs: tone, shape, filter, mod.
 - **FX**: the echo (tempo-synced on musical lengths, ping pong, tone, feedback, width), the reverb (send, predelay,
@@ -87,6 +87,7 @@ sample with the firmware, since the firmware never builds it.
 | `app/` | the page's code: `style.css`, `player.js` (the audio thread), then `core` (state, audio, shared helpers), `ui` (pages, faders), `perf`, `voice`, `fx`, `noteseq`, `fseq`, `random`, `presets`, `record`, `lcd` (screen colours), `pwa` |
 | `lxr.js`, `lxr-tables.js`, `lxr-ui-data.js`, `lxr-clicks.js` | the engine |
 | `presets/` | the built-in presets, in the format the presets page exports |
+| `patterns/`, `tools/import-patternz.mjs` | the patterns patternz random cuts up, and the script that reads them from `.pat` and `.ph2seq` files |
 | `sw.js`, `manifest.webmanifest`, `icons/` | the offline app |
 | `test/` | `engine.mjs` (sound, in Node), `sound.mjs` (every preset's audio hashed, so a refactor can't change the sound) and `smoke.mjs` (the page, in Chromium at three window sizes) |
 | `verify.mjs`, `ref/` | the sample-for-sample comparison with the firmware |

@@ -240,7 +240,8 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(await pg.evaluate((p4) => JSON.stringify(seq.steps.slice(48, 64)) === p4, p4), 'copy can be undone');
   // every algorithm makes a valid page
   check(await pg.evaluate(() => SEQ_ALGOS.every((_, a) => { seq.algo = a; for (let k = 0; k < 100; k++) { randomPage(1); const p = seq.steps.slice(16, 32);
-    if (p.some((x) => !(x.d >= 0 && x.d <= degMax() && x.gate >= 0 && x.gate <= 5)) || !p.some((x) => x.gate)) return false; } return true; })), 'all nine algorithms make valid pages');
+    if (p.some((x) => !(x.d >= 0 && x.d <= degMax() && x.gate >= 0 && x.gate <= 5)) || !p.some((x) => x.gate)) return false; } return true; })), 'all ten algorithms make valid pages');
+  check(await pg.evaluate(() => { seq.algo = SEQ_ALGOS.findIndex((a) => a[0] === 'patternz'); const seen = new Set(); for (let k = 0; k < 50; k++) { randomNotes(); if (seq.steps.some((x) => !(x.d >= 0 && x.d <= degMax() && Number.isInteger(x.w)))) return false; seen.add(JSON.stringify(seq.steps)); } return PATTERNZ.length > 100 && seen.size === 50; }), 'patternz fills all four pages with fresh cut-ups');
   await pg.evaluate(() => { seq.algo = 0; });
   await pg.click('#m-npages [data-page="0"]');
   // the space bar starts and stops
