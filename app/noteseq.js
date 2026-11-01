@@ -1,8 +1,7 @@
 // ---- the seq page: the note sequencer. Four pages of sixteen steps, played in turn a bar each; the page tabs pick
 // the page shown (the one playing is underlined), and copy makes pages 2 to 4 slight variations of page 1. A page's
 // steps sit in two rows of eight; the strip over them picks what a touch sets: note (the step's height is its note in the scale; a resting step comes on), gate (bottom rests, top rings),
-// accent or slide (tap, or drag across, to switch). Under them: root, scale, accent, length
-// (1 to 64 steps; the steps past it are dimmed and not played) and glide, and random, alter, undo ----
+// accent or slide (tap, or drag across, to switch). Under them: root, scale, accent and glide, and random, alter, undo ----
 let nsMode = 'note', nsPage = 0;
 const nsStep = (i) => seq.steps[nsPage * 16 + i];
 const nsCells = Array.from({ length: 16 }, (_, i) => {
@@ -16,13 +15,12 @@ function nsDraw() {
     c.querySelector('.m-sn').textContent = st.gate ? noteName(stepNote(st)) : '—';
     const f = nsMode === 'gate' ? st.gate / 5 : nsMode === 'note' ? (st.d + 1) / (DEG_MAX + 1) : 0;
     c.style.setProperty('--f', f);
-    c.classList.toggle('out', nsPage * 16 + i >= seq.len);
     c.classList.toggle('rest', !st.gate); c.classList.toggle('acc', st.acc); c.classList.toggle('slide', st.slide);
     c.setAttribute('aria-label', `step ${i + 1}: ${st.gate ? noteName(stepNote(st)) : 'rest'}${st.acc ? ', accent' : ''}${st.slide ? ', slide' : ''}`);
   });
   $('m-steps').dataset.mode = nsMode;
   [...$('m-modes').children].forEach((b) => b.setAttribute('aria-selected', b.dataset.mode === nsMode));
-  document.querySelectorAll('#m-npages [data-page]').forEach((b) => { b.setAttribute('aria-selected', +b.dataset.page === nsPage); b.classList.toggle('out', +b.dataset.page * 16 >= seq.len); });
+  document.querySelectorAll('#m-npages [data-page]').forEach((b) => b.setAttribute('aria-selected', +b.dataset.page === nsPage));
 }
 drawHooks.push(nsDraw);
 $('m-modes').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (b) { nsMode = b.dataset.mode; nsDraw(); } });
@@ -66,14 +64,11 @@ function nsHear(st) { if (!playing && st.gate) { startAudio(); send({ type: 'not
 // the step playing (if its page is shown) and its page, marked as they're heard
 let nsAt = null;
 function nsNow() {
-  nsCells.forEach((c, i) => c.classList.toggle('now', !!nsAt && nsAt.page === nsPage && i === nsAt.nstep));
+  nsCells.forEach((c, i) => c.classList.toggle('now', !!nsAt && nsAt.page === nsPage && i === nsAt.step));
   document.querySelectorAll('#m-npages [data-page]').forEach((b) => b.classList.toggle('now', !!nsAt && +b.dataset.page === nsAt.page));
 }
 eventHandlers.push((ev) => {
   if (ev.type !== 'step') return;
-  // the step heard, in the sequence as written (the rotate slider plays it from further on)
-  const len = Math.max(1, Math.min(NSTEPS, seq.len || NSTEPS)), at = ((ev.page * 16 + ev.nstep) + seqRot) % len;
-  ev = { ...ev, page: at >> 4, nstep: at & 15 };
   setTimeout(() => { if (playing) { nsAt = ev; nsNow(); } }, ctx && ctx.outputLatency ? ctx.outputLatency * 1000 : 0);
 });
 stopHooks.push(() => { nsAt = null; nsNow(); });
@@ -81,11 +76,8 @@ stopHooks.push(() => { nsAt = null; nsNow(); });
 const ROOTS = NOTE_NAMES;
 mFader($('m-seqf'), 'root', { min: 0, max: 11, get: () => seq.root, set: (v) => { seq.root = v; sendSeq(); nsDraw(); }, show: (v) => ROOTS[v], dflt: 0 });
 mFader($('m-seqf'), 'scale', { min: 0, max: SCALES.length - 1, get: () => seq.scale, set: (v) => { seq.scale = v; sendSeq(); nsDraw(); }, show: (v) => SCALES[v][0], dflt: SEQ0.scale });
-mFader($('m-seqf'), 'acc', { min: 0, max: 12, get: () => seq.accent, set: (v) => { seq.accent = v; sendSeq(); }, show: (v) => `+${v}dB`, dflt: SEQ0.accent });
-mFader($('m-seqf'), 'len', { min: 1, max: NSTEPS, get: () => seq.len, set: (v) => { seq.len = v; sendSeq(); nsDraw(); }, show: String, dflt: NSTEPS });
+mFader($('m-seqf'), 'accent', { min: 0, max: 12, get: () => seq.accent, set: (v) => { seq.accent = v; sendSeq(); }, show: (v) => `+${v}dB`, dflt: SEQ0.accent });
 mFader($('m-seqf'), 'glide', { min: 0, max: 100, step: 5, get: () => seq.glide, set: (v) => { seq.glide = v; sendSeq(); }, show: (v) => v + '%', dflt: SEQ0.glide });
-
-mFader($('m-seqf'), 'dens', { min: 0, max: 100, get: () => seq.dens, set: (v) => { seq.dens = v; sendSeq(); drawAll(); }, show: String, dflt: 50 });
 
 // random: a new line for a page, made by the algorithm picked on the algo fader (kept in the preset). Each makes 16
 // steps of { d: degree of the scale, gate, acc, slide }, so whatever it makes stays in the key
@@ -188,15 +180,9 @@ function copyVary() {
 }
 // the whole sequence, for the perf page's randomisers: a new page 1 and its variations
 function randomNotes() { randomPage(0); copyVary(); sendSeq(); }
-// random: a new page 1 and pages 2 to 4 as its variations, the same as perf's notes
-$('m-nrand').addEventListener('click', (e) => mRandomise(e.currentTarget, randomNotes));
+$('m-nrand').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { randomPage(nsPage); sendSeq(); }));
 $('m-nalter').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { alterPage(nsPage); sendSeq(); }));
 $('m-ncopy').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { copyVary(); sendSeq(); }));
 // the algorithm random uses: its number on the fader, its name on the random button
 mFader($('m-seqf'), 'algo', { min: 0, max: SEQ_ALGOS.length - 1, get: () => seq.algo, set: (v) => { seq.algo = v; drawAll(); }, show: (v) => String(v + 1), dflt: 0 });
 drawHooks.push(() => { $('m-nalgo').textContent = `${seq.algo + 1} ${SEQ_ALGOS[seq.algo][0]}`; });
-// groove: the synth plays with the beat's groove (its notes moved off the grid as the closed hat's are); on by default, kept
-// in the preset. The same switch as on mix's patterns page
-const followSet = (on) => { seq.follow = on; sendSeq(); drawAll(); };
-$('m-nfollow').addEventListener('click', () => followSet(seq.follow === false));
-drawHooks.push(() => { const b = $('m-nfollow'); b.setAttribute('aria-pressed', seq.follow !== false); b.textContent = seq.follow !== false ? 'groove on' : 'groove off'; });

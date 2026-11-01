@@ -26,20 +26,16 @@ const presets = existsSync(presetDir) ? readdirSync(presetDir).filter((f) => /\.
   .flatMap((f) => JSON.parse(readFileSync(new URL(f, presetDir), 'utf8')).presets || []) : [];
 for (const p of presets) if (p.v !== PRESET_V) throw new Error(`presets/: ${p.name} is format v${p.v}, the page reads v${PRESET_V}`);
 
-// the beat's kits: kits/beat-kits.json, from Elixir Mobile's factory presets (each a whole kit as base64 of its 247
-// parameter values, the beat taking voices 2 to 6 and moving drum 1's kick to drum 2)
-const beatKits = JSON.parse(read('kits/beat-kits.json')).kits;
-
 // the page's own code, run in this order as one classic script (each file sees the ones before it)
-const APP = ['core', 'ui', 'noteseq', 'fseq', 'grooves', 'beat', 'mix', 'presets', 'record', 'pwa'];
+const APP = ['core', 'ui', 'noteseq', 'fseq', 'presets', 'record', 'pwa'];
 const app = APP.map((f) => read(`app/${f}.js`)).join('\n');
 const esc = (t) => t.replace(/<\/script/gi, '<\\/script');
 const page = read('index.src.html')
-  .replace('/*@CSS@*/\n', () => read('app/style.css').replaceAll('@CAULDRON@', 'data:image/png;base64,' + readFileSync(new URL('art/cauldron.png', here)).toString('base64')))
+  .replace('/*@CSS@*/\n', () => read('app/style.css'))
   .replace('/*@PLAYER@*/\n', () => read('app/player.js'))
   .replace('/*@APP@*/\n', () => app)
   .replace('/*@ENGINE@*/\n', () => esc(bundle))
-  .replace('/*@PRESETS@*/\n', () => `const BUILTIN_PRESETS = ${esc(JSON.stringify(presets))};\nconst BEAT_KITS = ${esc(JSON.stringify(beatKits))};\n`);
+  .replace('/*@PRESETS@*/\n', () => `const BUILTIN_PRESETS = ${esc(JSON.stringify(presets))};\n`);
 // the version, by the title and in the presets footer, so a phone shows which one it has: the number of the commit
 // this build goes into (one past the commits so far), and when it was built (UK time)
 let ver = 1;

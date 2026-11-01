@@ -41,32 +41,6 @@ const check = (ok, what) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`); if
   check(p.e.drums[0].osc.freq === ref.drums[0].osc.freq, 'back on the semitone the frequency is exact');
 }
 // the sequencer
-// a 3-step sequence cycles on its own, against the 16-step bar
-{
-  const p = new Player(LXR.REAL_FS), notes = [];
-  const trig = p.e.trigger.bind(p.e);
-  p.e.trigger = (v, vel, note) => { if (v === 0) notes.push(note - 60); trig(v, vel, note); };
-  const S = (n) => ({ n, gate: 2, acc: false, slide: false });
-  p.msg({ type: 'seq', playing: true, bpm: 120, vel: 100, glide: 0, accentDb: 6, steps: [S(0), S(3), S(7)] });
-  const len = LXR.REAL_FS * 60 / 120 / 4;
-  for (let b = 0; b < Math.ceil(8 * len / 64) - 1; b++) p._render(p.A);
-  check(JSON.stringify(notes) === JSON.stringify([0, 3, 7, 0, 3, 7, 0, 3]), `a 3-step length cycles every 3 steps (${JSON.stringify(notes)})`);
-}
-// following the groove: the synth's notes move with the closed hat's offsets (here a hard swing), and play on the grid
-// when it doesn't follow
-for (const follow of [true, false]) {
-  const p = new Player(LXR.REAL_FS), at = [];
-  const trig = p.e.trigger.bind(p.e);
-  p.e.trigger = (v, vel, note) => { if (v === 0) at.push(p.clock); trig(v, vel, note); };
-  const off = Array.from({ length: 7 }, () => Array.from({ length: 16 }, (_, s) => (s % 2 ? 0.5 : 0)));
-  p.msg({ type: 'beat', beat: { pages: [] }, off, vel: 100, accentDb: 6 });
-  p.msg({ type: 'seq', playing: true, follow, bpm: 120, vel: 100, glide: 0, accentDb: 6, steps: Array.from({ length: 4 }, () => ({ n: 0, gate: 1, acc: false, slide: false })) });
-  const len = LXR.REAL_FS * 60 / 120 / 4;
-  for (let b = 0; b < Math.ceil(4.2 * len / 64); b++) p._render(p.A);
-  const d = at.slice(0, 4).map((t, i) => Math.round((t - at[0] - i * len) / len * 100) / 100);
-  check(at.length >= 4 && (follow ? d[1] >= 0.45 && d[1] <= 0.55 && Math.abs(d[2]) < 0.05 && d[3] >= 0.45 : d.every((x) => Math.abs(x) < 0.05)),
-    `the synth ${follow ? 'follows' : 'ignores'} the beat's swing (${JSON.stringify(d)} steps off the grid)`);
-}
 {
   const p = new Player(LXR.REAL_FS), hits = [];
   const trig = p.e.trigger.bind(p.e);

@@ -19,23 +19,12 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
   --display: "VT323", ui-monospace, monospace; --body: "VT323", ui-monospace, monospace; --mono: "VT323", ui-monospace, monospace;
   --fs-xs: 1.12rem; --fs-s: 1.25rem; --fs-m: 1.3rem; --fs-l: 1.6rem;
   --rule: 1px solid rgba(225, 235, 255, .38);
-  position: relative; max-width: 480px; margin: 0 auto; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 0;
-  height: calc(100dvh - max(6px, env(safe-area-inset-top, 0px)) - max(6px, env(safe-area-inset-bottom, 0px))); padding: 6px 8px 8px;
+  position: relative; max-width: 480px; margin: 0 auto; display: grid; grid-template-rows: auto auto 1fr auto; gap: 0;
+  height: calc(100dvh - max(6px, env(safe-area-inset-top, 0px)) - max(6px, env(safe-area-inset-bottom, 0px))); padding: 8px 8px 10px;
   font-family: var(--body); color: var(--ink);
   touch-action: manipulation; -webkit-user-select: none; user-select: none;
   -webkit-touch-callout: none; /* a long hold mustn't bring up the phone's own menus */
-  /* the case: a dark, slightly warm grey panel, faintly brushed, lit from above; the LCD sits in it below the controls */
-  border: 1px solid #070707; border-radius: 14px;
-  background: linear-gradient(180deg, #34363a, #26282b 22%, #1f2124),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, .012) 0 1px, transparent 1px 3px);
-  background-blend-mode: normal;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09), inset 0 -1px 0 rgba(0, 0, 0, .5), 0 10px 30px rgba(0, 0, 0, .5);
-}
-/* the LCD: its pages and page buttons, in a black bezel sunk into the case */
-.m-screen {
-  position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; padding: 8px 8px 10px;
-  color: var(--ink);
-  border: 5px solid #0b0c0a; border-radius: 8px;
+  border: 5px solid #0b0c0a; border-radius: 10px;
   /* uneven backlighting: lit from LEDs along the lower edge, as a cheap LCD is, so it glows brighter near
      the bottom corners, fades toward the top, and has a dim patch where the light doesn't quite reach; the glass
      texture sits over it (all behind the pixels, so the type stays as bright) */
@@ -55,7 +44,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 /* faded patches: an old LCD loses contrast in places, so a few soft patches show their pixels dimmer (a glass-coloured
    veil, clearest at the top right, a smaller one low on the left, a faint band down the right edge; it never takes a
    touch, and the sheets open above it) */
-.m-screen::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 5;
+.m::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 5;
   background: radial-gradient(34% 17% at 76% 24%, rgba(34, 56, 230, .42), rgba(34, 56, 230, 0) 100%),
     radial-gradient(22% 12% at 16% 66%, rgba(34, 56, 230, .38), rgba(34, 56, 230, 0) 100%),
     radial-gradient(14% 9% at 58% 83%, rgba(34, 56, 230, .3), rgba(34, 56, 230, 0) 100%),
@@ -66,43 +55,6 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m .m-vtrack i, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-gr i b { filter: drop-shadow(calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgba(4, 10, 80, .17)); }
 .m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-xy, .m .m-seq-len, .m .m-xyrow select { box-shadow: calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgba(4, 10, 80, .14); }
 .m .m-tabs button:not([aria-selected="true"]) { box-shadow: none; }
-
-/* ---- each mode its own LCD: elixir-synth the blue backlit one above, elixir-beat Elixir Mobile's original grey-green
-   (dark ink on a pale green-grey glass, lit from below, its ink casting a shadow rather than glowing), elixir-mix white
-   pixels on black. The shared pages (fx, mstr, prst) take the look of the mode they're in ---- */
-.m[data-mode="beat"] {
-  --panel: #a7b58c; --ink: #17200e; --muted: rgba(23, 32, 14, .62);
-  --tint: rgba(23, 32, 14, .07); --tint-2: rgba(23, 32, 14, .12); --ghost: rgba(23, 32, 14, .1); --led: #17200e;
-  --rule: 1px solid rgba(23, 32, 14, .32); }
-.m[data-mode="beat"] .m-screen {
-  background-image: linear-gradient(170deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, 0) 38%, rgba(0, 0, 0, .05)),
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, .03) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(0, 0, 0, .03) 0 1px, transparent 1px 3px),
-    radial-gradient(60% 34% at 12% 100%, rgba(255, 252, 195, .6), rgba(255, 252, 200, 0) 70%),
-    radial-gradient(52% 30% at 88% 102%, rgba(250, 255, 200, .45), rgba(250, 255, 205, 0) 70%),
-    radial-gradient(45% 25% at 50% 104%, rgba(255, 255, 215, .26), rgba(255, 255, 220, 0) 75%),
-    radial-gradient(38% 22% at 72% 38%, rgba(40, 50, 25, .16), rgba(40, 50, 25, 0) 70%),
-    radial-gradient(30% 18% at 22% 30%, rgba(255, 255, 230, .08), rgba(255, 255, 230, 0) 70%),
-    linear-gradient(180deg, rgba(30, 38, 20, .22) 0%, rgba(30, 38, 20, 0) 30%),
-    radial-gradient(130% 100% at 50% 60%, rgba(0, 0, 0, 0) 55%, rgba(20, 26, 12, .3) 100%); }
-.m[data-mode="beat"] .m-screen::after {
-  background: radial-gradient(34% 17% at 76% 24%, rgba(167, 181, 140, .42), rgba(167, 181, 140, 0) 100%),
-    radial-gradient(22% 12% at 16% 66%, rgba(167, 181, 140, .38), rgba(167, 181, 140, 0) 100%),
-    radial-gradient(14% 9% at 58% 83%, rgba(167, 181, 140, .3), rgba(167, 181, 140, 0) 100%),
-    linear-gradient(90deg, rgba(167, 181, 140, 0) 88%, rgba(167, 181, 140, .22) 97%, rgba(167, 181, 140, .1)); }
-.m[data-mode="beat"], .m[data-mode="beat"] button, .m[data-mode="beat"] .m-title, .m[data-mode="beat"] .m-flab, .m[data-mode="beat"] .m-vf output {
-  text-shadow: calc(2px * var(--d)) calc(2.2px * var(--d)) calc(.3px * var(--d)) rgba(23, 32, 14, calc(.16 + .04 * var(--d))); }
-.m[data-mode="beat"] .m-vtrack i, .m[data-mode="beat"] .m-seq-steps i::after, .m[data-mode="beat"] .m-seq-steps i::before, .m[data-mode="beat"] .m-gr i b { filter: drop-shadow(calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgba(23, 32, 14, .17)); }
-.m[data-mode="beat"] :is(.m-btn, .m-toggle, .m-pload, .m-tabs button, .m-xy, .m-seq-len, .m-xyrow select) { box-shadow: calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgba(23, 32, 14, .14); }
-.m[data-mode="mix"] {
-  --panel: #b3b5b0; --ink: #111; --muted: rgba(17, 17, 17, .7);
-  --tint: rgba(17, 17, 17, .07); --tint-2: rgba(17, 17, 17, .13); --ghost: rgba(17, 17, 17, .12); --led: #111;
-  --rule: 1px solid rgba(17, 17, 17, .35); }
-.m[data-mode="mix"] .m-screen { background-image: none; }
-.m[data-mode="mix"] .m-screen::after { background: none; }
-.m[data-mode="mix"], .m[data-mode="mix"] button, .m[data-mode="mix"] .m-title, .m[data-mode="mix"] .m-flab, .m[data-mode="mix"] .m-vf output { text-shadow: none; }
-.m[data-mode="mix"] .m-vtrack i, .m[data-mode="mix"] .m-seq-steps i::after, .m[data-mode="mix"] .m-seq-steps i::before, .m[data-mode="mix"] .m-gr i b { filter: none; }
-.m[data-mode="mix"] :is(.m-btn, .m-toggle, .m-pload, .m-tabs button, .m-xy, .m-seq-len, .m-xyrow select) { box-shadow: none; }
-.m[data-mode] .m-tabs button:not([aria-selected="true"]) { box-shadow: none; }
 
 /* cards: the sheets are glass of their own; the sections inside the screen are bare */
 .m-card { padding: 16px; border: 4px solid #0b0c0a; border-radius: 8px; background-color: var(--panel);
@@ -161,17 +113,17 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m .m-vtrack.mod b { display: block; left: -3px; right: -3px; height: 4px; border-radius: 0; bottom: calc(var(--b) * (100% - 4px)); background: var(--ink); box-shadow: 0 0 0 2px var(--panel); }
 
 /* the big faders (perf): a two-line readout, tracks as tall as the page */
-:is(#m-perf, #m-beatf, #m-patsf) .m-vf { display: flex; flex-direction: column; align-items: center; min-height: 0; gap: 3px; }
-:is(#m-perf, #m-beatf, #m-patsf) .m-vf output { font-size: min(var(--fs-xs), 3.9vw, 16px); line-height: 1; color: var(--ink); height: 2.5em; display: flex; align-items: flex-end; justify-content: center; flex: none; align-self: stretch; }
+#m-perf .m-vf { display: flex; flex-direction: column; align-items: center; min-height: 0; gap: 3px; }
+#m-perf .m-vf output { font-size: min(var(--fs-xs), 3.9vw, 16px); line-height: 1; color: var(--ink); height: 2.5em; display: flex; align-items: flex-end; justify-content: center; flex: none; align-self: stretch; }
 .m #m-perf .m-flab { font-size: min(var(--fs-xs), 3.9vw, 16px); letter-spacing: -.02em; white-space: nowrap; line-height: 1.2; }
 #m-perf .m-vtrack { width: min(56px, 100%); flex: 1; height: auto; min-height: 48px; }
 
 /* the dials (perf): a ring of segments over three quarters of a turn, lit up to the value, the CC number in the middle;
    as big as the cell lets them be, the readout over and the label under */
 .m .m-dial { container-type: size; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 0; }
-.m :is(#m-perf, #m-beatf, #m-patsf) .m-dial output { height: auto; font-size: min(var(--fs-xs), 3.7vw, 15.2px); white-space: nowrap; align-items: center; }
-.m :is(#m-perf, #m-beatf, #m-patsf) .m-dial .m-flab { font-size: min(var(--fs-xs), 3.7vw, 15.2px); max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.m :is(#m-perf, #m-beatf, #m-patsf) .m-dial .m-vtrack { --s: min(100cqw - 6px, 100cqh - 44px, 96px); flex: none; width: var(--s); height: var(--s); min-height: 0; border-radius: 50%;
+.m #m-perf .m-dial output { height: auto; font-size: min(var(--fs-xs), 3.7vw, 15.2px); white-space: nowrap; align-items: center; }
+.m #m-perf .m-dial .m-flab { font-size: min(var(--fs-xs), 3.7vw, 15.2px); max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.m #m-perf .m-dial .m-vtrack { --s: min(100cqw - 6px, 100cqh - 44px, 96px); flex: none; width: var(--s); height: var(--s); min-height: 0; border-radius: 50%;
   overflow: visible; cursor: ns-resize; background: none; }
 .m .m-dial .m-vtrack::before, .m .m-dial .m-vtrack i { content: ''; position: absolute; inset: 0; height: auto; border-radius: 50%;
   -webkit-mask: radial-gradient(closest-side, transparent 64%, #000 65%, #000 99%, transparent 100%), repeating-conic-gradient(from 225deg, #000 0 7deg, transparent 7deg 10deg);
@@ -199,20 +151,11 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-ver { margin-left: .5em; font-size: .7em; letter-spacing: .06em; text-transform: none; opacity: .7; }
 /* (on a narrow phone the title line's spacing tightens) */
 @media (max-width: 430px) { .m-title, .m-pagename { letter-spacing: .08em; } .m-top { gap: 6px; } }
-/* the title is the mode switch: a tap steps elixir-synth → elixir-beat → elixir-mix */
-.m .m-title { background: none; padding: 0; min-height: 36px; text-align: left; white-space: nowrap; cursor: pointer; }
-.m .m-title:active { opacity: .6; }
-.m-top { align-items: center; }
-/* the mode buttons: synth, beat, mix, the one showing inverted */
-.m-modes-top { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; flex: 0 1 230px; }
-.m .m-modes-top .m-btn { min-height: 40px; padding: 0 2px; font-size: min(var(--fs-xs), 4vw, 16.5px) !important; letter-spacing: .04em; }
-.m .m-modes-top .m-btn[aria-selected="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
-.m-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .m-pagename { white-space: nowrap; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 
 /* play, rec, and the step light */
 .m-trans { padding: 8px 0; display: grid; grid-template-columns: 1.3fr 1fr 1.1fr; gap: 8px; align-items: stretch; }
-
+.m > .m-card.m-trans { border-bottom: var(--rule); }
 .m-play { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; background: var(--ink) !important;
   color: var(--panel) !important; font-weight: 400; text-transform: uppercase; }
 .m .m-play { border: 2px solid var(--ink); border-radius: 3px; letter-spacing: .1em; font-size: var(--fs-m) !important; }
@@ -239,7 +182,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-panel { display: grid; grid-template-rows: 1fr; gap: 12px; align-content: stretch; min-height: 0; overflow: hidden; }
 
 /* the page buttons, one line of seven along the bottom where a thumb reaches them (each page's full name is on the title line) */
-.m-screen > .m-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; margin-top: 6px; padding: 8px 0 0; border-top: var(--rule); }
+.m > .m-tabs { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-top: 6px; padding: 8px 0 0; border-top: var(--rule); }
 .m-tabs button { border-color: transparent; min-width: 0; }
 .m-tabs button[aria-selected="true"] { border-color: var(--ink); }
 .m .m-tabs button { min-height: 56px; padding: 0; font-size: min(1.4rem, 5.2vw, 21.4px) !important; letter-spacing: 0; }
@@ -285,10 +228,8 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-steps[data-mode="acc"] .m-sm .a, .m-steps[data-mode="slide"] .m-sm .s { font-size: 1.3em; }
 .m-step.now { outline: 3px solid var(--ink); outline-offset: 1px; }
 .m-seqlow { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; min-height: 0; border-top: var(--rule); padding-top: 6px; }
-.m-seqf { grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
-.m-fxbtns { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 6px; min-height: 0; }
-.m-seqpair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; min-height: 0; }
-.m-seqbtns { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 6px; min-height: 0; }
+.m-seqf { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
+.m-seqbtns, .m-fxbtns { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 6px; min-height: 0; }
 .m-nalgo { display: block; margin-top: 4px; font-size: .85em; letter-spacing: 0; opacity: .8; }
 .m .m-seqbtns .m-btn, .m .m-fxbtns .m-btn { flex-direction: column; min-height: 0; font-size: min(var(--fs-xs), 3.8vw, 15.6px) !important; padding: 0 2px; }
 
@@ -328,8 +269,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-fxhead .m-chk i { width: 22px; height: 22px; }
 /* five to a row everywhere small faders sit in rows, so the columns line up */
 .m-row { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
-#m-comp { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-#m-echo, #m-verb { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+#m-echo, #m-comp, #m-verb { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 #m-ring { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 
 /* ---- mstr: the distortion, then the compressor, each a heading and a row ---- */
@@ -414,227 +354,3 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m .m-vf.cc .m-vtrack i { transition: none; }
 @media (prefers-reduced-motion: reduce) { .m .m-vtrack i, .m .m-gr i b, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-trans button, .m .m-xy i { transition: none; } }
 .m-xyrow option, .m-xyrow optgroup { color: #0b0c0a; background: #eef3ff; }
-
-/* ==== elixir-beat ==== */
-/* pattern: nine dials, three by three, and the randomise column beside them */
-[data-m-panel="beat"] { grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; }
-#m-beatf { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 4px 2px; min-height: 0; }
-.m-brand { grid-template-rows: repeat(5, minmax(0, 1fr)); }
-/* steps: the mode and edit buttons, then a row per track of sixteen cells (a gap every four); a hit is filled, an accent
-   has a notch, a hit on some bars only is hatched, the step playing is outlined */
-.m-bstep-card { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; min-height: 0; padding: 6px 2px; }
-.m-bgrid { display: grid; grid-template-columns: 3.3em repeat(16, minmax(0, 1fr)); grid-template-rows: repeat(6, minmax(0, 1fr)); gap: 6px 2px; min-height: 0; touch-action: none; }
-.m-blab { align-self: center; font-size: min(var(--fs-xs), 3.6vw, 15px); line-height: 1; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
-.m .m-bcell { position: relative; min-width: 0; min-height: 0; border: 2px solid var(--ink); border-radius: 2px; opacity: .55; }
-.m .m-bcell[data-s="4"], .m .m-bcell[data-s="8"], .m .m-bcell[data-s="12"] { margin-left: 4px; }
-.m .m-bcell[data-s="0"], .m .m-bcell[data-s="4"], .m .m-bcell[data-s="8"], .m .m-bcell[data-s="12"] { opacity: .8; }
-.m .m-bcell.on { opacity: 1; background: var(--ink); }
-.m .m-bcell.cond { background: repeating-linear-gradient(135deg, var(--ink) 0 2px, transparent 2px 5px); }
-.m .m-bcell.acc::after { content: ""; position: absolute; left: 20%; right: 20%; top: 3px; height: 5px; background: var(--panel); }
-.m .m-bcell.now { outline: 2px solid var(--ink); outline-offset: 1px; opacity: 1; }
-.m-bgrid[data-mode="acc"] .m-bcell:not(.acc) { opacity: .35; }
-/* kit: the kit's name between two arrows, then a tab per voice and its faders */
-.m-kit-card { display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 10px; min-height: 0; padding: 8px 2px; }
-.m-kitrow { display: grid; grid-template-columns: 56px minmax(0, 1fr) 56px; gap: 8px; align-items: center; }
-.m .m-kitrow .m-btn { min-height: 48px; padding: 0; font-size: 1.6rem !important; }
-.m-kitrow output { text-align: center; text-transform: uppercase; font-size: var(--fs-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.m-bvsec { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-.m .m-bvsec .m-btn { padding: 0 2px; font-size: min(var(--fs-xs), 3.8vw, 15.6px) !important; letter-spacing: 0; }
-
-/* ==== elixir-mix: a column per channel: level fader, meter, mute, then the echo and reverb sends ==== */
-.m-mix-card { display: grid; grid-template-rows: minmax(0, 1.7fr) auto auto auto minmax(0, 1fr) auto minmax(0, 1fr); gap: 6px; min-height: 0; padding: 6px 2px; }
-.m-mixlvl, .m-mixsend { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-.m-mix-card .m-chead { border-top: var(--rule); padding-top: 4px; }
-.m-mix-card .m-chead b { font-size: var(--fs-s); }
-.m-mixstrip { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
-.m .m-mute { min-width: 0; min-height: 40px; padding: 0; font-size: min(var(--fs-xs), 3.7vw, 15px) !important; letter-spacing: 0; }
-.m-meter { display: block; height: 10px; margin: 0 4px; overflow: hidden;
-  background: repeating-linear-gradient(to right, var(--ghost) 0 4px, transparent 4px 6px); }
-.m-meter b { display: block; height: 100%; width: 0; background: repeating-linear-gradient(to right, var(--ink) 0 4px, transparent 4px 6px); transition: width .06s linear; }
-
-/* ==== the hardware above the LCD: the same in every mode. Silkscreened labels, the logo, and real keys: soft
-   rounded caps a little raised off the case, pressed in while held or chosen, each with a small LED that lights for the
-   mode showing, while playing (green) and while recording (red). The step lights are sixteen small amber LEDs ==== */
-.m-top, .m-trans { --hw-ink: #d4d6d0; --hw-dim: #8d908a; text-shadow: none; }
-.m .m-top, .m > .m-card.m-trans { border: 0; background: none; }
-.m-top { padding: 4px 4px 8px; }
-.m .m-top .m-title { color: var(--hw-ink); text-shadow: 0 -1px 0 rgba(0, 0, 0, .6); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-size: 1.05rem; font-weight: 700; letter-spacing: .32em; }
-.m .m-top .m-ver { color: var(--hw-dim); font-weight: 400; letter-spacing: .08em; font-size: .62em; opacity: 1; }
-.m .m-top .m-btn, .m .m-trans button {
-  position: relative; color: var(--hw-ink) !important; text-shadow: 0 -1px 0 rgba(0, 0, 0, .55);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-weight: 600; letter-spacing: .12em;
-  background: linear-gradient(180deg, #44474c, #36383c 55%, #2f3134) !important;
-  border: 1px solid #0c0c0d; border-radius: 6px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 2px 0 #121314, 0 3px 4px rgba(0, 0, 0, .45) !important;
-  transition: box-shadow .08s, transform .08s, background .08s; }
-.m .m-top .m-btn { font-size: .72rem !important; }
-.m .m-trans button { font-size: .9rem !important; }
-.m .m-top .m-btn:active, .m .m-top .m-btn[aria-selected="true"], .m .m-trans button:active, .m .m-trans .m-play[aria-pressed="true"], .m .m-trans .m-rec.on {
-  transform: translateY(1px); background: linear-gradient(180deg, #303236, #2b2d30) !important;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, .55), 0 1px 0 rgba(255, 255, 255, .04) !important; }
-/* the LEDs: a mode key's above its label, play's and rec's beside theirs */
-.m .m-top .m-btn::before { content: ""; position: absolute; left: 50%; top: 5px; width: 6px; height: 3px; margin-left: -3px; border-radius: 2px;
-  background: #3b2a12; box-shadow: inset 0 0 1px rgba(0, 0, 0, .6); }
-.m .m-top .m-btn[aria-selected="true"]::before { background: #ffb547; box-shadow: 0 0 5px rgba(255, 170, 60, .8); }
-.m .m-top .m-btn { padding-top: 8px; }
-.m .m-trans .m-play svg { width: 14px; height: 14px; fill: var(--hw-ink); }
-.m .m-trans .m-play::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #17331a; box-shadow: inset 0 0 1px rgba(0, 0, 0, .7); }
-.m .m-trans .m-play[aria-pressed="true"]::after { background: #59e46b; box-shadow: 0 0 6px rgba(80, 230, 100, .8); }
-.m .m-trans .m-rec i { width: 8px; height: 8px; border-radius: 50%; background: #3a1414; box-shadow: inset 0 0 1px rgba(0, 0, 0, .7); }
-.m .m-trans .m-rec.on i { width: 8px; height: 8px; border-radius: 50%; background: #ff4a3d; box-shadow: 0 0 6px rgba(255, 70, 50, .85); }
-.m .m-trans .m-rec span { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: .9rem; }
-.m-trans { padding: 2px 4px 10px; }
-.m .m-top .m-steps-led { gap: 5px 4px; padding: 6px 4px; border-radius: 4px; background: #141517; box-shadow: inset 0 1px 3px rgba(0, 0, 0, .7), 0 1px 0 rgba(255, 255, 255, .05); }
-.m .m-top .m-steps-led i { border-radius: 2px; background: #2e2210; box-shadow: none; }
-.m .m-top .m-steps-led i:nth-child(4n+1) { background: #3a2a12; box-shadow: none; }
-.m .m-top .m-steps-led i.on { background: #ffb547; box-shadow: 0 0 5px rgba(255, 170, 60, .75); }
-.m .m-top .m-modes-top .m-btn[aria-selected="true"] { color: #fff !important; }
-
-/* steps and pages past the note sequence's length: there, but not played */
-.m .m-step.out, .m .m-npages .m-btn.out { opacity: .32; }
-
-/* ==== one line of hardware: the cauldron (tap: the next mode; the version stamped on it in the case's colour), play,
-   rec and the three mode keys, with the sixteen step LEDs in a slim strip under them ==== */
-.m .m-top { display: grid; grid-template-columns: 46px minmax(0, 1fr) minmax(0, 2.4fr); grid-template-rows: auto auto; align-items: stretch;
-  gap: 6px 6px; padding: 2px 2px 8px; }
-.m .m-top .m-title { position: relative; display: block; width: 46px; height: 44px; min-height: 0; padding: 0; letter-spacing: 0; }
-.m .m-top .m-cauldron { position: absolute; inset: 0; background: linear-gradient(180deg, #e2e4de, #b9bcb5);
-  -webkit-mask: url(@CAULDRON@) center / contain no-repeat; mask: url(@CAULDRON@) center / contain no-repeat;
-  filter: drop-shadow(0 -1px 0 rgba(0, 0, 0, .5)); }
-.m .m-top .m-ver { position: absolute; left: 0; right: 0; top: 52%; margin: 0; text-align: center; color: #2a2c2f; font: 700 10px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  letter-spacing: 0; opacity: 1; text-shadow: none; }
-.m .m-top .m-trans { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0; }
-.m .m-top .m-trans button { min-height: 44px; padding: 0 2px; gap: 5px; }
-.m .m-top .m-trans .m-play { display: flex; }
-.m .m-top .m-trans .m-rec span { font-size: .68rem; letter-spacing: .02em; overflow: hidden; }
-/* rec is its red LED alone until it's recording, then the time beside it */
-.m .m-top .m-trans .m-rec:not(.on) span { display: none; }
-.m .m-top .m-trans button { overflow: hidden; }
-.m .m-top .m-modes-top { flex: none; }
-.m .m-top .m-modes-top .m-btn { min-height: 44px; font-size: min(.72rem, 3.1vw) !important; letter-spacing: .08em; }
-.m .m-top .m-steps-led { grid-column: 1 / -1; grid-template-columns: repeat(16, 1fr); grid-template-rows: 5px; gap: 3px; padding: 4px 6px; }
-
-/* mix's patterns page: eight pads in two rows of four, the one playing filled, the one waiting for the bar flashing; and
-   under them the crossfader, beat to synth */
-.m-home-card { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 8px; min-height: 0; padding: 8px 2px; }
-.m-pats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-.m-patw { position: relative; aspect-ratio: 1; min-width: 0; }
-.m .m-pats .m-pat { position: absolute; inset: 0; width: 100%; height: 100%; padding-top: 25px; }
-/* the pad's copy / cancel / paste button: a strip along its top, over the pad */
-.m .m-patc { position: absolute; left: 4px; right: 4px; top: 4px; height: 24px; min-height: 0; padding: 0 2px; z-index: 1;
-  font-size: min(.72rem, 3vw, 12px) !important; letter-spacing: .04em; border-width: 1.5px; background: var(--panel); color: var(--ink); text-shadow: none; }
-.m .m-pat[aria-pressed="true"] + .m-patc { border-color: var(--panel); background: var(--ink); color: var(--panel); }
-.m .m-patc.on { animation: m-blink .5s steps(1) infinite; background: var(--ink) !important; color: var(--panel) !important; }
-.m .m-patc.paste { font-weight: 700; border-style: dashed; }
-.m .m-pat.flash { animation: m-blink .2s steps(1) 2; }
-.m .m-patw .m-pat { gap: 2px; padding-bottom: 2px; }
-.m .m-patw .m-pat b { font-size: min(1.9rem, 6.4vw); }
-.m .m-pat { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 0; padding: 4px 2px; overflow: hidden; }
-.m .m-pat b { font-size: min(2.2rem, 9vw); line-height: 1; }
-.m .m-pat small { font-size: min(.8rem, 3.2vw); letter-spacing: .02em; text-transform: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.m .m-pat[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
-.m .m-pat.pending { animation: m-blink .5s steps(1) infinite; }
-/* the pad's preset picker: over the whole page, a list of every preset */
-.m-pick { position: absolute; inset: 0; z-index: 5; display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 6px; padding: 8px 2px; background: var(--panel); }
-.m-pick[hidden] { display: none; }
-.m-pickhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: var(--rule); padding-bottom: 6px; }
-.m-pickhead b { font-size: var(--fs-m); text-transform: uppercase; }
-.m .m-pickhead .m-btn { min-height: 44px; padding: 0 16px; }
-.m-picklist { overflow-y: auto; overscroll-behavior: contain; margin: 0; }
-.m .m-pat { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
-.m-pickbtns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.m .m-pickbtns .m-btn { min-height: 46px; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.m-home-card /* under the pads: dials for the crossfader, the beat's energy, the synth's density, rotate and tempo, and the randomisers */
-#m-patsf { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 150px)) auto; align-content: center; gap: 4px 2px; min-height: 0; border-top: var(--rule); padding-top: 6px; }
-.m-patsbtns { order: 9; grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); height: 52px; gap: 6px; min-height: 0; padding: 4px 2px; }
-.m .m-patsbtns .m-btn { min-height: 0; padding: 0 4px; line-height: 1.15; white-space: normal; }
-.m #m-patsf .m-dial output, .m #m-patsf .m-dial .m-flab { font-size: min(var(--fs-xs), 3.2vw, 14px); }
-.m-patfol { order: 8; align-self: center; height: min(100%, 64px); }
-.m .m-patfol { min-height: 0; padding: 0 2px; line-height: 1.15; white-space: normal; font-size: min(var(--fs-xs), 3.6vw, 15px) !important; }
-.m .m-patsbtns .m-btn { font-size: min(var(--fs-xs), 3.4vw, 14px) !important; }
-.m .m-seqf .m-flab, .m .m-seqf .m-vf output { font-size: min(.95rem, 3.2vw, 13.2px); }
-
-/* ==== the top as a second LCD in its own black bezel, in the colours of the screen below it (blue for synth,
-   grey-green for beat, black on grey for mix), the cauldron, keys and step lights all drawn on it; the case round both screens plain black ==== */
-.m { border-color: #050505; background: linear-gradient(180deg, #1b1b1c, #111112 30%, #0c0c0d); }
-.m .m-top {
-  --yl: var(--panel); --yk: var(--ink); --yg: var(--ghost);
-  margin-bottom: 8px; padding: 8px 8px 9px; border: 5px solid #0b0c0a; border-radius: 8px;
-  background: linear-gradient(170deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, 0) 45%, rgba(0, 0, 0, .05)), var(--panel);
-  box-shadow: inset 0 4px 10px rgba(0, 0, 0, .28), inset 0 0 0 1px rgba(255, 255, 255, .12), 0 1px 0 rgba(255, 255, 255, .06);
-  text-shadow: none; }
-.m .m-top .m-btn, .m .m-trans button {
-  font-family: var(--display); font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--yk) !important; text-shadow: none;
-  background: transparent !important; border: 2px solid var(--yk); border-radius: 3px; box-shadow: none !important; transform: none; }
-.m .m-top .m-btn:active, .m .m-top .m-btn[aria-selected="true"], .m .m-trans button:active, .m .m-trans .m-play[aria-pressed="true"], .m .m-trans .m-rec.on {
-  transform: none; background: var(--yk) !important; color: var(--yl) !important; box-shadow: none !important; }
-.m .m-top .m-modes-top .m-btn { font-size: min(1.25rem, 4.6vw) !important; padding-top: 0; }
-.m .m-top .m-modes-top .m-btn[aria-selected="true"] { color: var(--yl) !important; }
-.m .m-top .m-btn::before { display: none; }
-.m .m-trans .m-play svg { fill: currentColor; }
-.m .m-trans .m-play::after { width: 6px; height: 6px; border-radius: 0; background: var(--yg); box-shadow: none; }
-.m .m-trans .m-play[aria-pressed="true"]::after { background: var(--yl); box-shadow: none; }
-.m .m-trans .m-rec i { width: 9px; height: 9px; border-radius: 50%; background: var(--yk); box-shadow: none; }
-.m .m-trans .m-rec.on i, .m .m-trans .m-rec.on.on i { background: var(--yl); box-shadow: none; }
-.m .m-trans .m-rec span { font-family: var(--mono); font-size: 1rem; }
-.m .m-top .m-cauldron { background: var(--yk); filter: none; }
-.m .m-top .m-ver { color: var(--yl); font-family: var(--mono); font-weight: 400; font-size: 13px; }
-.m .m-top .m-steps-led { padding: 2px 0 0; background: none; box-shadow: none; }
-.m .m-top .m-steps-led i, .m .m-top .m-steps-led i:nth-child(4n+1) { border-radius: 0; background: var(--yg); box-shadow: none; }
-.m .m-top .m-steps-led i:nth-child(4n+1) { background: var(--tint-2); }
-.m .m-top .m-steps-led i.on { background: var(--yk); box-shadow: none; }
-/* the two screens meet along a thin line of bezel */
-.m .m-top { margin-bottom: 0; border-bottom-width: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-.m-screen { border-top-width: 2px; border-top-left-radius: 0; border-top-right-radius: 0; }
-/* softer shadows inside both screens */
-.m-screen { box-shadow: inset 0 2px 5px rgba(0, 0, 0, .12), inset 0 0 0 1px rgba(255, 255, 255, .08), 0 1px 0 rgba(255, 255, 255, .05); }
-.m .m-top { box-shadow: inset 0 1px 4px rgba(0, 0, 0, .1), inset 0 0 0 1px rgba(255, 255, 255, .1), 0 1px 0 rgba(255, 255, 255, .05); }
-/* the LCD's drop shadow under lit pixels and keys, kept faint */
-.m .m-vtrack i, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-gr i b { filter: drop-shadow(calc(.8px * var(--d, 1)) calc(.9px * var(--d, 1)) 0 rgba(4, 10, 80, .07)); }
-.m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-xy, .m .m-seq-len, .m .m-xyrow select { box-shadow: calc(.8px * var(--d, 1)) calc(.9px * var(--d, 1)) 0 rgba(4, 10, 80, .06); }
-.m[data-mode="beat"], .m[data-mode="beat"] button, .m[data-mode="beat"] .m-title, .m[data-mode="beat"] .m-flab, .m[data-mode="beat"] .m-vf output {
-  text-shadow: calc(.8px * var(--d)) calc(.9px * var(--d)) calc(.3px * var(--d)) rgba(23, 32, 14, calc(.06 + .02 * var(--d))); }
-.m[data-mode="beat"] .m-vtrack i, .m[data-mode="beat"] .m-seq-steps i::after, .m[data-mode="beat"] .m-seq-steps i::before, .m[data-mode="beat"] .m-gr i b { filter: drop-shadow(calc(.8px * var(--d, 1)) calc(.9px * var(--d, 1)) 0 rgba(23, 32, 14, .07)); }
-/* pad sets: a slim row under the pads, the list of sets, then save set, over and delete */
-.m-home-card { grid-template-rows: auto auto minmax(0, 1fr); }
-.m-psetrow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto 40px; gap: 6px; }
-.m-psetrow select { min-width: 0; height: 36px; font: inherit; font-size: min(var(--fs-xs), 3.6vw, 14px); text-transform: uppercase; color: var(--ink);
-  background: transparent; border: 2px solid var(--ink); border-radius: 3px; padding: 0 6px; }
-.m .m-psetrow .m-btn { height: 36px; min-height: 0; padding: 0 10px; font-size: min(var(--fs-xs), 3.6vw, 14px); }
-.m .m-psetrow .m-btn:disabled { opacity: .4; }
-.m .m-psetrow .m-btn { height: 32px; font-size: min(var(--fs-xs), 3.4vw, 13px) !important; letter-spacing: .04em; }
-.m-psetrow select { height: 32px; }
-/* every button: a soft, faint shadow beneath it, in all three modes (a tab not picked is bare text, so none) */
-.m :is(.m-btn, .m-toggle, .m-pload, .m-psetrow select, .m-tabs button[aria-selected="true"]),
-.m[data-mode] :is(.m-btn, .m-toggle, .m-pload, .m-psetrow select, .m-tabs button[aria-selected="true"]) {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .14), 0 2px 5px rgba(0, 0, 0, .07) !important; }
-.m .m-tabs button:not([aria-selected="true"]) { box-shadow: none !important; }
-/* preferences, held open from the cauldron: over the whole screen */
-.m-prefs { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; gap: 12px; padding: 12px 10px; background: var(--panel); color: var(--ink); }
-.m-prefs[hidden] { display: none; }
-.m .m-prefs .m-big { min-height: 64px; }
-.m .m-top .m-ver { top: 37%; }
-/* play: one sign, a triangle while stopped and a square while playing (no light beside it) */
-.m .m-trans .m-play::after { display: none; }
-.m .m-trans .m-play svg { width: 18px; height: 18px; }
-/* ==== synth: black pixels on a blue LCD, the top LCD too ==== */
-.m[data-mode="synth"] {
-  --panel: #8e9bd2; --ink: #0a0c1c; --muted: rgba(10, 12, 28, .7);
-  --tint: rgba(10, 12, 28, .07); --tint-2: rgba(10, 12, 28, .13); --ghost: rgba(10, 12, 28, .12); --led: #0a0c1c;
-  --rule: 1px solid rgba(10, 12, 28, .35); }
-.m[data-mode="synth"] .m-screen {
-  background-image: linear-gradient(170deg, rgba(255, 255, 255, .18), rgba(255, 255, 255, 0) 40%, rgba(0, 0, 0, .05)),
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, .02) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(0, 0, 0, .02) 0 1px, transparent 1px 3px); }
-.m[data-mode="synth"] .m-screen::after {
-  background: radial-gradient(34% 17% at 76% 24%, rgba(110, 112, 120, .22), rgba(110, 112, 120, 0) 100%),
-    radial-gradient(22% 12% at 16% 66%, rgba(110, 112, 120, .2), rgba(110, 112, 120, 0) 100%),
-    radial-gradient(14% 9% at 58% 83%, rgba(110, 112, 120, .16), rgba(110, 112, 120, 0) 100%),
-    linear-gradient(90deg, rgba(110, 112, 120, 0) 88%, rgba(110, 112, 120, .14) 97%, rgba(110, 112, 120, .06)); }
-.m[data-mode="synth"], .m[data-mode="synth"] button, .m[data-mode="synth"] .m-title, .m[data-mode="synth"] .m-flab, .m[data-mode="synth"] .m-vf output {
-  text-shadow: calc(.8px * var(--d)) calc(.9px * var(--d)) calc(.3px * var(--d)) rgba(0, 4, 40, calc(.06 + .02 * var(--d))); }
-/* no case: the two screens fill the window edge to edge, joined by a thin line */
-body { padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); background: #0b0c0a; }
-.m { height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
-.m .m-top { border-width: 0 0 2px; border-radius: 0; }
-.m-screen { border: 0; border-radius: 0; }

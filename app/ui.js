@@ -3,49 +3,22 @@
 
 // ---- pages: swipe across the screen, or tap a page button. A swipe starts anywhere but on a fader, the x/y pad, the
 // steps or a list, so dragging those never turns the page ----
-// ---- modes: elixir-synth, elixir-beat and elixir-mix, three sets of pages over the one engine and clock, all playing at
-// once. The mix, synth and beat buttons at the top go straight to one, and a tap on the cauldron steps mix → synth → beat → mix; each mode keeps the page it was on, and the mode and pages
-// are kept in this browser. A page (and its button) can belong to more than one mode (data-modes) ----
-const mPages = $('m-pages'), ALL_PANELS = [...mPages.querySelectorAll('[data-m-panel]')];
-const MODES = ['mix', 'synth', 'beat'];
-const PAGE_NAMES = { play: 'perform', seq: 'notes', voice: 'voice', xy: 'x/y', fx: 'effects', comp: 'master', presets: 'presets',
-  beat: 'pattern', bsteps: 'steps', kit: 'kit', mix: 'mixer', home: 'patterns' };
-const MODE_KEY = 'elixir-synth-mode';
-const inMode = (el, m) => el.dataset.modes.split(' ').includes(m);
-let mode = 'mix', PANELS = ALL_PANELS, mCur = 0;
-const modePage = { synth: 'play', beat: 'beat', mix: 'home' };
-// it opens on mix's patterns page; the synth and beat keep the page they were on
-try { const k = JSON.parse(localStorage.getItem(MODE_KEY)); if (k && k.pages) Object.assign(modePage, k.pages, { mix: 'home' }); } catch (e) {}
-const pageHooks = [], modeHooks = [];
+const mPages = $('m-pages'), PANELS = [...mPages.querySelectorAll('[data-m-panel]')];
+const PAGE_NAMES = { play: 'perform', seq: 'notes', voice: 'voice', xy: 'x/y', fx: 'effects', comp: 'master', presets: 'presets' };
+let mCur = 0;
+const pageHooks = [];
 function mGo(i, smooth) {
   mCur = Math.max(0, Math.min(PANELS.length - 1, i));
   const t = PANELS[mCur].dataset.mPanel;
   mPages.scrollTo({ left: PANELS[mCur].offsetLeft - PANELS[0].offsetLeft, behavior: smooth ? 'smooth' : 'instant' });
   $('m-pagename').textContent = PAGE_NAMES[t];
   document.querySelectorAll('[data-m-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.mTab === t));
-  modePage[mode] = t;
-  try { localStorage.setItem(MODE_KEY, JSON.stringify({ mode, pages: modePage })); } catch (e) {}
   pageHooks.forEach((h) => h(t));
 }
-function setMode(m) {
-  mode = m;
-  PANELS = ALL_PANELS.filter((p) => inMode(p, m));
-  ALL_PANELS.forEach((p) => { p.hidden = !inMode(p, m); });
-  document.querySelectorAll('[data-m-tab]').forEach((b) => { b.hidden = !inMode(b, m); });
-  $('m').dataset.mode = m;
-  $('m-modename').textContent = m;
-  document.querySelectorAll('[data-to-mode]').forEach((b) => b.setAttribute('aria-selected', b.dataset.toMode === m));
-  $('m-mode').setAttribute('aria-label', `elixir ${m}: tap for elixir ${MODES[(MODES.indexOf(m) + 1) % MODES.length]}`);
-  mGo(Math.max(0, PANELS.findIndex((p) => p.dataset.mPanel === modePage[m])));
-  modeHooks.forEach((h) => h(m));
-}
-$('m-mode').addEventListener('click', () => { setMode(MODES[(MODES.indexOf(mode) + 1) % MODES.length]); requestAnimationFrame(mDepth); });
-// or straight to one with the buttons at the top
-document.querySelectorAll('[data-to-mode]').forEach((b) => b.addEventListener('click', () => { if (b.dataset.toMode !== mode) { setMode(b.dataset.toMode); requestAnimationFrame(mDepth); } }));
 document.querySelectorAll('[data-m-tab]').forEach((b) => b.addEventListener('click', () => mGo(PANELS.findIndex((p) => p.dataset.mPanel === b.dataset.mTab))));
 addEventListener('resize', () => mGo(mCur));
 {
-  const NOSWIPE = '.m-vtrack, .m-xy, .m-steps, .m-bgrid, .m-pick, select, input';
+  const NOSWIPE = '.m-vtrack, .m-xy, .m-steps, select, input';
   let sw = null;
   mPages.addEventListener('pointerdown', (e) => {
     if (sw || e.target.closest(NOSWIPE)) return;
@@ -77,7 +50,7 @@ $('m').addEventListener('contextmenu', (e) => e.preventDefault());
 // ---- transport ----
 function setPlaying(on) {
   playing = on;
-  $('m-play').setAttribute('aria-pressed', on); $('m-play').setAttribute('aria-label', on ? 'stop' : 'play');
+  $('m-play').setAttribute('aria-pressed', on); $('m-play').querySelector('span').textContent = on ? 'stop' : 'play';
   sendSeq();
   if (!on) { mLed(-1); stopHooks.forEach((h) => h()); }
 }
@@ -89,12 +62,6 @@ addEventListener('keydown', (e) => {
   e.preventDefault();
   if (!e.repeat) $('m-play').click();
 }, true);
-// z, x and c go to mix, synth and beat (not while typing, nor with a modifier held)
-addEventListener('keydown', (e) => {
-  const m = { KeyZ: 'mix', KeyX: 'synth', KeyC: 'beat' }[e.code];
-  if (!m || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input[type="text"], textarea, select')) return;
-  setMode(m); requestAnimationFrame(mDepth);
-});
 addEventListener('keyup', (e) => { if (e.code === 'Space' && !e.target.closest('input[type="text"], textarea, select')) e.preventDefault(); }, true);
 // the step light: sixteen segments, the one playing lit
 const mLedCells = Array.from({ length: 16 }, () => { const i = document.createElement('i'); $('m-led').append(i); return i; });
@@ -110,9 +77,9 @@ eventHandlers.push((ev) => {
 // resets it, and holding one still for half a second opens its step sequencer. While a sequencer runs, the fader sets
 // its base (fd.base) and the sequencer moves the value around it: the fill is the value heard, the bar the base ----
 const mFaders = [];
-function mFader(box, label, { min, max, step = 1, get, set, show, dflt, travel = 1, cc = 0, dial = !!cc }) {
+function mFader(box, label, { min, max, step = 1, get, set, show, dflt, travel = 1, cc = 0 }) {
   const el = document.createElement('div');
-  el.className = dial ? 'm-vf m-dial' : 'm-vf';
+  el.className = cc ? 'm-vf m-dial' : 'm-vf';
   el.innerHTML = '<output></output><div class="m-vtrack" role="slider" tabindex="0"><i></i><b></b></div><span class="m-flab"></span>';
   // a dial (cc: its MIDI CC number, shown in its middle) turns by dragging up and down over 200 px
   if (cc) el.querySelector('.m-vtrack').insertAdjacentHTML('beforeend', `<em aria-hidden="true">${cc}</em>`);
@@ -135,7 +102,7 @@ function mFader(box, label, { min, max, step = 1, get, set, show, dflt, travel =
   let drag = null, hold = 0;
   tr.addEventListener('pointerdown', (e) => {
     tr.setPointerCapture(e.pointerId); el.classList.add('held');
-    drag = { y: e.clientY, v: fd.base !== null ? fd.base : get(), h: dial ? 200 : tr.getBoundingClientRect().height };
+    drag = { y: e.clientY, v: fd.base !== null ? fd.base : get(), h: cc ? 200 : tr.getBoundingClientRect().height };
     clearTimeout(hold);
     hold = setTimeout(() => { if (!drag) return; const v = drag.v; end(); move(v); fsOpen(fd); }, 500);
   });
@@ -160,9 +127,9 @@ function mFader(box, label, { min, max, step = 1, get, set, show, dflt, travel =
 }
 const pct = (v) => (v === 100 ? '0%' : (v > 100 ? '+' : '−') + Math.abs(v - 100) + '%');
 
-// ---- perf: twelve dials, MIDI CC 1 to 12 in reading order: tempo, pitch, decay, filter, reso, fm, drive, attack, filter
-// drive, pitch mod amount, lfo rate and lfo amount; all the synth's own (the effects are the mix's). Decay, filter and fm
-// are macros on top of the sound; the rest move the same settings as their faders on the voice page ----
+// ---- perf: twelve dials, MIDI CC 1 to 12 in reading order: tempo, pitch, decay, filter, reso, fm, drive, the echo send
+// and feedback, the reverb send and decay, and the master distortion's mix. Decay, filter and fm are macros on top of
+// the sound; the rest move the same settings as their faders on the other pages ----
 const sendPct = (v) => (v ? v + '%' : 'off');
 const PERF_DIALS = [
   ['tempo', { min: 40, max: 240, travel: 2, get: () => tempo, set: (v) => { tempo = v; sendSeq(); }, show: (v) => `${v} bpm`, dflt: 120 }],
@@ -173,8 +140,11 @@ const PERF_DIALS = [
   ['reso', { min: 0, max: 127, get: () => values[PAR.RESO_1], set: (v) => setValue(PAR.RESO_1, v), show: String, dflt: () => factoryInit[PAR.RESO_1] }],
   ['fm', { min: 0, max: 200, get: () => macro.fm, set: (v) => setMacro('fm', v), show: pct, dflt: 100 }],
   ['drive', { min: 0, max: 127, get: () => values[PAR.DRIVE1], set: (v) => setValue(PAR.DRIVE1, v), show: String, dflt: () => factoryInit[PAR.DRIVE1] }],
-  ...[['attack', 'VELOA1'], ['flt drive', 'FILTER_DRIVE_1'], ['mod amt', 'MODAMNT1'], ['lfo rate', 'FREQ_LFO1'], ['lfo amt', 'AMOUNT_LFO1']].map(([label, n]) =>
-    [label, { min: 0, max: spec(PAR[n]).max, get: () => values[PAR[n]], set: (v) => setValue(PAR[n], v), show: String, dflt: () => factoryInit[PAR[n]] }])];
+  ['echo', { min: 0, max: 100, get: () => fx.send, set: (v) => { fx.send = v; sendMix(); }, show: sendPct, dflt: 0 }],
+  ['echo fb', { min: 0, max: 127, get: () => values[PAR.FX_P4], set: (v) => setValue(PAR.FX_P4, v), show: String, dflt: 50 }],
+  ['reverb', { min: 0, max: 100, get: () => fx.verb, set: (v) => { fx.verb = v; sendMix(); }, show: sendPct, dflt: 0 }],
+  ['rvb decay', { min: 0, max: 127, get: () => fx.vDecay, set: (v) => { fx.vDecay = v; sendMix(); }, show: String, dflt: FX0.vDecay }],
+  ['dist', { min: 0, max: 100, get: () => dist.mix, set: (v) => { dist.mix = v; sendMix(); }, show: sendPct, dflt: 0 }]];
 const ccDials = PERF_DIALS.map(([label, o], i) => mFader($('m-perf'), label, { ...o, cc: i + 1 }));
 // MIDI in (Web MIDI, any input, any channel): CC 1 to 12 turn the dials, 0..127 over each one's range. Access is asked
 // for at the first touch (or straight away if it was given before); controllers plugged in later are picked up
@@ -278,18 +248,20 @@ const xyFader = (pn) => mFaders.find((f) => f.key === `m-voice-${VP_PAGES.find((
   drawHooks.push(draw);
 }
 
-// ---- fx: the echo (ping pong, time on the musical lengths, tone, feedback, width; the sends are on the mix page) and the ring mod (send,
+// ---- fx: the echo (ping pong, send, time on the musical lengths, tone, feedback, width) and the ring mod (send,
 // carrier wave and frequency) ----
 const fxF = (box, label, o) => mFader($(box), label, { show: String, ...o });
 $('m-pp').addEventListener('change', () => setValue(PAR.FX_DELAY_TYPE, $('m-pp').checked ? 1 : 0));
 drawHooks.push(() => { $('m-pp').checked = values[PAR.FX_DELAY_TYPE] === 1; });
+fxF('m-echo', 'send', { min: 0, max: 100, get: () => fx.send, set: (v) => { fx.send = v; sendMix(); }, show: sendPct, dflt: 0 });
 fxF('m-echo', 'time', { min: 0, max: 1000, get: () => Math.round(delayPos * 1000), set: (v) => setDelay(v / 1000), show: showDelay, dflt: Math.round(posOf(3 / 16) * 1000) });
 fxF('m-echo', 'tone', { min: 0, max: 127, get: () => values[PAR.FX_P3], set: (v) => setValue(PAR.FX_P3, v), dflt: 90 });
 fxF('m-echo', 'feedback', { min: 0, max: 127, get: () => values[PAR.FX_P4], set: (v) => setValue(PAR.FX_P4, v), dflt: 50 });
 fxF('m-echo', 'width', { min: 0, max: 200, get: () => fx.width, set: (v) => { fx.width = v; sendMix(); }, show: (v) => v + '%', dflt: 100 });
-// the reverb (its sends are on the mix page): the firmware's four: predelay (1 to 46 ms), decay (its feedback; at the top it holds), tone (a
+// the reverb: send, then the firmware's four: predelay (1 to 46 ms), decay (its feedback; at the top it holds), tone (a
 // tilt: in the middle it's flat, down darkens and damps the tail, up thins it) and early (the early reflections' level)
 const preMs = (v) => Math.round(2031 * (0.02166 + v / 127 * 0.97784) / (LXR.REAL_FS / 1000)) + ' ms';
+fxF('m-verb', 'send', { min: 0, max: 100, get: () => fx.verb, set: (v) => { fx.verb = v; sendMix(); }, show: sendPct, dflt: 0 });
 [['predelay', 'vPre', preMs], ['decay', 'vDecay'], ['tone', 'vTone'], ['early', 'vEarly']].forEach(([l, k, show]) =>
   fxF('m-verb', l, { min: 0, max: 127, get: () => fx[k], set: (v) => { fx[k] = v; sendMix(); }, show: show || String, dflt: FX0[k] }));
 const RING_W = OSC_WAVE_NAMES.map((n) => n.toLowerCase());
@@ -402,18 +374,18 @@ function alterFx(a = 0.1) {
   fx.width = nudge(fx.width, 0, 200); fx.ringFreq = nudge(fx.ringFreq, 0, 127);
   sendMix();
 }
-$('m-everything').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { randomSound(); randomNotes(); }));
+$('m-everything').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { randomSound(); randomNotes(); randomFx(); }));
 $('m-sound').addEventListener('click', (e) => mRandomise(e.currentTarget, randomSound));
 $('m-alter').addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterSound()));
 $('m-pattern').addEventListener('click', (e) => mRandomise(e.currentTarget, randomNotes));
-for (const id of ['m-fxr2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomFx));
-for (const id of ['m-fxa2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterFx()));
+for (const id of ['m-fxr', 'm-fxr2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomFx));
+for (const id of ['m-fxa', 'm-fxa2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterFx()));
 
 // ---- the glass isn't flat: each control's ink shadow deepens a little toward the top right of the screen (--d, used
 // by the CSS), worked out from where it sits on its own page, and again when the screen's size changes ----
 function mDepth() {
   const m = $('m').getBoundingClientRect();
-  for (const el of document.querySelectorAll('.m-vf, .m-btn, .m-toggle, .m-pload, .m-tabs button, .m-xy, .m-chead, .m-title, .m-trans button, .m-seq-lenrow, .m-step, .m-bcell')) {
+  for (const el of document.querySelectorAll('.m-vf, .m-btn, .m-toggle, .m-pload, .m-tabs button, .m-xy, .m-chead, .m-title, .m-trans button, .m-seq-lenrow, .m-step')) {
     const r = el.getBoundingClientRect();
     if (!r.width) continue;
     const x = (((r.left + r.width / 2 - m.left) % m.width) + m.width) % m.width / m.width, y = (r.top + r.height / 2 - m.top) / m.height;

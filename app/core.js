@@ -19,12 +19,6 @@ for (let i = 8; i < PAR.END_OF_SOUND_PARAMETERS; i++) initValues[i - 8] = INIT_K
 for (const [n, v] of Object.entries(SYNTH0)) initValues[PAR[n]] = v;
 const factoryInit = initValues.slice();
 const values = initValues.slice();
-// the beat's parameters: those of the engine's other five voices (drum 2, drum 3, snare, cymbal, hats). The synth owns
-// drum 1's and the FX bus; a synth preset from before the beat leaves the beat's alone
-const BEAT_PARS = new Set([...VOICE_PAGES.slice(1).flatMap((vp) => vp.groups.flatMap((g) => g.params.map(([, n]) => PAR[n]))),
-  ...[2, 3, 4, 5, 6].flatMap((n) => [PAR['VOICE_LFO' + n], PAR['TARGET_LFO' + n], PAR['AUDIO_OUT' + n]])]);
-// the echo's own settings in the kit (FX_*): the mix's, like the rest of the effects
-const FX_PARS = new Set(Object.keys(PAR).filter((k) => k.startsWith('FX_')).map((k) => PAR[k]));
 // drum 1's targets (velocity and LFO) are only its own parameters
 const [T0, T1] = MOD_TARGET_VOICE_RANGES[0];
 const TARGETS = [0, ...Array.from({ length: T1 - T0 + 1 }, (_, i) => T0 + i)].filter((i) => !MOD_TARGETS[i][0].startsWith('FX_'));
@@ -86,7 +80,7 @@ const SCALES = [['major', [0, 2, 4, 5, 7, 9, 11]], ['minor', [0, 2, 3, 5, 7, 8, 
   ['phrygian', [0, 1, 3, 5, 7, 8, 10]], ['mixolyd', [0, 2, 4, 5, 7, 9, 10]], ['harm min', [0, 2, 3, 5, 7, 8, 11]],
   ['pent min', [0, 3, 5, 7, 10]], ['pent maj', [0, 2, 4, 7, 9]], ['blues', [0, 3, 5, 6, 7, 10]], ['chromatic', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]];
 const DEG_MAX = 15;
-const SEQ0 = { root: 0, scale: 1, accent: 6, glide: 35, vel: 100, algo: 0, len: 64, dens: 50, follow: true,
+const SEQ0 = { root: 0, scale: 1, accent: 6, glide: 35, vel: 100, algo: 0,
   steps: [[0, 4, 1, 0], [0, 2, 0, 0], [7, 3, 0, 1], [8, 4, 0, 0], [0, 0, 0, 0], [3, 3, 1, 0], [0, 2, 0, 0], [5, 4, 0, 1],
     [4, 4, 0, 0], [0, 2, 1, 0], [0, 0, 0, 0], [7, 3, 0, 0], [6, 4, 1, 1], [7, 4, 0, 0], [2, 2, 0, 0], [0, 3, 0, 0]].map(([d, gate, acc, slide]) => ({ d, gate, acc: !!acc, slide: !!slide })) };
 const PAGES = 4, NSTEPS = PAGES * 16;
@@ -98,34 +92,9 @@ const seq = structuredClone(SEQ0);
 const degSemis = (d, sc = seq.scale, root = seq.root) => { const s = SCALES[sc][1]; return root + s[d % s.length] + 12 * Math.floor(d / s.length); };
 const stepNote = (st) => values[PAR.COARSE1] + degSemis(st.d);
 let playing = false, tempo = 120;
-// the rotate slider on mix's patterns page: the note sequence played from this many steps on, against the beat (live,
-// not kept in presets; the steps themselves don't move)
-let seqRot = 0;
-// density: 50 plays the steps as written; below that the least important notes drop out (offbeats before beats, the
-// bar's first step last), above it rests fill in, most important first, with the note before them. Nothing written changes.
-const densPri = (i) => (i % 16 === 0 ? 4 : i % 8 === 0 ? 3 : i % 4 === 0 ? 2 : i % 2 === 0 ? 1 : 0) + ((Math.imul(i + 1, 2654435761) >>> 0) % 997) / 997;
-function densSteps(steps) {
-  const d = seq.dens ?? 50, out = steps.map((st) => ({ ...st }));
-  if (d === 50) return out;
-  const idx = (on) => out.map((_, i) => i).filter((i) => (steps[i].gate > 0) === on);
-  if (d < 50) {
-    const on = idx(true).sort((a, b) => densPri(a) - densPri(b));
-    on.slice(0, Math.round(on.length * (50 - d) / 50)).forEach((i) => { out[i].gate = 0; });
-  } else {
-    const off = idx(false).sort((a, b) => densPri(b) - densPri(a)), first = steps.find((st) => st.gate > 0);
-    off.slice(0, Math.round(off.length * (d - 50) / 50)).forEach((i) => {
-      let j = i; while (j > 0 && steps[j - 1].gate === 0) j--;
-      out[i] = { d: (j > 0 ? steps[j - 1] : first || { d: 0 }).d, gate: 2, acc: false, slide: false };
-    });
-  }
-  return out;
-}
-const densName = (v) => `${v < 50 ? 'sparse' : v > 50 ? 'busy' : 'as is'}${v === 50 ? '' : ' ' + v}`;
 function sendSeq() {
-  const len = Math.max(1, Math.min(NSTEPS, seq.len || NSTEPS)), r = seqRot % len;
-  const steps = densSteps(seq.steps.slice(0, len));
-  send({ type: 'seq', playing, bpm: tempo, follow: seq.follow !== false, vel: seq.vel, glide: seq.glide / 100, accentDb: seq.accent,
-    steps: [...steps.slice(r), ...steps.slice(0, r)].map((st) => ({ n: degSemis(st.d), gate: st.gate, acc: st.acc, slide: st.slide })) });
+  send({ type: 'seq', playing, bpm: tempo, vel: seq.vel, glide: seq.glide / 100, accentDb: seq.accent,
+    steps: seq.steps.map((st) => ({ n: degSemis(st.d), gate: st.gate, acc: st.acc, slide: st.slide })) });
 }
 
 // ---- effects and master: echo, reverb and ring mod sends; the echo's tone, feedback and ping pong are the engine's own
@@ -204,10 +173,8 @@ async function startAudio() {
   sendAll();
 }
 // everything, to a new audio thread or for a preset
-const sendHooks = [];
 function sendAll() {
   send({ type: 'kit', values: effValues() });
-  sendHooks.forEach((h) => h());
   send({ type: 'pitch', v: macro.pitch });
   send({ type: 'delay', pos: delayPos });
   sendMix(); sendSeq();
@@ -219,32 +186,24 @@ function onEvent(ev) { for (const h of eventHandlers) h(ev); }
 // ---- a snapshot of everything a preset keeps, and putting one back ----
 const PRESET_V = 1;
 let fseqSnapshot = () => ({}), fseqUse = () => {};
-// the other modes' parts of a preset (beat, mix): each { key, get, put }; a preset without one leaves that part as it is
-const snapParts = [];
 function snapshot() {
-  const p = { v: PRESET_V, kit: Array.from(values), macro: { ...macro }, tempo, seq: structuredClone(seq), fx: { ...fx }, dpos: delayPos,
+  return { v: PRESET_V, kit: Array.from(values), macro: { ...macro }, tempo, seq: structuredClone(seq), fx: { ...fx }, dpos: delayPos,
     dist: structuredClone(dist), master: { ...master }, fseqs: fseqSnapshot() };
-  for (const sp of snapParts) p[sp.key] = sp.get();
-  return p;
 }
 const drawHooks = [];
 const drawAll = () => drawHooks.forEach((d) => d());
 function useSnapshot(p, keepTempo) {
   const kit = Uint8Array.from(p.kit);
-  for (let i = 0; i < Math.min(kit.length, values.length); i++) if ((p.beat || !BEAT_PARS.has(i)) && (p.mix || !FX_PARS.has(i))) values[i] = kit[i];
+  values.set(kit.subarray(0, values.length));
   values[PAR.VOICE_LFO1] = 1;
   Object.assign(macro, MACRO0, p.macro);
   if (!keepTempo && p.tempo) tempo = p.tempo;
   Object.assign(seq, structuredClone(SEQ0), structuredClone(p.seq || {}));
   seq.steps = fillPages(seq.steps.length ? seq.steps.slice(0, NSTEPS) : SEQ0.steps);
-  // the effects and master belong to the mix: a preset without the mix (the synth's own) leaves them as they are
-  if (p.mix) {
-    Object.assign(fx, FX0, p.fx);
-    delayPos = typeof p.dpos === 'number' ? p.dpos : posOf(3 / 16);
-    Object.assign(dist, structuredClone(DIST0), structuredClone(p.dist || {}));
-    Object.assign(master, MASTER0, p.master);
-  }
+  Object.assign(fx, FX0, p.fx);
+  delayPos = typeof p.dpos === 'number' ? p.dpos : posOf(3 / 16);
+  Object.assign(dist, structuredClone(DIST0), structuredClone(p.dist || {}));
+  Object.assign(master, MASTER0, p.master);
   fseqUse(p.fseqs || {});
-  for (const sp of snapParts) if (p[sp.key]) sp.put(structuredClone(p[sp.key]));
   sendAll(); drawAll();
 }

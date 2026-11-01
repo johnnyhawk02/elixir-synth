@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<meta name="description" content="Elixir Synth: a phone-first mono synth, drum machine and mixer in the browser, on a JavaScript port of the Erica Synths LXR-02 engine.">
+<meta name="description" content="Elixir Synth: a phone-first mono synth in the browser, playing the drum 1 voice of a JavaScript port of the Erica Synths LXR-02 engine.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
 <style>
@@ -18,29 +18,17 @@
 
 <main class="m" id="m">
   <header class="m-top">
-    <button class="m-title" id="m-mode" type="button"><i class="m-cauldron" aria-hidden="true"></i><span class="m-sr">elixir-<span id="m-modename">mix</span></span><small class="m-ver">@VER@</small></button>
-    <b class="m-sr" id="m-pagename" aria-live="polite">perform</b>
-    <div class="m-trans">
-      <button class="m-play" id="m-play" type="button" aria-pressed="false" aria-label="play"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M7 4.5v15l13-7.5z"/><rect class="i-stop" x="5.5" y="5.5" width="13" height="13" rx="2"/></svg></button>
-      <button class="m-rec" id="m-rec" type="button" aria-pressed="false" aria-label="Record"><i></i><span id="m-rec-t">rec</span></button>
-    </div>
-    <div class="m-modes-top" role="tablist" aria-label="mode">
-      <button class="m-btn" type="button" role="tab" data-to-mode="mix" aria-selected="true">mix</button>
-      <button class="m-btn" type="button" role="tab" data-to-mode="synth" aria-selected="false">synth</button>
-      <button class="m-btn" type="button" role="tab" data-to-mode="beat" aria-selected="false">beat</button>
-    </div>
-    <output class="m-steps-led" id="m-led" aria-hidden="true"></output>
+    <b class="m-title">elixir<small class="m-ver">synth v@VER@</small></b>
+    <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
   </header>
+  <section class="m-card m-trans">
+    <button class="m-play" id="m-play" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M7 4.5v15l13-7.5z"/><rect class="i-stop" x="5.5" y="5.5" width="13" height="13" rx="2"/></svg><span>play</span></button>
+    <button class="m-rec" id="m-rec" type="button" aria-pressed="false" aria-label="Record"><i></i><span id="m-rec-t">rec</span></button>
+    <output class="m-steps-led" id="m-led" aria-hidden="true"></output>
+  </section>
 
-  <div class="m-screen" id="m-screen">
-    <div class="m-prefs" id="m-prefs" role="dialog" aria-labelledby="m-prefst" hidden>
-      <div class="m-pickhead"><b id="m-prefst">preferences</b><button class="m-btn" id="m-prefsx" type="button">done</button></div>
-      <button class="m-btn m-big" id="m-prefsdl" type="button">download my presets</button>
-      <button class="m-btn m-big" id="m-prefspads" type="button">new pads from factory</button>
-      <p class="m-note" id="m-prefsnote" aria-live="polite">Your presets and pad sets, in one file. Import it on the presets page.</p>
-    </div>
   <div class="m-pages" id="m-pages">
-  <div class="m-panel" data-m-panel="play" data-modes="synth">
+  <div class="m-panel" data-m-panel="play">
     <section class="m-card m-play-card"><div class="m-faders m-dials" id="m-perf"></div></section>
     <section class="m-card m-rand-card" aria-label="randomise">
       <div class="m-rand">
@@ -49,12 +37,14 @@
         <button class="m-btn" id="m-sound" type="button">sound</button>
         <button class="m-btn" id="m-alter" type="button">alter</button>
         <button class="m-btn" id="m-pattern" type="button">notes</button>
+        <button class="m-btn" id="m-fxr" type="button">random fx</button>
+        <button class="m-btn" id="m-fxa" type="button">alter fx</button>
         <button class="m-btn" data-undo type="button" disabled>undo</button>
       </div>
     </section>
   </div>
 
-  <div class="m-panel" data-m-panel="seq" data-modes="synth">
+  <div class="m-panel" data-m-panel="seq">
     <section class="m-card m-seqpage">
       <div class="m-modes" id="m-modes" role="tablist" aria-label="what a step edit sets">
         <button class="m-btn" type="button" role="tab" data-mode="note" aria-selected="true">note</button>
@@ -74,86 +64,25 @@
         <div class="m-faders m-seqf" id="m-seqf"></div>
         <div class="m-seqbtns">
           <button class="m-btn m-big" id="m-nrand" type="button">random<small class="m-nalgo" id="m-nalgo"></small></button>
-          <div class="m-seqpair"><button class="m-btn" id="m-nalter" type="button">alter</button><button class="m-btn" data-undo type="button" disabled>undo</button></div>
-          <button class="m-btn" id="m-nfollow" type="button" aria-pressed="true">groove</button>
+          <button class="m-btn" id="m-nalter" type="button">alter</button>
+          <button class="m-btn" data-undo type="button" disabled>undo</button>
         </div>
       </div>
     </section>
   </div>
 
-  <div class="m-panel" data-m-panel="voice" data-modes="synth">
+  <div class="m-panel" data-m-panel="voice">
     <section class="m-card m-voice-card">
       <div class="m-vsec" id="m-vsec" role="tablist" aria-label="section"></div>
       <div class="m-vsets" id="m-vsets"></div>
     </section>
   </div>
 
-  <div class="m-panel" data-m-panel="xy" data-modes="synth">
+  <div class="m-panel" data-m-panel="xy">
     <section class="m-card m-xy-card" id="m-xy-card"></section>
   </div>
 
-  <div class="m-panel" data-m-panel="beat" data-modes="beat">
-    <section class="m-card m-play-card"><div class="m-faders m-dials" id="m-beatf"></div></section>
-    <section class="m-card m-rand-card" aria-label="randomise the beat">
-      <div class="m-rand m-brand">
-        <button class="m-btn m-big" id="m-beverything" type="button">everything</button>
-        <button class="m-btn" id="m-bpat" type="button">pattern</button>
-        <button class="m-btn" id="m-bkitr" type="button">kit</button>
-        <button class="m-btn" id="m-balter" type="button">alter kit</button>
-        <button class="m-btn" data-undo type="button" disabled>undo</button>
-      </div>
-    </section>
-  </div>
-
-  <div class="m-panel" data-m-panel="bsteps" data-modes="beat">
-    <section class="m-card m-bstep-card">
-      <div class="m-modes" id="m-bmodes" role="tablist" aria-label="what a tap sets">
-        <button class="m-btn" type="button" role="tab" data-bmode="on" aria-selected="true">hits</button>
-        <button class="m-btn" type="button" role="tab" data-bmode="acc" aria-selected="false">accent</button>
-        <button class="m-btn" type="button" id="m-bclear">clear</button>
-        <button class="m-btn" type="button" data-undo disabled>undo</button>
-      </div>
-      <div class="m-bgrid" id="m-bgrid" role="grid" aria-label="the beat's steps"></div>
-    </section>
-  </div>
-
-  <div class="m-panel" data-m-panel="kit" data-modes="beat">
-    <section class="m-card m-kit-card">
-      <div class="m-kitrow"><button class="m-btn" id="m-kprev" type="button" aria-label="previous kit">‹</button><output id="m-kitname" aria-live="polite"></output><button class="m-btn" id="m-knext" type="button" aria-label="next kit">›</button></div>
-      <div class="m-vsec m-bvsec" id="m-bvsec" role="tablist" aria-label="voice"></div>
-      <div class="m-vsets" id="m-bvsets"></div>
-    </section>
-  </div>
-
-  <div class="m-panel" data-m-panel="home" data-modes="mix">
-    <section class="m-card m-home-card">
-      <div class="m-pats" id="m-pats" aria-label="patterns"></div>
-      <div class="m-psetrow"><select id="m-psets" aria-label="pad sets"></select><button class="m-btn" id="m-psetsave" type="button">save set</button><button class="m-btn" id="m-psetover" type="button">over</button><button class="m-btn" id="m-psetdel" type="button" aria-label="delete the pad set">✕</button></div>
-      <div class="m-pick" id="m-pick" hidden>
-        <div class="m-pickhead"><b id="m-pickt">pad 1 plays</b><button class="m-btn" id="m-pickx" type="button">done</button></div>
-        <div class="m-pickbtns"><button class="m-btn" id="m-picksave" type="button">save preset</button><button class="m-btn" id="m-picksover" type="button">save over</button></div>
-        <ul class="m-plist m-picklist" id="m-picklist"></ul>
-      </div>
-      <div class="m-faders m-dials" id="m-patsf">
-        <button class="m-btn m-patfol" id="m-pfollow" type="button" aria-pressed="true">syn groove</button>
-        <div class="m-patsbtns"><button class="m-btn" id="m-prdrum" type="button">rnd drm</button><button class="m-btn" id="m-pralt" type="button">alt drm</button><button class="m-btn" id="m-prsynth" type="button">rnd syn</button><button class="m-btn" id="m-pralts" type="button">alt syn</button><button class="m-btn" id="m-prfx" type="button">rnd fx</button><button class="m-btn" id="m-praltfx" type="button">alt fx</button></div>
-      </div>
-    </section>
-  </div>
-
-  <div class="m-panel" data-m-panel="mix" data-modes="mix">
-    <section class="m-card m-mix-card">
-      <div class="m-faders m-row m-mixlvl" id="m-mixlvl"></div>
-      <div class="m-mixstrip" id="m-mixmeters" aria-hidden="true"></div>
-      <div class="m-mixstrip" id="m-mixmutes"></div>
-      <div class="m-chead"><b>echo send</b></div>
-      <div class="m-faders m-row m-mixsend" id="m-mixecho"></div>
-      <div class="m-chead"><b>reverb send</b></div>
-      <div class="m-faders m-row m-mixsend" id="m-mixverb"></div>
-    </section>
-  </div>
-
-  <div class="m-panel" data-m-panel="fx" data-modes="mix">
+  <div class="m-panel" data-m-panel="fx">
     <section class="m-card m-fx-card">
       <div class="m-fx-row"><div class="m-fxhead"><b>echo</b><label class="m-chk"><input id="m-pp" type="checkbox"><i aria-hidden="true"></i>ping pong</label></div><div class="m-faders m-row" id="m-echo"></div></div>
       <div class="m-fx-row"><div class="m-fxhead"><b>reverb</b></div><div class="m-faders m-row" id="m-verb"></div></div>
@@ -166,7 +95,7 @@
     </section>
   </div>
 
-  <div class="m-panel" data-m-panel="comp" data-modes="mix">
+  <div class="m-panel" data-m-panel="comp">
     <section class="m-card m-comp-card">
       <div class="m-chead"><b>distortion</b></div>
       <div class="m-faders m-row" id="m-dist"></div>
@@ -175,7 +104,7 @@
     </section>
   </div>
 
-  <div class="m-panel" data-m-panel="presets" data-modes="synth beat mix">
+  <div class="m-panel" data-m-panel="presets">
     <section class="m-card m-presets-card">
       <div class="m-psaves"><button class="m-btn m-big" id="m-psave" type="button">save new</button><button class="m-btn" id="m-pover" type="button">save over</button></div>
       <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
@@ -204,20 +133,14 @@
   </div>
 
   <nav class="m-tabs" role="tablist" aria-label="pages">
-    <button type="button" role="tab" data-m-tab="play" data-modes="synth" aria-selected="true">perf</button>
-    <button type="button" role="tab" data-m-tab="seq" data-modes="synth" aria-selected="false">seq</button>
-    <button type="button" role="tab" data-m-tab="voice" data-modes="synth" aria-selected="false">voice</button>
-    <button type="button" role="tab" data-m-tab="xy" data-modes="synth" aria-selected="false">x/y</button>
-    <button type="button" role="tab" data-m-tab="beat" data-modes="beat" aria-selected="false">beat</button>
-    <button type="button" role="tab" data-m-tab="bsteps" data-modes="beat" aria-selected="false">steps</button>
-    <button type="button" role="tab" data-m-tab="kit" data-modes="beat" aria-selected="false">kit</button>
-    <button type="button" role="tab" data-m-tab="home" data-modes="mix" aria-selected="false">pats</button>
-    <button type="button" role="tab" data-m-tab="mix" data-modes="mix" aria-selected="false">mix</button>
-    <button type="button" role="tab" data-m-tab="fx" data-modes="mix" aria-selected="false">fx</button>
-    <button type="button" role="tab" data-m-tab="comp" data-modes="mix" aria-selected="false">mstr</button>
-    <button type="button" role="tab" data-m-tab="presets" data-modes="synth beat mix" aria-selected="false">prst</button>
+    <button type="button" role="tab" data-m-tab="play" aria-selected="true">perf</button>
+    <button type="button" role="tab" data-m-tab="seq" aria-selected="false">seq</button>
+    <button type="button" role="tab" data-m-tab="voice" aria-selected="false">voice</button>
+    <button type="button" role="tab" data-m-tab="xy" aria-selected="false">x/y</button>
+    <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
+    <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>
+    <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
   </nav>
-  </div>
 </main>
 
 <script id="engine">
