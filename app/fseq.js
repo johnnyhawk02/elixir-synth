@@ -4,15 +4,18 @@
 // gliding to it over up to a whole step; each step lasts a 16th note up to 8 bars. The fader still moves its setting
 // meanwhile, and stopping (or switching the sequencer off) puts the setting back. Draw the steps with a finger,
 // randomise them (random, drunk, wobbly, ramp, s&h or sparse), or switch it off; a fader with one running is marked.
-// Presets keep them ----
+// A step can slide (the slide button, then tap or drag along the steps): it's legato, gliding from its own offset to
+// the next step's over the whole step instead of jumping there. Presets keep them ----
 const FS_MAX = 16;
-const fsCells = Array.from({ length: FS_MAX }, (_, i) => { const c = document.createElement('i'); c.dataset.i = i; $('m-fs-steps').append(c); return c; });
+const fsCells = Array.from({ length: FS_MAX }, (_, i) => { const c = document.createElement('i'); c.dataset.i = i; c.innerHTML = '<b>S</b>'; $('m-fs-steps').append(c); return c; });
+// the slide button: while it's on, a touch on the steps switches their slides instead of painting them
+let fsSlideMode = false;
 let fsF = null;
 const FS_STEPS = [1, 2, 4, 8, 16, 32, 64, 128];
 const fsStepName = (v) => (v < 16 ? `1/${16 / v}` : v === 16 ? '1 bar' : `${v / 16} bars`);
 // a step's offset, -1..1 of depth, in twentieths
 const fsOff = (x) => Math.round(Math.max(-1, Math.min(1, x)) * 20) / 20;
-const fsNew = () => ({ on: true, len: 16, slew: 0, step: 1, depth: 50, vals: new Array(FS_MAX).fill(0) });
+const fsNew = () => ({ on: true, len: 16, slew: 0, step: 1, depth: 50, vals: new Array(FS_MAX).fill(0), slides: new Array(FS_MAX).fill(false) });
 // the value heard: the setting moved by the current offset
 function fsApply(f) {
   const q = f.seq;
@@ -34,8 +37,9 @@ function fsDraw() {
   fsCells.forEach((c, i) => {
     const v = q.vals[i];
     c.style.setProperty('--up', Math.max(0, v)); c.style.setProperty('--dn', Math.max(0, -v));
-    c.classList.toggle('off', i >= q.len);
+    c.classList.toggle('off', i >= q.len); c.classList.toggle('slide', !!q.slides[i]);
   });
+  $('m-fs-slide').setAttribute('aria-pressed', fsSlideMode);
   $('m-fs-type').textContent = FS_RAND[fsType][0];
   $('m-fs-depth').style.setProperty('--w', q.depth / 100); $('m-fs-depth-out').textContent = `±${q.depth}%`;
   $('m-fs-len').style.setProperty('--w', (q.len - 2) / (FS_MAX - 2)); $('m-fs-len-out').textContent = `${q.len} steps`;
@@ -48,7 +52,7 @@ const fsMarks = () => mFaders.forEach((f) => f.el.classList.toggle('seq', !!(f.s
 // presets keep them by fader (its box and label), with the settings, not the values heard
 fseqSnapshot = () => {
   const out = {};
-  for (const f of mFaders) if (f.seq) out[f.key] = { on: f.seq.on, len: f.seq.len, slew: f.seq.slew, step: f.seq.step, depth: f.seq.depth, vals: f.seq.vals.slice() };
+  for (const f of mFaders) if (f.seq) out[f.key] = { on: f.seq.on, len: f.seq.len, slew: f.seq.slew, step: f.seq.step, depth: f.seq.depth, vals: f.seq.vals.slice(), slides: f.seq.slides.slice() };
   return out;
 };
 const fsSnap0 = snapshot;
@@ -64,7 +68,8 @@ fseqUse = (all) => {
     const q = all[f.key];
     f.base = null; f.off = 0; f.glide = null;
     f.seq = q ? { on: !!q.on, len: Math.max(2, Math.min(FS_MAX, q.len | 0)), slew: q.slew || 0, step: FS_STEPS.includes(q.step) ? q.step : 1,
-      depth: typeof q.depth === 'number' ? q.depth : 50, vals: Array.from({ length: FS_MAX }, (_, i) => (Number.isFinite(q.vals[i]) ? q.vals[i] : 0)) } : null;
+      depth: typeof q.depth === 'number' ? q.depth : 50, vals: Array.from({ length: FS_MAX }, (_, i) => (Number.isFinite(q.vals[i]) ? q.vals[i] : 0)),
+      slides: Array.from({ length: FS_MAX }, (_, i) => !!(q.slides && q.slides[i])) } : null;
   }
   if (fsF) { if (fsF.seq) fsDraw(); else $('m-fs-close').click(); }
   fsMarks();
@@ -72,20 +77,25 @@ fseqUse = (all) => {
 // painting: a step takes the offset at the finger's height (the middle is none); dragging across paints the steps it passes
 {
   const box = $('m-fs-steps');
-  let painting = false;
-  const paint = (e) => {
+  let painting = false, slideTo = null;
+  const paint = (e, first) => {
     const r = box.getBoundingClientRect(), cols = 8, rows = 2;
     const col = Math.max(0, Math.min(cols - 1, Math.floor((e.clientX - r.left) / r.width * cols)));
     const row = Math.max(0, Math.min(rows - 1, Math.floor((e.clientY - r.top) / r.height * rows)));
     const i = row * cols + col, c = fsCells[i], cr = c.getBoundingClientRect();
     if (c.classList.contains('off')) return;
+    // in slide mode the first step touched switches its slide, and the rest of a drag sets the others the same
+    if (fsSlideMode) {
+      if (first || slideTo === null) slideTo = !fsF.seq.slides[i];
+      fsF.seq.slides[i] = slideTo; fsDraw(); return;
+    }
     const o = fsF.seq.vals[i] = fsOff(1 - 2 * (e.clientY - cr.top) / cr.height);
     $('m-fs-val').textContent = `${o > 0 ? '+' : o < 0 ? '−' : ''}${Math.round(Math.abs(o) * fsF.seq.depth)}%`;
     fsDraw();
   };
-  box.addEventListener('pointerdown', (e) => { box.setPointerCapture(e.pointerId); painting = true; paint(e); });
-  box.addEventListener('pointermove', (e) => { if (painting) paint(e); });
-  const stop = () => { painting = false; };
+  box.addEventListener('pointerdown', (e) => { box.setPointerCapture(e.pointerId); painting = true; paint(e, true); });
+  box.addEventListener('pointermove', (e) => { if (painting) paint(e, false); });
+  const stop = () => { painting = false; slideTo = null; };
   box.addEventListener('pointerup', stop); box.addEventListener('pointercancel', stop);
 }
 // length, slew, speed and depth: horizontal bars
@@ -118,7 +128,8 @@ let fsType = Math.max(0, FS_RAND.findIndex(([n]) => n === store.get(FS_TYPE_KEY)
 $('m-fs-type').addEventListener('click', () => { fsType = (fsType + 1) % FS_RAND.length; store.set(FS_TYPE_KEY, FS_RAND[fsType][0]); fsDraw(); });
 $('m-fs-rand').addEventListener('click', () => { const q = fsF.seq; q.vals = FS_RAND[fsType][1](q.len).map(fsOff); q.on = true; fsDraw(); });
 $('m-fs-on').addEventListener('click', () => { fsF.seq.on = !fsF.seq.on; if (!fsF.seq.on) fsRelease(fsF); fsDraw(); });
-$('m-fs-close').addEventListener('click', () => { $('m-fs').hidden = true; fsF = null; });
+$('m-fs-slide').addEventListener('click', () => { fsSlideMode = !fsSlideMode; fsDraw(); });
+$('m-fs-close').addEventListener('click', () => { $('m-fs').hidden = true; fsF = null; fsSlideMode = false; });
 // the glides, a frame at a time while any is moving
 let fsGlideOn = false;
 function fsGlideRun() {
@@ -137,10 +148,12 @@ function fsGlideRun() {
   };
   requestAnimationFrame(tick);
 }
-// one step of a fader's sequencer: its offset, jumped to or, with slew, glided to over that share of the step
+// one step of a fader's sequencer: its offset, jumped to or, with slew, glided to over that share of the step. A
+// slide step starts on its own offset and glides to the next step's over the whole step
 function fsStep(f, i, ms) {
   const q = f.seq, k = Math.floor(i) % q.len, to = q.vals[k] || 0;
-  if (q.slew) { f.glide = { from: f.off, to, t0: performance.now(), ms: q.slew / 100 * ms }; fsGlideRun(); } else { f.glide = null; f.off = to; fsApply(f); }
+  if (q.slides[k]) { f.off = to; fsApply(f); f.glide = { from: to, to: q.vals[(k + 1) % q.len] || 0, t0: performance.now(), ms }; fsGlideRun(); }
+  else if (q.slew) { f.glide = { from: f.off, to, t0: performance.now(), ms: q.slew / 100 * ms }; fsGlideRun(); } else { f.glide = null; f.off = to; fsApply(f); }
   if (f === fsF) fsCells.forEach((c, j) => c.classList.toggle('now', j === k));
 }
 // stopping puts every fader back to its setting

@@ -86,7 +86,19 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   r = await box('#m-voice-tone .m-vtrack');
   await pg.mouse.move(r.x + r.width / 2, r.y + r.height / 2); await pg.mouse.down(); await pg.waitForTimeout(650); await pg.mouse.up();
   check(await pg.isVisible('#m-fs') && await pg.textContent('#m-fs-name') === 'note', 'holding a fader opens its sequencer');
-  r = await box('#m-fs-rand'); await pg.click('#m-fs-rand'); await pg.click('#m-fs-close');
+  r = await box('#m-fs-rand'); await pg.click('#m-fs-rand');
+  // slide: with the slide button on, a drag along the first three steps slides them; a slide step glides to the next
+  // step's offset over the whole step
+  await pg.click('#m-fs-slide');
+  {
+    const c0 = await box('#m-fs-steps i:nth-child(1)'), c2 = await box('#m-fs-steps i:nth-child(3)');
+    await pg.mouse.move(c0.x + c0.width / 2, c0.y + c0.height / 2); await pg.mouse.down();
+    await pg.mouse.move(c2.x + c2.width / 2, c2.y + c2.height / 2, { steps: 6 }); await pg.mouse.up();
+  }
+  check(await pg.evaluate(() => { const q = fsF.seq; return q.slides.slice(0, 4).join() === 'true,true,true,false' && document.querySelector('#m-fs-steps i.slide b').offsetWidth > 0; }), 'a drag with slide on slides the steps');
+  check(await pg.evaluate(() => { const f = fsF, q = f.seq; fsStep(f, 1, 125); const g = f.glide, ok = g && g.from === q.vals[1] && g.to === q.vals[2] && g.ms === 125; fsRelease(f); return ok; }), 'a slide step glides to the next step over the whole step');
+  await pg.click('#m-fs-slide');
+  await pg.click('#m-fs-close');
   check(await pg.evaluate(() => mFaders.find((f) => f.key === 'm-voice-tone:note').seq.vals.some((v) => v)), 'randomise fills its steps');
   // the note grid: the bottom of a step's gate rests it; a tap on its A accents it
   await pg.click('[data-m-tab="seq"]');

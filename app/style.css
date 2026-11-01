@@ -332,7 +332,10 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
   background: repeating-linear-gradient(to right, var(--ghost) 0 5px, transparent 5px 8px) 4px 4px / calc(100% - 8px) calc(100% - 8px) no-repeat; }
 .m-seq-len i { position: absolute; left: 4px; top: 4px; bottom: 4px; width: calc((100% - 8px) * var(--w, 1));
   background: repeating-linear-gradient(to right, var(--ink) 0 5px, transparent 5px 8px); }
-.m-seq-btns { display: grid; grid-template-columns: 1.3fr 1fr 0.9fr; gap: 8px; }
+.m-seq-btns { display: grid; grid-template-columns: 1.3fr 1fr 0.9fr 0.9fr; gap: 8px; }
+.m .m-seq-btns .m-btn[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
+.m-seq-steps i b { display: none; position: absolute; right: 3px; top: 3px; z-index: 1; padding: 0 4px; font-size: 12px; line-height: 16px; background: var(--ink); color: var(--panel); border-radius: 2px; }
+.m-seq-steps i.slide b { display: block; }
 .m .m-seq-type { font-size: min(var(--fs-xs), 15.7px) !important; padding: 0 2px; letter-spacing: 0; }
 .m-seq-btns .m-btn { min-height: 52px; }
 
