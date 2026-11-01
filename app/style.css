@@ -14,11 +14,13 @@ html, body { margin: 0; overscroll-behavior: none; }
 [hidden] { display: none !important; }
 body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlight-color: transparent; background: radial-gradient(120% 80% at 50% 0%, #2a2d28, #161815) fixed; }
 .m {
-  --panel: #2238e6; --ink: #eef3ff; --muted: rgba(225, 233, 255, .7);
-  --tint: rgba(225, 235, 255, .08); --tint-2: rgba(225, 235, 255, .15); --ghost: rgba(160, 185, 255, .17); --led: #eef3ff;
+  /* the colours, set from one LCD look (the blue one here; ui.js's LCD_LOOKS swaps them): the panel and its pixels,
+     as colours and as r g b for the see-through ones; light is the backlight's bloom, shade its dark corners */
+  --panel: #2238e6; --ink: #eef3ff; --panel-rgb: 34 56 230; --ink-rgb: 225 235 255; --light-rgb: 185 215 255; --shade-rgb: 6 12 90; --glow: 1;
+  --muted: rgb(var(--ink-rgb) / .7); --tint: rgb(var(--ink-rgb) / .08); --tint-2: rgb(var(--ink-rgb) / .15); --ghost: rgb(var(--ink-rgb) / .17); --led: var(--ink);
   --display: "VT323", ui-monospace, monospace; --body: "VT323", ui-monospace, monospace; --mono: "VT323", ui-monospace, monospace;
   --fs-xs: 1.12rem; --fs-s: 1.25rem; --fs-m: 1.3rem; --fs-l: 1.6rem;
-  --rule: 1px solid rgba(225, 235, 255, .38);
+  --rule: 1px solid rgb(var(--ink-rgb) / .38);
   position: absolute; left: 50%; top: 50%; width: 1000px; height: 600px; transform: translate(-50%, -50%) scale(var(--k, 1));
   display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: 124px minmax(0, 1fr) auto;
   grid-template-areas: "top dials" "pages pages" "rnd tabs"; column-gap: 16px; padding: 8px 12px 10px;
@@ -32,13 +34,13 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
   background-color: var(--panel);
   background-image: linear-gradient(170deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, 0) 38%, rgba(0, 0, 0, .05)),
     repeating-linear-gradient(0deg, rgba(0, 0, 0, .03) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(0, 0, 0, .03) 0 1px, transparent 1px 3px),
-    radial-gradient(60% 34% at 12% 100%, rgba(185, 215, 255, .6), rgba(185, 215, 255, 0) 70%),
-    radial-gradient(52% 30% at 88% 102%, rgba(170, 205, 255, .45), rgba(170, 205, 255, 0) 70%),
-    radial-gradient(45% 25% at 50% 104%, rgba(200, 225, 255, .26), rgba(200, 225, 255, 0) 75%),
-    radial-gradient(38% 22% at 72% 38%, rgba(6, 12, 90, .16), rgba(6, 12, 90, 0) 70%),
-    radial-gradient(30% 18% at 22% 30%, rgba(210, 230, 255, .08), rgba(210, 230, 255, 0) 70%),
-    linear-gradient(180deg, rgba(6, 12, 90, .22) 0%, rgba(6, 12, 90, 0) 30%),
-    radial-gradient(130% 100% at 50% 60%, rgba(0, 0, 0, 0) 55%, rgba(4, 8, 70, .3) 100%);
+    radial-gradient(60% 34% at 12% 100%, rgb(var(--light-rgb) / .6), rgb(var(--light-rgb) / 0) 70%),
+    radial-gradient(52% 30% at 88% 102%, rgb(var(--light-rgb) / .45), rgb(var(--light-rgb) / 0) 70%),
+    radial-gradient(45% 25% at 50% 104%, rgb(var(--light-rgb) / .26), rgb(var(--light-rgb) / 0) 75%),
+    radial-gradient(38% 22% at 72% 38%, rgb(var(--shade-rgb) / .16), rgb(var(--shade-rgb) / 0) 70%),
+    radial-gradient(30% 18% at 22% 30%, rgb(var(--light-rgb) / .08), rgb(var(--light-rgb) / 0) 70%),
+    linear-gradient(180deg, rgb(var(--shade-rgb) / .22) 0%, rgb(var(--shade-rgb) / 0) 30%),
+    radial-gradient(130% 100% at 50% 60%, rgba(0, 0, 0, 0) 55%, rgb(var(--shade-rgb) / .3) 100%);
   /* depth: it sits deep in its bezel, the inner shadow heaviest at the top right */
   box-shadow: inset 0 6px 16px rgba(0, 0, 0, .36), inset -8px 8px 18px rgba(0, 0, 0, .2), inset 0 0 0 1px rgba(255, 255, 255, .1), 0 1px 0 rgba(255, 255, 255, .07);
 }
@@ -46,15 +48,15 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
    veil, clearest at the top right, a smaller one low on the left, a faint band down the right edge; it never takes a
    touch, and the sheets open above it) */
 .m::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 5;
-  background: radial-gradient(34% 17% at 76% 24%, rgba(34, 56, 230, .42), rgba(34, 56, 230, 0) 100%),
-    radial-gradient(22% 12% at 16% 66%, rgba(34, 56, 230, .38), rgba(34, 56, 230, 0) 100%),
-    radial-gradient(14% 9% at 58% 83%, rgba(34, 56, 230, .3), rgba(34, 56, 230, 0) 100%),
-    linear-gradient(90deg, rgba(34, 56, 230, 0) 88%, rgba(34, 56, 230, .22) 97%, rgba(34, 56, 230, .1)); }
+  background: radial-gradient(34% 17% at 76% 24%, rgb(var(--panel-rgb) / .42), rgb(var(--panel-rgb) / 0) 100%),
+    radial-gradient(22% 12% at 16% 66%, rgb(var(--panel-rgb) / .38), rgb(var(--panel-rgb) / 0) 100%),
+    radial-gradient(14% 9% at 58% 83%, rgb(var(--panel-rgb) / .3), rgb(var(--panel-rgb) / 0) 100%),
+    linear-gradient(90deg, rgb(var(--panel-rgb) / 0) 88%, rgb(var(--panel-rgb) / .22) 97%, rgb(var(--panel-rgb) / .1)); }
 /* the lit pixels' glow, a little stronger toward the top right, where the light gathers
    (--d, set per control by mDepth in ui.js: 1 at the bottom left, about 1.7 at the top right) */
-.m, .m button, .m-title, .m .m-flab, .m .m-vf output { --d: 1; text-shadow: 0 0 calc(2.5px * var(--d)) rgba(205, 220, 255, calc(.38 + .1 * var(--d))); }
-.m .m-vtrack i, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-gr i b { filter: drop-shadow(calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgba(4, 10, 80, .17)); }
-.m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-seq-len { box-shadow: calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgba(4, 10, 80, .14); }
+.m, .m button, .m-title, .m .m-flab, .m .m-vf output { --d: 1; text-shadow: 0 0 calc(2.5px * var(--d)) rgb(var(--ink-rgb) / calc(var(--glow, 1) * (.38 + .1 * var(--d)))); }
+.m .m-vtrack i, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-gr i b { filter: drop-shadow(calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgb(var(--shade-rgb) / .17)); }
+.m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-seq-len { box-shadow: calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgb(var(--shade-rgb) / .14); }
 .m .m-tabs button:not([aria-selected="true"]) { box-shadow: none; }
 
 /* cards: the sheets are glass of their own; the sections inside the screen are bare */
@@ -270,12 +272,15 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 #m-comp.off { opacity: .4; }
 
 /* ---- prst: save at the top, the list between (it scrolls), the file buttons and credits at the foot ---- */
-.m-presets-card { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto auto; gap: 6px; min-height: 0; padding: 8px 2px; }
+.m-presets-card { display: grid; grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto; gap: 6px; min-height: 0; padding: 8px 2px; }
 /* save new, and save over the loaded preset */
 .m-psaves { display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; }
 .m-psaves .m-btn { min-height: 56px; font-size: var(--fs-xs) !important; padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* a passing note under them, taking no room while empty */
 .m-note { margin: 0; min-height: 1.2em; font-size: var(--fs-s); color: var(--muted); }
+.m-lcd { display: grid; grid-template-columns: 5.5em repeat(5, minmax(0, 1fr)); gap: 6px; align-items: center; text-transform: uppercase; font-size: var(--fs-xs); }
+.m .m-lcd .m-btn { min-height: 38px; padding: 0 2px; font-size: min(var(--fs-xs), 16px) !important; }
+.m .m-lcd .m-btn[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
 .m-presets-card .m-note:empty { min-height: 0; height: 0; margin-top: -6px; }
 .m-plist { list-style: none; margin: 4px 0 0; padding: 4px 0 0; display: grid; gap: 4px; align-content: start; min-height: 0;
   overflow-y: auto; overscroll-behavior: contain; border-top: var(--rule); touch-action: pan-y; }

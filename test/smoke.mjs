@@ -171,6 +171,12 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   await pg.click('[data-m-tab="presets"]');
   await pg.click('.m-pload >> text=Acid Line');
   await pg.waitForTimeout(1500);
+  // the screen's colours: five LCD looks on the presets page; amber turns the screen amber and is kept
+  await pg.click('[data-m-tab="presets"]');
+  await pg.click('#m-lcd [data-lcd="2"]');
+  check(await pg.evaluate(() => document.querySelectorAll('#m-lcd [data-lcd]').length === 5 && getComputedStyle($('m')).backgroundColor === 'rgb(42, 19, 0)'
+    && localStorage.getItem('elixir-synth-lcd') === 'amber'), 'an LCD look changes the screen colours and is kept');
+  await pg.click('#m-lcd [data-lcd="0"]');
   check(await pg.evaluate(() => tempo === 128 && seq.root === 9), 'a built-in preset loads (at the next bar)');
   await pg.click('#m-psave');
   check(await pg.evaluate(() => JSON.parse(localStorage.getItem('elixir-synth-presets')).length === 1), 'save new keeps a preset in its own storage');
