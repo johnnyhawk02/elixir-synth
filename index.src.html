@@ -25,18 +25,7 @@
       <button class="m-rec" id="m-rec" type="button" aria-pressed="false" aria-label="Record"><i></i><span id="m-rec-t">rec</span></button>
     </div>
   </header>
-  <section class="m-card m-rand-card" aria-label="randomise">
-    <div class="m-rand">
-      <label class="m-chk m-nextbar"><input id="m-nextbar" type="checkbox"><i aria-hidden="true"></i>next bar</label>
-      <button class="m-btn m-big" id="m-everything" type="button">everything</button>
-      <button class="m-btn" id="m-sound" type="button">sound</button>
-      <button class="m-btn" id="m-alter" type="button">alter</button>
-      <button class="m-btn" id="m-pattern" type="button">notes</button>
-      <button class="m-btn" id="m-fxr" type="button">random fx</button>
-      <button class="m-btn" id="m-fxa" type="button">alter fx</button>
-      <button class="m-btn" data-undo type="button" disabled>undo</button>
-    </div>
-  </section>
+  <button class="m-btn m-rnd-open" id="m-rnd-open" type="button" aria-haspopup="dialog" aria-expanded="false">randomise</button>
 
   <div class="m-side" id="m-side" aria-label="perform">
     <section class="m-card m-play-card"><div class="m-faders m-dials" id="m-perf"></div></section>
@@ -125,6 +114,22 @@
       <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v@VER@, @BUILT@</footer>
     </section>
   </div>
+  </div>
+
+  <div class="m-seq m-rnd" id="m-rnd" hidden>
+    <section class="m-card m-rand-card" role="dialog" aria-label="randomise">
+      <div class="m-chead"><b>randomise</b><label class="m-chk m-nextbar"><input id="m-nextbar" type="checkbox"><i aria-hidden="true"></i>next bar</label></div>
+      <div class="m-rand">
+        <button class="m-btn m-big" id="m-everything" type="button">everything</button>
+        <button class="m-btn" id="m-sound" type="button">sound</button>
+        <button class="m-btn" id="m-alter" type="button">alter</button>
+        <button class="m-btn" id="m-pattern" type="button">notes</button>
+        <button class="m-btn" id="m-fxr" type="button">random fx</button>
+        <button class="m-btn" id="m-fxa" type="button">alter fx</button>
+        <button class="m-btn" data-undo type="button" disabled>undo</button>
+        <button class="m-btn" id="m-rnd-close" type="button">done</button>
+      </div>
+    </section>
   </div>
 
   <div class="m-seq" id="m-fs" hidden>

@@ -21,7 +21,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
   --rule: 1px solid rgba(225, 235, 255, .38);
   position: absolute; left: 50%; top: 50%; width: 1000px; height: 600px; transform: translate(-50%, -50%) scale(var(--k, 1));
   display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: 124px auto minmax(0, 1fr);
-  grid-template-areas: "top dials" "side tabs" "side pages"; column-gap: 16px; padding: 8px 12px 10px;
+  grid-template-areas: "top dials" "rnd tabs" "pages pages"; column-gap: 16px; padding: 8px 12px 10px;
   font-family: var(--body); color: var(--ink);
   touch-action: manipulation; -webkit-user-select: none; user-select: none;
   -webkit-touch-callout: none; /* a long hold mustn't bring up the phone's own menus */
@@ -72,7 +72,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-toggle { min-width: 64px; min-height: 36px; font-size: var(--fs-s) !important; }
 .m .m-btn, .m .m-rec, .m .m-toggle, .m .m-pload, .m-tabs button {
   background: transparent !important; border: 2px solid var(--ink); border-radius: 3px; font-weight: 400; text-transform: uppercase; letter-spacing: .06em; }
-.m .m-btn:active, .m .m-big, .m .m-play, .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"], .m .m-plist li.cur .m-pload, .m .m-rec.on {
+.m .m-btn:active, .m .m-big, .m .m-play, .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"], .m .m-plist li.cur .m-pload, .m .m-rec.on, .m .m-rnd-open[aria-expanded="true"] {
   background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
 .m .m-big:active, .m .m-play:active { transform: none; background: transparent !important; color: var(--ink) !important; }
 .m .m-btn:disabled { opacity: .3; }
@@ -184,18 +184,22 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-side { grid-area: dials; display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; overflow: hidden; border-bottom: var(--rule); }
 .m-play-card { display: grid; min-height: 0; padding: 6px 0 4px; }
 #m-perf { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 2px; min-height: 0; }
-/* the randomise column: next bar and the seven buttons, down the left */
-.m > .m-card.m-rand-card { grid-area: side; display: grid; min-height: 0; min-width: 0; padding: 10px 0 0; }
-.m-rand { display: grid; grid-template-columns: 1fr; grid-template-rows: auto repeat(7, minmax(0, 1fr)); gap: 8px; min-width: 0; min-height: 0; }
-.m-rand .m-btn { min-height: 0; min-width: 0; padding: 0 2px; letter-spacing: .02em; overflow: hidden; }
-.m .m-rand .m-btn { font-size: min(var(--fs-xs), 15.2px) !important; white-space: nowrap; }
-.m-nextbar { gap: 5px; font-size: min(var(--fs-xs), 14.8px); white-space: nowrap; justify-content: flex-start; padding-left: 2px; min-height: 30px; min-width: 0; }
+/* the randomise button, left of the page buttons, and its popup: next bar, then the seven buttons and done, four across */
+.m .m-rnd-open { grid-area: rnd; align-self: center; min-height: 40px; margin: 8px 0 6px; font-size: var(--fs-s) !important; letter-spacing: .06em; }
+.m-seq.m-rnd { top: 196px; bottom: auto; height: 250px; }
+.m-rnd .m-rand-card { width: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; pointer-events: auto;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, .5), inset 0 3px 10px rgba(0, 0, 0, .28); }
+.m-rnd .m-chead { gap: 16px; text-transform: uppercase; }
+.m-rand { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 10px; min-width: 0; min-height: 0; }
+.m-rand .m-btn { min-height: 0; min-width: 0; padding: 0 2px; letter-spacing: .04em; overflow: hidden; }
+.m .m-rand .m-btn { font-size: var(--fs-m) !important; white-space: nowrap; }
+.m-nextbar { gap: 8px; font-size: var(--fs-s); white-space: nowrap; justify-content: flex-start; min-height: 30px; min-width: 0; }
 .m-nextbar i { width: 18px; height: 18px; }
 /* next bar: a button waiting for the bar flashes */
 .m .m-btn.pending { animation: m-flash .5s steps(1) infinite; }
 @media (prefers-reduced-motion: reduce) { .m .m-btn.pending { animation: none; outline: 2px dashed var(--ink); outline-offset: 2px; } }
 
-/* ---- seq: what a touch sets, the sixteen steps in two rows, then root, scale, accent, glide and the buttons ---- */
+/* ---- seq: what a touch sets, the sixteen steps in one line, then root, scale, accent, glide and the buttons ---- */
 .m-seqpage { display: grid; grid-template-rows: auto auto minmax(0, 1fr) minmax(120px, 34%); gap: 8px; min-height: 0; padding: 6px 2px; }
 .m-modes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
 .m .m-modes .m-btn { min-height: 44px; padding: 0 2px; font-size: min(var(--fs-xs), 16px) !important; letter-spacing: .02em; }
@@ -206,7 +210,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m .m-npages .m-btn[aria-selected="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
 .m .m-npages .m-btn.now { box-shadow: inset 0 -5px 0 var(--ink); }
 .m .m-npages .m-btn.now[aria-selected="true"] { box-shadow: inset 0 -5px 0 var(--panel); }
-.m-steps { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 8px 4px; min-height: 0; touch-action: none; }
+.m-steps { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; touch-action: none; }
 /* a step: its note on top, a bar for its note (or gate) filling from the bottom, A and S lit when accented or sliding */
 .m-step { --f: 0; position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 2px; min-height: 0; padding: 3px 2px; border: 2px solid var(--ink); border-radius: 2px; }
 .m-step:nth-child(4n+1) { box-shadow: inset 3px 0 0 var(--tint-2); }
@@ -309,7 +313,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 /* ---- the fader step sequencer: a sheet over the pages, leaving perf, play and record beside it free; sixteen
    step bars in two rows (the ones past the length faint), length, slew, speed and depth as horizontal segmented bars,
    then randomise and done ---- */
-.m-seq { position: absolute; left: 424px; right: 8px; top: 60px; bottom: 8px; z-index: 10; pointer-events: none; display: flex; align-items: stretch; justify-content: center; }
+.m-seq { position: absolute; left: 8px; right: 8px; top: 136px; bottom: 8px; z-index: 10; pointer-events: none; display: flex; align-items: stretch; justify-content: center; }
 .m-seq[hidden] { display: none; }
 .m-seq-card { width: 100%; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto auto auto auto; gap: 12px;
   pointer-events: auto; box-shadow: 0 -8px 30px rgba(0, 0, 0, .5), inset 0 3px 10px rgba(0, 0, 0, .28); }

@@ -373,6 +373,13 @@ $('m-pattern').addEventListener('click', (e) => mRandomise(e.currentTarget, rand
 for (const id of ['m-fxr', 'm-fxr2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomFx));
 for (const id of ['m-fxa', 'm-fxa2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterFx()));
 
+// the randomise popup: opens over the pages and stays open while its buttons are used (next bar's pending flash shows
+// there); done, the opener again, or Escape closes it
+function mRnd(on) { $('m-rnd').hidden = !on; $('m-rnd-open').setAttribute('aria-expanded', on); $('m-rnd-open').classList.toggle('on', on); if (on) mDepth(); }
+$('m-rnd-open').addEventListener('click', () => mRnd($('m-rnd').hidden));
+$('m-rnd-close').addEventListener('click', () => mRnd(false));
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('m-rnd').hidden) mRnd(false); });
+
 // ---- the glass isn't flat: each control's ink shadow deepens a little toward the top right of the screen (--d, used
 // by the CSS), worked out from where it sits on its own page, and again when the screen's size changes ----
 function mDepth() {

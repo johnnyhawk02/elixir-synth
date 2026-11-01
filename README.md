@@ -19,7 +19,7 @@ Perf is on show all the time. The other pages share the space under its dials: t
 them. The space bar starts and stops. Dragging a fader, a dial, the x/y pad or the steps never turns the page. Play and
 record sit under the title at the top left.
 
-- **PERF** (always on show): eight dials in a line along the top right, and the randomise column down the left: everything, sound, alter, notes, random fx, alter fx, undo, and
+- **PERF** (always on show): eight dials in a line along the top right, and the randomise button, which opens a popup of everything, sound, alter, notes, random fx, alter fx, undo, and
   *next bar* (while playing, a randomise waits for the next bar). Drag a dial up or down to turn it. A MIDI controller
   turns them too: CC 1 to 8, on any channel, left to right:
 

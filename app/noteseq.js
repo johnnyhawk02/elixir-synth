@@ -1,6 +1,6 @@
 // ---- the seq page: the note sequencer. Four pages of sixteen steps, played in turn a bar each; the page tabs pick
 // the page shown (the one playing is underlined), and copy makes pages 2 to 4 slight variations of page 1. A page's
-// steps sit in two rows of eight; the strip over them picks what a touch sets: note (the step's height is its note in the scale; a resting step comes on), gate (bottom rests, top rings),
+// steps sit in one line of sixteen; the strip over them picks what a touch sets: note (the step's height is its note in the scale; a resting step comes on), gate (bottom rests, top rings),
 // accent or slide (tap, or drag across, to switch). Under them: root, scale, accent and glide, and random, alter, undo ----
 let nsMode = 'note', nsPage = 0;
 const nsStep = (i) => seq.steps[nsPage * 16 + i];
@@ -32,9 +32,8 @@ function nsHear(st) { if (!playing && st.gate) { startAudio(); send({ type: 'not
   let paint = null;
   const cellAt = (e) => {
     const r = box.getBoundingClientRect();
-    const col = Math.max(0, Math.min(7, Math.floor((e.clientX - r.left) / r.width * 8)));
-    const row = Math.max(0, Math.min(1, Math.floor((e.clientY - r.top) / r.height * 2)));
-    return row * 8 + col;
+    // the sixteen steps in one line
+    return Math.max(0, Math.min(15, Math.floor((e.clientX - r.left) / r.width * 16)));
   };
   const at = (e, first) => {
     const i = cellAt(e), st = nsStep(i), c = nsCells[i], cr = c.getBoundingClientRect();

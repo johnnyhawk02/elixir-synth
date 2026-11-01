@@ -32,10 +32,18 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(Math.abs(sr.width / sr.height - 5 / 3) < 0.01 && sr.x >= -0.5 && sr.y >= -0.5 && sr.x + sr.width <= w + 0.5 && sr.y + sr.height <= h + 0.5
     && (Math.abs(sr.width - w) < 1 || Math.abs(sr.height - h) < 1), `the screen is 5:3 and fits the window (${Math.round(sr.width)} x ${Math.round(sr.height)})`);
   check(await pg.evaluate(() => { const p = $('m-side'); return p.scrollHeight <= p.clientHeight && p.scrollWidth <= p.clientWidth; }), 'perf fits beside the pages');
-  // the eight perf dials in one line along the top right, over the page buttons; the randomise column down the left, each button whole
+  // the eight perf dials in one line along the top, over the page buttons; the sixteen note steps in one line
   check(await pg.evaluate(() => { const r = [...document.querySelectorAll('#m-perf .m-dial')].map((e) => e.getBoundingClientRect()), t = document.querySelector('.m-tabs').getBoundingClientRect();
-    return r.length === 8 && r.every((b) => Math.abs(b.top - r[0].top) < 1 && b.bottom <= t.top && b.left >= t.left - 1)
-      && [...document.querySelectorAll('.m-rand > *')].every((e) => e.getBoundingClientRect().right <= t.left && e.scrollWidth <= e.clientWidth); }), 'the dials are one line along the top, the randomisers down the left');
+    const s = [...document.querySelectorAll('.m-step')].map((e) => e.getBoundingClientRect());
+    return r.length === 8 && r.every((b) => Math.abs(b.top - r[0].top) < 1 && b.bottom <= t.top) && s.length === 16 && s.every((b) => Math.abs(b.top - s[0].top) < 1); }), 'the dials and the steps are one line each');
+  // the randomisers: a popup, opened and closed by its button (and done), each button whole
+  check(await pg.evaluate(() => $('m-rnd').hidden), 'the randomise popup starts closed');
+  await pg.click('#m-rnd-open');
+  check(await pg.evaluate(() => !$('m-rnd').hidden && [...document.querySelectorAll('.m-rand .m-btn')].every((e) => e.getBoundingClientRect().width > 0 && e.scrollWidth <= e.clientWidth)), 'the randomise button opens the popup');
+  await pg.click('#m-sound');
+  check(await pg.evaluate(() => !$('m-rnd').hidden) && await pg.isEnabled('#m-fxa ~ [data-undo]'), 'a randomiser works from the popup, which stays open');
+  await pg.click('#m-rnd-close');
+  check(await pg.evaluate(() => $('m-rnd').hidden), 'done closes the popup');
   // no page scrolls; every panel fits
   for (const t of ['seq', 'voice', 'xy', 'fx', 'comp', 'presets']) {
     await pg.click(`[data-m-tab="${t}"]`);
