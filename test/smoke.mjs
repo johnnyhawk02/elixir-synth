@@ -60,7 +60,7 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
     const [a, b] = [...t.querySelectorAll('.m-vpart')].map((e) => e.getBoundingClientRect()); return !b || (Math.abs(a.top - b.top) < 1 && a.right <= b.left + 1); })
     && [...document.querySelectorAll('.m-vset')].length === 4), 'voice: two tabs of two sections side by side');
   // the voice's randomisers, down the right of the voice page: a section's button changes only that section and shows its tab
-  check(await pg.evaluate(() => { const v = document.querySelector('.m-vbtns').getBoundingClientRect(), s = $('m-vsets').getBoundingClientRect(); return v.left >= s.right; }), 'voice: the randomisers sit on the right');
+  check(await pg.evaluate(() => { const v = document.querySelector('.m-voice-card .m-vbtns').getBoundingClientRect(), s = $('m-vsets').getBoundingClientRect(); return v.left >= s.right; }), 'voice: the randomisers sit on the right');
   {
     const snap = () => pg.evaluate(() => Object.fromEntries(DR1.map((n) => [n, values[PAR[n]]])));
     const was = await snap();
@@ -72,6 +72,9 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
     check(JSON.stringify(await snap()) === JSON.stringify(was), 'voice: undo puts it back');
     await pg.click('#m-vsec .m-btn >> nth=0');
   }
+  // the seq page's random, alter and undo: a column down the right, as on the voice and fx pages
+  await pg.click('[data-m-tab="seq"]');
+  check(await pg.evaluate(() => { const c = document.querySelector('.m-seqpage > .m-vbtns').getBoundingClientRect(); return ['.m-npages', '#m-steps', '.m-seqlow'].every((q) => document.querySelector(q).getBoundingClientRect().right <= c.left); }), 'seq: random, alter and undo sit on the right');
   // the fx page's randomisers, down its right: one effect's button changes only that effect; undo puts it back
   await pg.click('[data-m-tab="fx"]');
   {

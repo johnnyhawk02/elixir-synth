@@ -214,7 +214,10 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 @media (prefers-reduced-motion: reduce) { .m .m-btn.pending { animation: none; outline: 2px dashed var(--ink); outline-offset: 2px; } }
 
 /* ---- seq: what a touch sets, the sixteen steps in one line, then root, scale, accent, glide and the buttons ---- */
-.m-seqpage { display: grid; grid-template-rows: auto minmax(0, 1.6fr) minmax(0, 0.9fr) 134px; gap: 8px; min-height: 0; padding: 6px 2px; }
+.m-seqpage { display: grid; grid-template-rows: auto minmax(0, 1.6fr) minmax(0, 0.9fr) 134px; grid-template-columns: minmax(0, 1fr) 118px; gap: 8px 10px; min-height: 0; padding: 6px 2px; }
+.m-seqpage > * { grid-column: 1; }
+/* random, alter and undo: a column down the right, as on the voice and fx pages */
+.m-seqpage > .m-seqbtns { grid-column: 2; grid-row: 1 / -1; grid-template-rows: 80px; grid-auto-rows: 52px; align-content: start; }
 /* the pages: four tabs (the one playing underlined) and the copy button */
 .m-npages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.4fr) minmax(0, 1.6fr) minmax(0, 2.6fr); gap: 4px; }
 .m .m-npages .m-btn[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
@@ -249,11 +252,10 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m .m-npages .m-btn.out { opacity: .45; }
 .m-step.thin .m-sn, .m-step.thin .m-sbar { opacity: .35; }
 .m-sm b:hover { background: var(--tint-2); }
-.m-seqlow { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; min-height: 0; border-top: var(--rule); padding-top: 6px; }
+.m-seqlow { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-height: 0; border-top: var(--rule); padding-top: 6px; }
 .m-seqf { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
-.m-seqbtns { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 6px; min-height: 0; }
 .m-nalgo { display: block; margin-top: 4px; font-size: .85em; letter-spacing: 0; opacity: .8; }
-.m .m-seqbtns .m-btn { flex-direction: column; min-height: 0; font-size: min(var(--fs-xs), 15.6px) !important; padding: 0 2px; }
+.m .m-seqbtns .m-btn { flex-direction: column; }
 
 /* ---- voice: two tabs (tone + shape, filter + mod), each two sections side by side, two rows of faders in each ---- */
 .m-voice-card { display: grid; grid-template-rows: auto minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) 118px; gap: 10px 10px; min-height: 0; padding: 10px 2px; }
@@ -382,7 +384,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v31</small></button>
+    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v44</small></button>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
     <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
   </header>
@@ -408,11 +410,11 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
       <div class="m-steps m-gates" id="m-morphs" role="grid" aria-label="the sixteen steps' morph values" hidden></div>
       <div class="m-seqlow">
         <div class="m-faders m-seqf" id="m-seqf"></div>
-        <div class="m-seqbtns">
-          <button class="m-btn m-big" id="m-nrand" type="button">random<small class="m-nalgo" id="m-nalgo"></small></button>
-          <button class="m-btn" id="m-nalter" type="button">alter</button>
-          <button class="m-btn" data-undo type="button" disabled>undo</button>
-        </div>
+      </div>
+      <div class="m-vbtns m-seqbtns" role="group" aria-label="randomise the notes">
+        <button class="m-btn m-big" id="m-nrand" type="button">random<small class="m-nalgo" id="m-nalgo"></small></button>
+        <button class="m-btn" id="m-nalter" type="button">alter</button>
+        <button class="m-btn" data-undo type="button" disabled>undo</button>
       </div>
     </section>
   </div>
@@ -490,7 +492,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
       <div class="m-prefs-body">
         <div class="m-lcd" id="m-lcd" role="group" aria-label="screen colours"><span>screen</span></div>
         <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
-        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v31, 1 Nov, 13:56</footer>
+        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v44, 1 Nov, 14:02</footer>
       </div>
     </section>
   </div>
