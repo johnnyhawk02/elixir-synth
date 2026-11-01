@@ -124,8 +124,15 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(await pg.evaluate(() => { seq.density = 50; const t = thinned(), on = seq.steps.slice(0, 16).filter((x) => x.gate).length;
     const kept = seq.steps.slice(0, 16).filter((x, i) => x.gate && !t[i]).length; const ok = kept === Math.round(on / 2) && (!seq.steps[0].gate || !t[0]);
     seq.density = 100; return ok && !thinned().some(Boolean); }), 'density thins the playing steps, off-beats first');
+  // copy, on page 2: 'copy to 3' puts page 2 onto page 3 exactly and shows page 3; on page 4 it's off
+  check(await pg.textContent('#m-ncopy') === 'copy to 3', 'on page 2 the copy button says copy to 3');
   await pg.click('#m-ncopy');
-  check(await pg.evaluate(() => { const k = [1, 2, 3].map((p) => seq.steps.slice(p * 16, p * 16 + 16).filter((st, i) => JSON.stringify(st) !== JSON.stringify(seq.steps[i])).length); return k.every((n) => n <= 5) && k.some((n) => n > 0); }), 'copy: pages 2 to 4 are page 1, slightly varied');
+  check(await pg.evaluate(() => nsPage === 2 && JSON.stringify(seq.steps.slice(32, 48)) === JSON.stringify(seq.steps.slice(16, 32))), 'copy puts the page onto the next and shows it');
+  const p4 = await pg.evaluate(() => JSON.stringify(seq.steps.slice(48, 64)));
+  await pg.click('#m-ncopy');
+  check(await pg.evaluate(() => nsPage === 3 && $('m-ncopy').disabled && $('m-ncopy').textContent === 'copy to 4'), 'on page 4 copy is off');
+  await pg.click('[data-undo]');
+  check(await pg.evaluate((p4) => JSON.stringify(seq.steps.slice(48, 64)) === p4, p4), 'copy can be undone');
   // every algorithm makes a valid page
   check(await pg.evaluate(() => SEQ_ALGOS.every((_, a) => { seq.algo = a; for (let k = 0; k < 100; k++) { randomPage(1); const p = seq.steps.slice(16, 32);
     if (p.some((x) => !(x.d >= 0 && x.d <= degMax() && x.gate >= 0 && x.gate <= 5)) || !p.some((x) => x.gate)) return false; } return true; })), 'all eight algorithms make valid pages');

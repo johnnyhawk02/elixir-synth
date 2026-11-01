@@ -1,5 +1,5 @@
 // ---- the seq page: the note sequencer. Four pages of sixteen steps, played in turn a bar each; the page tabs pick
-// the page shown (the one playing is underlined), and copy makes pages 2 to 4 slight variations of page 1; oct - and
+// the page shown (the one playing is underlined), and copy puts the page shown onto the next one; oct - and
 // oct + move the whole sequence an octave. A page's steps sit in one line of sixteen: a step's height is its note,
 // two octaves of the scale (a touch on a resting step brings it on), and the A and S under it switch its accent and
 // slide (tap, or drag along the row). Under the notes, a lane of the steps' gate times: bottom rests, then a quarter
@@ -32,6 +32,7 @@ function nsDraw() {
     g.setAttribute('aria-label', `step ${i + 1} gate: ${GATE_NAMES[st.gate]}`);
   });
   document.querySelectorAll('#m-npages [data-page]').forEach((b) => b.setAttribute('aria-selected', +b.dataset.page === nsPage));
+  $('m-ncopy').textContent = `copy to ${Math.min(nsPage + 2, PAGES)}`; $('m-ncopy').disabled = nsPage >= PAGES - 1;
   $('m-noct-out').textContent = seq.oct > 0 ? `+${seq.oct}` : String(seq.oct);
   $('m-noct-dn').disabled = seq.oct <= OCT_MIN; $('m-noct-up').disabled = seq.oct >= OCT_MAX;
 }
@@ -207,7 +208,14 @@ function copyVary() {
 function randomNotes() { randomPage(0); copyVary(); sendSeq(); }
 $('m-nrand').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { randomPage(nsPage); sendSeq(); }));
 $('m-nalter').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { alterPage(nsPage); sendSeq(); }));
-$('m-ncopy').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { copyVary(); sendSeq(); }));
+// copy to the next page: the page shown, exactly, onto the one after it, which is then shown (so pressing it again
+// carries on to the next); off on page 4. Undo puts the page back as it was
+$('m-ncopy').addEventListener('click', (e) => {
+  if (nsPage >= PAGES - 1) return;
+  const from = nsPage;
+  mRandomise(e.currentTarget, () => { for (let i = 0; i < 16; i++) seq.steps[(from + 1) * 16 + i] = { ...seq.steps[from * 16 + i] }; sendSeq(); });
+  nsPage = from + 1; nsDraw(); nsNow();
+});
 // the algorithm random uses: its number on the fader, its name on the random button
 mFader($('m-seqf'), 'algo', { min: 0, max: SEQ_ALGOS.length - 1, get: () => seq.algo, set: (v) => { seq.algo = v; drawAll(); }, show: (v) => String(v + 1), dflt: 0 });
 drawHooks.push(() => { $('m-nalgo').textContent = `${seq.algo + 1} ${SEQ_ALGOS[seq.algo][0]}`; });
