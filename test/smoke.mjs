@@ -1,7 +1,7 @@
 // Drives the built page in Chromium at three window sizes (the 1000 x 600 layout itself, a wide window and a small one, where
 // it scales to fit): no errors, the screen keeps its 5:3 shape inside the window, no page scrolls but the presets list,
 // swipes and page buttons turn the page, fader and pad drags don't, holding a fader opens
-// its sequencer, MIDI CC 1-12 turn the perf dials, the reverb sends, the note grid edits steps on four pages and copies
+// its sequencer, MIDI CC 1-8 turn the perf dials, the reverb sends, the note grid edits steps on four pages and copies
 // page 1 to the others, space plays and stops, play runs the steps, presets save and load, and record downloads a WAV.
 //   node test/smoke.mjs [index.html]   (needs Playwright)
 import { createRequire } from 'node:module';
@@ -32,10 +32,10 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(Math.abs(sr.width / sr.height - 5 / 3) < 0.01 && sr.x >= -0.5 && sr.y >= -0.5 && sr.x + sr.width <= w + 0.5 && sr.y + sr.height <= h + 0.5
     && (Math.abs(sr.width - w) < 1 || Math.abs(sr.height - h) < 1), `the screen is 5:3 and fits the window (${Math.round(sr.width)} x ${Math.round(sr.height)})`);
   check(await pg.evaluate(() => { const p = $('m-side'); return p.scrollHeight <= p.clientHeight && p.scrollWidth <= p.clientWidth; }), 'perf fits beside the pages');
-  // the randomise row: next bar and seven buttons in one line along the top, right of the title line, each one whole
-  check(await pg.evaluate(() => { const r = [...document.querySelectorAll('.m-rand > *')].map((e) => e.getBoundingClientRect()), t = document.querySelector('.m-tabs').getBoundingClientRect();
-    return r.length === 8 && r.every((b) => Math.abs(b.top - r[0].top) < 1 && b.bottom <= t.top && b.left >= $('m-side').getBoundingClientRect().right)
-      && [...document.querySelectorAll('.m-rand .m-btn')].every((e) => e.scrollWidth <= e.clientWidth); }), 'the randomise row is one line along the top');
+  // the eight perf dials in one line along the top right, over the page buttons; the randomise column down the left, each button whole
+  check(await pg.evaluate(() => { const r = [...document.querySelectorAll('#m-perf .m-dial')].map((e) => e.getBoundingClientRect()), t = document.querySelector('.m-tabs').getBoundingClientRect();
+    return r.length === 8 && r.every((b) => Math.abs(b.top - r[0].top) < 1 && b.bottom <= t.top && b.left >= t.left - 1)
+      && [...document.querySelectorAll('.m-rand > *')].every((e) => e.getBoundingClientRect().right <= t.left && e.scrollWidth <= e.clientWidth); }), 'the dials are one line along the top, the randomisers down the left');
   // no page scrolls; every panel fits
   for (const t of ['seq', 'voice', 'xy', 'fx', 'comp', 'presets']) {
     await pg.click(`[data-m-tab="${t}"]`);
@@ -58,9 +58,9 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   const before = await pg.evaluate(() => macro.filter);
   await drag(r.x + r.width / 2, r.y + r.height / 2, r.x + r.width / 2 + sr.width * 0.3, r.y - r.height);
   check(await page() === 'seq' && await pg.evaluate(() => macro.filter) > before, 'a dial drag moves the dial, not the page');
-  // MIDI: CC 4 sends the filter dial to the top, CC 10 the reverb send to 50%, on any channel
-  await pg.evaluate(() => { window.__midiIn.onmidimessage({ data: [0xb0, 4, 127] }); window.__midiIn.onmidimessage({ data: [0xb3, 10, 64] }); });
-  check(await pg.evaluate(() => macro.filter === 200 && fx.verb === 50 && document.querySelectorAll('#m-perf .m-dial').length === 12), 'MIDI CC 4 and 10 turn the filter and reverb dials');
+  // MIDI: CC 4 sends the filter dial to the top, CC 8 the reverb send to 50%, on any channel
+  await pg.evaluate(() => { window.__midiIn.onmidimessage({ data: [0xb0, 4, 127] }); window.__midiIn.onmidimessage({ data: [0xb3, 8, 64] }); });
+  check(await pg.evaluate(() => macro.filter === 200 && fx.verb === 50 && document.querySelectorAll('#m-perf .m-dial').length === 8), 'MIDI CC 4 and 8 turn the filter and reverb dials');
   // the reverb: the FX page's reverb send is the same as the dial's
   await pg.click('[data-m-tab="fx"]');
   check(await pg.evaluate(() => document.querySelector('#m-verb .m-vtrack').getAttribute('aria-valuenow') === '50'), 'the fx page shows the reverb send');

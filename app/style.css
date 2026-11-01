@@ -20,8 +20,8 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
   --fs-xs: 1.12rem; --fs-s: 1.25rem; --fs-m: 1.3rem; --fs-l: 1.6rem;
   --rule: 1px solid rgba(225, 235, 255, .38);
   position: absolute; left: 50%; top: 50%; width: 1000px; height: 600px; transform: translate(-50%, -50%) scale(var(--k, 1));
-  display: grid; grid-template-columns: 400px minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr);
-  grid-template-areas: "top trans" "side tabs" "side pages"; column-gap: 16px; padding: 8px 12px 10px;
+  display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: 124px auto minmax(0, 1fr);
+  grid-template-areas: "top dials" "side tabs" "side pages"; column-gap: 16px; padding: 8px 12px 10px;
   font-family: var(--body); color: var(--ink);
   touch-action: manipulation; -webkit-user-select: none; user-select: none;
   -webkit-touch-callout: none; /* a long hold mustn't bring up the phone's own menus */
@@ -147,14 +147,14 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m .m-row .m-vtrack, .m .m-vset .m-vtrack, .m .m-seqf .m-vtrack { width: min(52px, 100%); flex: 1; height: auto; min-height: 12px; }
 
 /* ---- the frame: title line, transport, pages, page buttons ---- */
-.m-top { grid-area: top; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0 8px 4px; border-bottom: var(--rule); }
+.m-top { grid-area: top; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; padding: 10px 0 8px; border-bottom: var(--rule); }
 .m-title { font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
-.m-ver { margin-left: .5em; font-size: .7em; letter-spacing: .06em; text-transform: none; opacity: .7; }
+.m-ver { display: block; margin-top: 4px; font-size: .7em; letter-spacing: .06em; text-transform: none; opacity: .7; }
 /* (the page buttons show which page is open, so its name isn't needed on the title line) */
 .m-pagename { display: none; white-space: nowrap; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 
-/* play and rec, small, at the end of the title line (a plugin's host has its own transport) */
-.m-trans { display: grid; grid-template-columns: 84px 78px; gap: 6px; align-items: stretch; flex: none; }
+/* play and rec, under the title */
+.m-trans { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; align-items: stretch; flex: none; }
 .m-play { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 6px; background: var(--ink) !important;
   color: var(--panel) !important; font-weight: 400; text-transform: uppercase; }
 .m .m-play { border: 2px solid var(--ink); border-radius: 3px; letter-spacing: .1em; font-size: var(--fs-m) !important; }
@@ -180,16 +180,16 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-tabs button[aria-selected="true"] { border-color: var(--ink); }
 .m .m-tabs button { min-height: 40px; padding: 0; font-size: 1.3rem !important; letter-spacing: .04em; }
 
-/* ---- perf, always on show down the left: twelve dials, four across ---- */
-.m-side { grid-area: side; display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; overflow: hidden; padding-top: 6px; }
-.m-play-card { display: grid; min-height: 0; padding: 6px 2px; }
-#m-perf { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 4px 2px; min-height: 0; }
-/* the randomise row: next bar and the seven buttons in one line at the top right, over the page buttons */
-.m > .m-card.m-randrow { grid-area: trans; display: grid; min-width: 0; padding: 8px 0; border-bottom: var(--rule); }
-.m-rand { display: grid; grid-template-columns: 1.12fr 1.22fr repeat(6, minmax(0, 1fr)); gap: 4px; min-width: 0; }
-.m-rand .m-btn { min-height: 40px; min-width: 0; padding: 0 1px; letter-spacing: 0; overflow: hidden; }
+/* ---- perf, always on show: eight dials in a line along the top right, and the randomise column down the left ---- */
+.m-side { grid-area: dials; display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; overflow: hidden; border-bottom: var(--rule); }
+.m-play-card { display: grid; min-height: 0; padding: 6px 0 4px; }
+#m-perf { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 2px; min-height: 0; }
+/* the randomise column: next bar and the seven buttons, down the left */
+.m > .m-card.m-rand-card { grid-area: side; display: grid; min-height: 0; min-width: 0; padding: 10px 0 0; }
+.m-rand { display: grid; grid-template-columns: 1fr; grid-template-rows: auto repeat(7, minmax(0, 1fr)); gap: 8px; min-width: 0; min-height: 0; }
+.m-rand .m-btn { min-height: 0; min-width: 0; padding: 0 2px; letter-spacing: .02em; overflow: hidden; }
 .m .m-rand .m-btn { font-size: min(var(--fs-xs), 15.2px) !important; white-space: nowrap; }
-.m-nextbar { gap: 5px; font-size: min(var(--fs-xs), 14.8px); white-space: nowrap; justify-content: flex-start; padding-left: 0; min-height: 40px; min-width: 0; }
+.m-nextbar { gap: 5px; font-size: min(var(--fs-xs), 14.8px); white-space: nowrap; justify-content: flex-start; padding-left: 2px; min-height: 30px; min-width: 0; }
 .m-nextbar i { width: 18px; height: 18px; }
 /* next bar: a button waiting for the bar flashes */
 .m .m-btn.pending { animation: m-flash .5s steps(1) infinite; }

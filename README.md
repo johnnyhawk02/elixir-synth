@@ -15,20 +15,22 @@ Elixir Synth is unofficial: it is not made, approved or endorsed by Erica Synths
 The screen is landscape, 5:3, laid out once at 1000 x 600 and scaled as a whole to fit the window, with the case
 showing round it where the window is a different shape. That is how the plugin's window will resize.
 
-Perf sits down the left all the time. The other pages share the right: tap the page buttons over them, or swipe across
+Perf is on show all the time. The other pages share the space under its dials: tap the page buttons over them, or swipe across
 them. The space bar starts and stops. Dragging a fader, a dial, the x/y pad or the steps never turns the page. Play and
-record sit at the end of the title line, and the randomise buttons run in one line along the top right.
+record sit under the title at the top left.
 
-- **PERF** (always on show): twelve dials, and the randomise row along the top: everything, sound, alter, notes, random fx, alter fx, undo, and
+- **PERF** (always on show): eight dials in a line along the top right, and the randomise column down the left: everything, sound, alter, notes, random fx, alter fx, undo, and
   *next bar* (while playing, a randomise waits for the next bar). Drag a dial up or down to turn it. A MIDI controller
-  turns them too: CC 1 to 12, on any channel, in reading order:
+  turns them too: CC 1 to 8, on any channel, left to right:
 
-  | CC | dial | | CC | dial | | CC | dial |
-  |---|---|---|---|---|---|---|---|
-  | 1 | tempo | | 5 | reso | | 9 | echo feedback |
-  | 2 | pitch (two octaves either way) | | 6 | fm | | 10 | reverb send |
-  | 3 | decay | | 7 | drive | | 11 | reverb decay |
-  | 4 | filter | | 8 | echo send | | 12 | distortion mix |
+  | CC | dial | | CC | dial |
+  |---|---|---|---|---|
+  | 1 | tempo | | 5 | reso |
+  | 2 | pitch (two octaves either way) | | 6 | fm |
+  | 3 | decay | | 7 | echo send |
+  | 4 | filter | | 8 | reverb send |
+
+  Drive, echo feedback, reverb decay and the distortion mix are on the voice, fx and mstr pages.
 
   Chrome asks for MIDI access at the first touch.
 - **SEQ**: the note sequencer. Four pages of sixteen steps, played in turn a bar each; each step has a note, a gate
