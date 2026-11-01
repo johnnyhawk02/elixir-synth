@@ -147,34 +147,27 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m .m-row .m-vtrack, .m .m-vset .m-vtrack, .m .m-seqf .m-vtrack { width: min(52px, 100%); flex: 1; height: auto; min-height: 12px; }
 
 /* ---- the frame: title line, transport, pages, page buttons ---- */
-.m-top { grid-area: top; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 4px; border-bottom: var(--rule); }
+.m-top { grid-area: top; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0 8px 4px; border-bottom: var(--rule); }
 .m-title { font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 .m-ver { margin-left: .5em; font-size: .7em; letter-spacing: .06em; text-transform: none; opacity: .7; }
 /* (the page buttons show which page is open, so its name isn't needed on the title line) */
 .m-pagename { display: none; white-space: nowrap; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 
-/* play, rec, and the step light */
-.m-trans { grid-area: trans; padding: 8px 0; display: grid; grid-template-columns: 130px 110px minmax(0, 1fr); gap: 8px; align-items: stretch; }
-.m > .m-card.m-trans { border-bottom: var(--rule); }
-.m-play { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; background: var(--ink) !important;
+/* play and rec, small, at the end of the title line (a plugin's host has its own transport) */
+.m-trans { display: grid; grid-template-columns: 84px 78px; gap: 6px; align-items: stretch; flex: none; }
+.m-play { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 6px; background: var(--ink) !important;
   color: var(--panel) !important; font-weight: 400; text-transform: uppercase; }
 .m .m-play { border: 2px solid var(--ink); border-radius: 3px; letter-spacing: .1em; font-size: var(--fs-m) !important; }
-.m-play svg { width: 20px; height: 20px; fill: currentColor; }
+.m-play svg { width: 16px; height: 16px; fill: currentColor; }
 .m-play .i-stop, .m-play[aria-pressed="true"] .i-play { display: none; }
 .m-play[aria-pressed="true"] .i-stop { display: inline; }
-.m .m-rec { display: grid; grid-auto-flow: column; justify-content: center; place-items: center; align-content: center; gap: min(10px, 8.2px) !important; min-height: 46px; }
-.m-rec i { width: 16px; height: 16px; border-radius: 2px; background: var(--ink); }
+.m .m-rec { display: grid; grid-auto-flow: column; justify-content: center; place-items: center; align-content: center; gap: min(10px, 8.2px) !important; min-height: 40px; padding: 0 6px; }
+.m-rec i { width: 14px; height: 14px; border-radius: 2px; background: var(--ink); }
 .m-rec span { font-family: var(--mono); font-size: var(--fs-s); font-variant-numeric: tabular-nums; }
-.m-rec.on i { width: 16px; height: 16px; border-radius: 4px; background: var(--panel); animation: m-blink 1s steps(1) infinite; }
+.m-rec.on i { width: 14px; height: 14px; border-radius: 4px; background: var(--panel); animation: m-blink 1s steps(1) infinite; }
 @keyframes m-blink { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .m-rec.on i { animation: none; } }
 .m .m-rec:disabled { opacity: .35; }
-/* the step light: sixteen segments in a row, the step playing lit */
-.m-steps-led { display: grid; grid-template-columns: repeat(16, 1fr); gap: 3px; padding: 10px 0 10px 8px; }
-.m-steps-led i { background: var(--ghost); border-radius: 1px; }
-.m-steps-led i:nth-child(4n+1) { box-shadow: inset 0 -3px 0 var(--tint-2); }
-.m-steps-led i.on { background: var(--ink); }
-
 /* the pages sit side by side on the right; swipe across them or tap a page button. Each page is one screen, no scrolling */
 .m-pages { grid-area: pages; display: grid; grid-auto-flow: column; grid-auto-columns: 100%; column-gap: 16px; min-height: 0; padding-top: 6px; overflow: hidden;
   overscroll-behavior-x: contain; scrollbar-width: none; touch-action: none; }
@@ -187,15 +180,16 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-tabs button[aria-selected="true"] { border-color: var(--ink); }
 .m .m-tabs button { min-height: 40px; padding: 0; font-size: 1.3rem !important; letter-spacing: .04em; }
 
-/* ---- perf, always on show down the left: twelve dials, four across, and the randomise column beside them ---- */
-.m-side { grid-area: side; display: grid; grid-template-columns: minmax(0, 1fr) 104px; gap: 8px; min-height: 0; overflow: hidden; padding-top: 6px; }
+/* ---- perf, always on show down the left: twelve dials, four across ---- */
+.m-side { grid-area: side; display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; overflow: hidden; padding-top: 6px; }
 .m-play-card { display: grid; min-height: 0; padding: 6px 2px; }
 #m-perf { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 4px 2px; min-height: 0; }
-.m-side .m-rand-card { display: grid; min-height: 0; padding: 6px 2px 6px 8px; border-left: var(--rule); }
-.m-rand { display: grid; grid-template-columns: 1fr; grid-template-rows: auto repeat(7, minmax(0, 1fr)); gap: 6px; min-width: 0; height: 100%; }
-.m-rand .m-btn { min-height: 0; min-width: 0; padding: 0 2px; letter-spacing: .02em; overflow: hidden; }
+/* the randomise row: next bar and the seven buttons in one line at the top right, over the page buttons */
+.m > .m-card.m-randrow { grid-area: trans; display: grid; min-width: 0; padding: 8px 0; border-bottom: var(--rule); }
+.m-rand { display: grid; grid-template-columns: 1.12fr 1.22fr repeat(6, minmax(0, 1fr)); gap: 4px; min-width: 0; }
+.m-rand .m-btn { min-height: 40px; min-width: 0; padding: 0 1px; letter-spacing: 0; overflow: hidden; }
 .m .m-rand .m-btn { font-size: min(var(--fs-xs), 15.2px) !important; white-space: nowrap; }
-.m-nextbar { gap: 6px; font-size: min(var(--fs-xs), 14.8px); white-space: nowrap; justify-content: flex-start; padding-left: 4px; min-height: 36px; }
+.m-nextbar { gap: 5px; font-size: min(var(--fs-xs), 14.8px); white-space: nowrap; justify-content: flex-start; padding-left: 0; min-height: 40px; min-width: 0; }
 .m-nextbar i { width: 18px; height: 18px; }
 /* next bar: a button waiting for the bar flashes */
 .m .m-btn.pending { animation: m-flash .5s steps(1) infinite; }

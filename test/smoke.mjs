@@ -32,6 +32,10 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(Math.abs(sr.width / sr.height - 5 / 3) < 0.01 && sr.x >= -0.5 && sr.y >= -0.5 && sr.x + sr.width <= w + 0.5 && sr.y + sr.height <= h + 0.5
     && (Math.abs(sr.width - w) < 1 || Math.abs(sr.height - h) < 1), `the screen is 5:3 and fits the window (${Math.round(sr.width)} x ${Math.round(sr.height)})`);
   check(await pg.evaluate(() => { const p = $('m-side'); return p.scrollHeight <= p.clientHeight && p.scrollWidth <= p.clientWidth; }), 'perf fits beside the pages');
+  // the randomise row: next bar and seven buttons in one line along the top, right of the title line, each one whole
+  check(await pg.evaluate(() => { const r = [...document.querySelectorAll('.m-rand > *')].map((e) => e.getBoundingClientRect()), t = document.querySelector('.m-tabs').getBoundingClientRect();
+    return r.length === 8 && r.every((b) => Math.abs(b.top - r[0].top) < 1 && b.bottom <= t.top && b.left >= $('m-side').getBoundingClientRect().right)
+      && [...document.querySelectorAll('.m-rand .m-btn')].every((e) => e.scrollWidth <= e.clientWidth); }), 'the randomise row is one line along the top');
   // no page scrolls; every panel fits
   for (const t of ['seq', 'voice', 'xy', 'fx', 'comp', 'presets']) {
     await pg.click(`[data-m-tab="${t}"]`);
@@ -104,7 +108,7 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(await pg.isEnabled('#m-nalter ~ [data-undo]'), 'random notes can be undone');
   // play runs the steps
   await pg.click('#m-play'); await pg.waitForTimeout(1200);
-  check(await pg.evaluate(() => document.querySelectorAll('#m-led i.on').length === 1 && document.querySelectorAll('.m-step.now').length === 1), 'playing lights the step');
+  check(await pg.evaluate(() => document.querySelectorAll('.m-step.now').length === 1), 'playing lights the step');
   // presets: load a built-in one, save a new one
   await pg.click('[data-m-tab="presets"]');
   await pg.click('.m-pload >> text=Acid Line');

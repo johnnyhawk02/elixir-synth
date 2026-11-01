@@ -57,7 +57,7 @@ function setPlaying(on) {
   playing = on;
   $('m-play').setAttribute('aria-pressed', on); $('m-play').querySelector('span').textContent = on ? 'stop' : 'play';
   sendSeq();
-  if (!on) { mLed(-1); stopHooks.forEach((h) => h()); }
+  if (!on) stopHooks.forEach((h) => h());
 }
 const stopHooks = [];
 $('m-play').addEventListener('click', async () => { await startAudio(); setPlaying(!playing); });
@@ -68,15 +68,6 @@ addEventListener('keydown', (e) => {
   if (!e.repeat) $('m-play').click();
 }, true);
 addEventListener('keyup', (e) => { if (e.code === 'Space' && !e.target.closest('input[type="text"], textarea, select')) e.preventDefault(); }, true);
-// the step light: sixteen segments, the one playing lit
-const mLedCells = Array.from({ length: 16 }, () => { const i = document.createElement('i'); $('m-led').append(i); return i; });
-function mLed(s) { mLedCells.forEach((c, i) => c.classList.toggle('on', i === s)); }
-eventHandlers.push((ev) => {
-  if (ev.type !== 'step') return;
-  const lag = ctx && ctx.outputLatency ? ctx.outputLatency * 1000 : 0;
-  setTimeout(() => { if (playing) mLed(ev.step); }, lag);
-});
-
 // ---- faders: vertical, readout on top and label under; dragging moves the value from where it is (a touch doesn't jump
 // it), the whole track's height is the full range (travel 2: twice it, for finer steps), a double tap on the label
 // resets it, and holding one still for half a second opens its step sequencer. While a sequencer runs, the fader sets

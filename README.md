@@ -16,10 +16,10 @@ The screen is landscape, 5:3, laid out once at 1000 x 600 and scaled as a whole 
 showing round it where the window is a different shape. That is how the plugin's window will resize.
 
 Perf sits down the left all the time. The other pages share the right: tap the page buttons over them, or swipe across
-them. The space bar starts and stops. Dragging a fader, a dial, the x/y pad or the steps never turns the page. Play,
-record and the step light sit at the top right.
+them. The space bar starts and stops. Dragging a fader, a dial, the x/y pad or the steps never turns the page. Play and
+record sit at the end of the title line, and the randomise buttons run in one line along the top right.
 
-- **PERF** (always on show): twelve dials, and the randomise column: everything, sound, alter, notes, random fx, alter fx, undo, and
+- **PERF** (always on show): twelve dials, and the randomise row along the top: everything, sound, alter, notes, random fx, alter fx, undo, and
   *next bar* (while playing, a randomise waits for the next bar). Drag a dial up or down to turn it. A MIDI controller
   turns them too: CC 1 to 12, on any channel, in reading order:
 
