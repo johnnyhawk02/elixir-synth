@@ -53,12 +53,15 @@ $('m').addEventListener('contextmenu', (e) => e.preventDefault());
 // ---- transport ----
 function setPlaying(on) {
   playing = on;
+  const pb = $('m-play'); pb.setAttribute('aria-pressed', on); pb.setAttribute('aria-label', on ? 'stop (space)' : 'play (space)'); pb.title = pb.getAttribute('aria-label');
   sendSeq();
   if (!on) stopHooks.forEach((h) => h());
 }
 const stopHooks = [];
 const togglePlay = async () => { await startAudio(); setPlaying(!playing); };
-// there are no transport buttons (a plugin's host has its own): the space bar starts and stops, and R starts and
+// a small play button under the title, doing as the space bar does: a triangle while stopped, a square while playing
+$('m-play').addEventListener('click', togglePlay);
+// the space bar (or the play button under the title) starts and stops, and R starts and
 // stops a recording (both still type in a text box); space never presses the button that has the focus
 addEventListener('keydown', (e) => {
   if (e.target.closest('input[type="text"], textarea, select') || e.ctrlKey || e.metaKey || e.altKey) return;

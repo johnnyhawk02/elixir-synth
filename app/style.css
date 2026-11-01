@@ -153,9 +153,13 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m .m-title { align-self: flex-start; padding: 0; background: none; text-align: left; cursor: pointer; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 .m-ver { display: block; margin-top: 4px; font-size: .7em; letter-spacing: .06em; text-transform: none; opacity: .7; }
 
-/* recording (R): REC and the time under the title, blinking */
-.m-recind { align-self: flex-start; padding: 6px 10px; border: 2px solid var(--ink); border-radius: 3px; background: var(--ink); color: var(--panel);
-  font-family: var(--mono); font-size: var(--fs-m); text-transform: uppercase; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+/* under the title: the play button (a triangle, a square while playing), and while recording (R) REC and the time */
+.m-tport { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.m .m-play { display: grid; place-items: center; flex: none; width: 48px; min-height: 40px; height: 40px; padding: 0; }
+.m-play i { display: block; width: 14px; height: 16px; margin-left: 3px; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.m-play[aria-pressed="true"] i { width: 14px; height: 14px; margin-left: 0; clip-path: none; }
+.m-recind { align-self: center; display: flex; align-items: center; height: 40px; padding: 0 6px; white-space: nowrap; border: 2px solid var(--ink); border-radius: 3px; background: var(--ink); color: var(--panel);
+  font-family: var(--mono); font-size: var(--fs-s); text-transform: uppercase; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
 .m-recind.on { animation: m-blink 1s steps(1) infinite; }
 @keyframes m-blink { 50% { opacity: .55; } }
 @media (prefers-reduced-motion: reduce) { .m-recind.on { animation: none; } }

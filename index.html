@@ -168,9 +168,13 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m .m-title { align-self: flex-start; padding: 0; background: none; text-align: left; cursor: pointer; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 .m-ver { display: block; margin-top: 4px; font-size: .7em; letter-spacing: .06em; text-transform: none; opacity: .7; }
 
-/* recording (R): REC and the time under the title, blinking */
-.m-recind { align-self: flex-start; padding: 6px 10px; border: 2px solid var(--ink); border-radius: 3px; background: var(--ink); color: var(--panel);
-  font-family: var(--mono); font-size: var(--fs-m); text-transform: uppercase; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+/* under the title: the play button (a triangle, a square while playing), and while recording (R) REC and the time */
+.m-tport { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.m .m-play { display: grid; place-items: center; flex: none; width: 48px; min-height: 40px; height: 40px; padding: 0; }
+.m-play i { display: block; width: 14px; height: 16px; margin-left: 3px; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.m-play[aria-pressed="true"] i { width: 14px; height: 14px; margin-left: 0; clip-path: none; }
+.m-recind { align-self: center; display: flex; align-items: center; height: 40px; padding: 0 6px; white-space: nowrap; border: 2px solid var(--ink); border-radius: 3px; background: var(--ink); color: var(--panel);
+  font-family: var(--mono); font-size: var(--fs-s); text-transform: uppercase; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
 .m-recind.on { animation: m-blink 1s steps(1) infinite; }
 @keyframes m-blink { 50% { opacity: .55; } }
 @media (prefers-reduced-motion: reduce) { .m-recind.on { animation: none; } }
@@ -385,8 +389,11 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v78</small></button>
-    <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
+    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v79</small></button>
+    <div class="m-tport">
+      <button class="m-btn m-play" id="m-play" type="button" aria-pressed="false" aria-label="play (space)" title="play (space)"><i aria-hidden="true"></i></button>
+      <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
+    </div>
   </header>
 
   <div class="m-side" id="m-side" aria-label="perform">
@@ -493,7 +500,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
       <div class="m-prefs-body">
         <div class="m-lcd" id="m-lcd" role="group" aria-label="screen colours"><span>screen</span></div>
         <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
-        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v78, 1 Nov, 14:17</footer>
+        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v79, 1 Nov, 14:31</footer>
       </div>
     </section>
   </div>
@@ -4825,12 +4832,15 @@ $('m').addEventListener('contextmenu', (e) => e.preventDefault());
 // ---- transport ----
 function setPlaying(on) {
   playing = on;
+  const pb = $('m-play'); pb.setAttribute('aria-pressed', on); pb.setAttribute('aria-label', on ? 'stop (space)' : 'play (space)'); pb.title = pb.getAttribute('aria-label');
   sendSeq();
   if (!on) stopHooks.forEach((h) => h());
 }
 const stopHooks = [];
 const togglePlay = async () => { await startAudio(); setPlaying(!playing); };
-// there are no transport buttons (a plugin's host has its own): the space bar starts and stops, and R starts and
+// a small play button under the title, doing as the space bar does: a triangle while stopped, a square while playing
+$('m-play').addEventListener('click', togglePlay);
+// the space bar (or the play button under the title) starts and stops, and R starts and
 // stops a recording (both still type in a text box); space never presses the button that has the focus
 addEventListener('keydown', (e) => {
   if (e.target.closest('input[type="text"], textarea, select') || e.ctrlKey || e.metaKey || e.altKey) return;
