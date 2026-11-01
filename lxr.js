@@ -1493,6 +1493,12 @@ export class LxrEngine {
   }
 
   /**
+   * Not in the firmware (elixir-synth): parameter par at x (0..1) between its 128 steps, as a modulator sets it,
+   * without touching its stored value (the morph lane glides a parameter with this)
+   */
+  setParamFloat(par, x) { this._dispatch(par, 0, true, x < 0 ? 0 : x > 1 ? 1 : x); }
+
+  /**
    * voiceControl_noteOn: voice 0..2 drums, 3 snare, 4 cymbal, 5 closed hat, 6 open hat. heard: see _declickAt()
    */
   trigger(voice, velocity = 127, note = SEQ_DEFAULT_NOTE, heard = null) {

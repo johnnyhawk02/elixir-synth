@@ -195,7 +195,9 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 /* ---- seq: what a touch sets, the sixteen steps in one line, then root, scale, accent, glide and the buttons ---- */
 .m-seqpage { display: grid; grid-template-rows: auto minmax(0, 1.6fr) minmax(0, 0.9fr) 134px; gap: 8px; min-height: 0; padding: 6px 2px; }
 /* the pages: four tabs (the one playing underlined) and the copy button */
-.m-npages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.4fr) minmax(0, 2.6fr); gap: 4px; }
+.m-npages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.4fr) minmax(0, 1.6fr) minmax(0, 2.6fr); gap: 4px; }
+.m .m-npages .m-btn[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
+.m-steps[hidden] { display: none; }
 .m-noct { display: grid; grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr); gap: 4px; align-items: center; }
 .m-noct output { text-align: center; font-size: min(var(--fs-xs), 16px); }
 .m .m-npages .m-btn:disabled { opacity: .35; }
@@ -227,7 +229,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-step.thin .m-sn, .m-step.thin .m-sbar { opacity: .35; }
 .m-sm b:hover { background: var(--tint-2); }
 .m-seqlow { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; min-height: 0; border-top: var(--rule); padding-top: 6px; }
-.m-seqf { grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
+.m-seqf { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
 .m-seqbtns, .m-fxbtns { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 6px; min-height: 0; }
 .m-nalgo { display: block; margin-top: 4px; font-size: .85em; letter-spacing: 0; opacity: .8; }
 .m .m-seqbtns .m-btn, .m .m-fxbtns .m-btn { flex-direction: column; min-height: 0; font-size: min(var(--fs-xs), 15.6px) !important; padding: 0 2px; }
@@ -345,3 +347,4 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 /* a fader moved by MIDI follows the knob straight away */
 .m .m-vf.cc .m-vtrack i { transition: none; }
 @media (prefers-reduced-motion: reduce) { .m .m-vtrack i, .m .m-gr i b, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button { transition: none; } }
+.m-steps.off { opacity: .5; }

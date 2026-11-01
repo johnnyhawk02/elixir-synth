@@ -129,6 +129,17 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(await pg.evaluate(() => { seq.density = 50; const t = thinned(), on = seq.steps.slice(0, 16).filter((x) => x.gate).length;
     const kept = seq.steps.slice(0, 16).filter((x, i) => x.gate && !t[i]).length; const ok = kept === Math.round(on / 2) && (!seq.steps[0].gate || !t[0]);
     seq.density = 100; return ok && !thinned().some(Boolean); }), 'density thins the playing steps, off-beats first');
+  // morph: the morph button swaps the gate lane for the morph lane; the top of a step there sets 100, and the morph
+  // fader (off by default) names the parameter it moves
+  await pg.click('#m-nlane');
+  check(await pg.evaluate(() => $('m-gates').hidden && !$('m-morphs').hidden && $('m-nlane').textContent === 'gates'), 'the morph button shows the morph lane');
+  {
+    const b = await pg.locator('#m-morphs .m-step').nth(5).boundingBox();
+    await pg.mouse.click(b.x + b.width / 2, b.y + 2);
+  }
+  check(await pg.evaluate(() => seq.steps[16 + 5].m === 100 && seq.morph === 0), 'the top of a morph step sets 100, the morph still off');
+  await pg.click('#m-nlane');
+  check(await pg.evaluate(() => !$('m-gates').hidden && $('m-morphs').hidden), 'and back to the gate lane');
   // copy, on page 2: 'copy to 3' puts page 2 onto page 3 exactly and shows page 3; on page 4 it's off
   check(await pg.textContent('#m-ncopy') === 'copy to 3', 'on page 2 the copy button says copy to 3');
   await pg.click('#m-ncopy');

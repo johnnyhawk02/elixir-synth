@@ -3,8 +3,8 @@
 // copy (the page shown onto the next) and oct - / oct + (the whole sequence an octave). Then the page's sixteen steps:
 // a step's height is its note, two octaves of the scale (a touch on a resting step brings it on), and the A and S under
 // it switch its accent and slide (tap, or drag along the row). Under the notes, a lane of the steps' gate times
-// (bottom rests, then a quarter to all of the step, top rings). Under that the faders (root, scale, accent, length,
-// density, glide, algo) and random, alter, undo ----
+// (bottom rests, then a quarter to all of the step, top rings), or (the morph button) of their morph values. Under that
+// the faders (root, scale, accent, length, density, glide, morph, algo) and random, alter, undo ----
 let nsPage = 0;
 const nsAbs = (i) => nsPage * 16 + i;
 const nsStep = (i) => seq.steps[nsAbs(i)];
@@ -17,7 +17,11 @@ const nsRow = (id, cls, html) => Array.from({ length: 16 }, (_, i) => {
 const nsCells = nsRow('m-steps', 'm-step',
   '<span class="m-sn"></span><i class="m-sbar"></i><span class="m-sm"><b class="a" role="button" aria-label="accent">A</b><b class="s" role="button" aria-label="slide">S</b></span>');
 const nsGates = nsRow('m-gates', 'm-step m-gstep', '<i class="m-sbar"></i><span class="m-sn"></span>');
+const nsMorphs = nsRow('m-morphs', 'm-step m-gstep', '<i class="m-sbar"></i><span class="m-sn"></span>');
 const GATE_NAMES = ['rest', '¼', '½', '¾', 'full', 'ring'];
+// which lane is under the notes: the gate times, or the morph values
+let nsLaneMorph = false;
+$('m-nlane').addEventListener('click', () => { nsLaneMorph = !nsLaneMorph; nsDraw(); });
 function nsDraw() {
   const thin = thinned(), top = degMax();
   nsCells.forEach((c, i) => {
@@ -30,7 +34,16 @@ function nsDraw() {
     g.style.setProperty('--f', st.gate / 5);
     g.querySelector('.m-sn').textContent = GATE_NAMES[st.gate];
     g.setAttribute('aria-label', `step ${i + 1} gate: ${GATE_NAMES[st.gate]}`);
+    const mc = nsMorphs[i], mv = st.m || 0;
+    mc.classList.toggle('thin', thin[nsAbs(i)]); mc.classList.toggle('out', nsAbs(i) >= seq.len); mc.classList.toggle('rest', !st.gate);
+    mc.style.setProperty('--f', mv / 100);
+    mc.querySelector('.m-sn').textContent = String(mv);
+    mc.setAttribute('aria-label', `step ${i + 1} morph: ${mv}`);
   });
+  $('m-gates').hidden = nsLaneMorph; $('m-morphs').hidden = !nsLaneMorph;
+  $('m-nlane').setAttribute('aria-pressed', nsLaneMorph);
+  $('m-nlane').textContent = nsLaneMorph ? 'gates' : 'morph';
+  $('m-morphs').classList.toggle('off', !seq.morph);
   document.querySelectorAll('#m-npages [data-page]').forEach((b) => { b.setAttribute('aria-selected', +b.dataset.page === nsPage); b.classList.toggle('out', +b.dataset.page * 16 >= seq.len); });
   $('m-ncopy').textContent = `copy to ${Math.min(nsPage + 2, PAGES)}`; $('m-ncopy').disabled = nsPage >= PAGES - 1;
   $('m-noct-out').textContent = seq.oct > 0 ? `+${seq.oct}` : String(seq.oct);
@@ -44,7 +57,7 @@ const nsOct = (k) => { seq.oct = Math.max(OCT_MIN, Math.min(OCT_MAX, seq.oct + k
 $('m-noct-dn').addEventListener('click', () => nsOct(-1));
 $('m-noct-up').addEventListener('click', () => nsOct(1));
 // hear a note as it's set, while stopped
-function nsHear(st) { if (!playing && st.gate) { startAudio(); send({ type: 'note', n: degSemis(st.d), acc: st.acc, gate: st.gate }); } }
+function nsHear(st) { if (!playing && st.gate) { startAudio(); send({ type: 'note', n: degSemis(st.d), acc: st.acc, gate: st.gate, m: (st.m || 0) / 100 }); } }
 // how high a touch is on el: 0 at its bottom to 1 at its top
 const nsY = (el, e) => { const r = el.getBoundingClientRect(); return Math.max(0, Math.min(0.999, (r.bottom - e.clientY) / r.height)); };
 // a row of sixteen that a touch, or a drag across, edits: edit(i, e, first) changes step i and says whether to play it
@@ -91,6 +104,12 @@ nsLane($('m-gates'), (i, e, first) => {
   if (g !== st.gate) { st.gate = g; return true; }
   return first ? false : null;
 });
+// the morph values, 0 (the bottom) to 100 (the top) in fives
+nsLane($('m-morphs'), (i, e, first) => {
+  const st = nsStep(i), m = Math.floor(nsY(nsMorphs[i], e) * 21) * 5;
+  if (m !== (st.m || 0)) { st.m = m; return true; }
+  return first ? false : null;
+});
 // the step playing (if its page is shown) and its page, marked as they're heard
 let nsAt = null;
 function nsNow() {
@@ -112,6 +131,8 @@ nsFader('accent', 'accent', { min: 0, max: 12, show: (v) => `+${v}dB` });
 nsFader('length', 'len', { min: 1, max: NSTEPS, show: (v) => String(v), detents: [16, 32, 48], catch: 2.5 });
 nsFader('density', 'density', { min: 0, max: 100, step: 5, show: (v) => v + '%' });
 nsFader('glide', 'glide', { min: 0, max: 100, step: 5, show: (v) => v + '%' });
+// morph: off, or the voice parameter the morph lane moves
+nsFader('morph', 'morph', { min: 0, max: MORPH_DESTS.length, show: (v) => (v ? MORPH_DESTS[v - 1][0] : 'off') });
 
 // random: a new line for a page, made by the algorithm picked on the algo fader (kept in the preset). Each makes 16
 // steps of { d: degree of the scale, gate, acc, slide }, so whatever it makes stays in the key
