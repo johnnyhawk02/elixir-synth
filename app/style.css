@@ -216,7 +216,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m .m-mcol .m-nshift .m-btn { font-size: var(--fs-s) !important; }
 .m-mcol .m-fxhead b { padding-left: 0; }
 .m-mnotescol { grid-template-rows: 36px 64px 48px 48px minmax(0, 1fr); align-content: stretch; }
-.m-row.m-mlen { grid-template-columns: minmax(0, 1fr); padding-top: 8px; }
+.m-row.m-mlen { grid-template-columns: repeat(3, minmax(0, 1fr)); padding-top: 8px; }
 .m-mpreset { grid-template-rows: 36px 30px 64px; }
 .m-mcur { align-self: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-s); }
 .m-mpreset .m-note { line-height: 1.2; }

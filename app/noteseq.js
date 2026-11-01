@@ -141,9 +141,7 @@ nsFader('accent', 'accent', { min: 0, max: 12, show: (v) => `+${v}dB` });
 // (the main page has the same fader: a move of either redraws both)
 const nsLen = (v) => { seq.len = v; nsChanged(); drawAll(); };
 nsFader('length', 'len', { set: nsLen, min: 1, max: NSTEPS, show: (v) => String(v), detents: [16, 32, 48], catch: 2.5 });
-// (and again on the main page, under the notes' randomisers)
-mFader($('m-mlen'), 'length', { get: () => seq.len, set: nsLen, dflt: SEQ0.len, min: 1, max: NSTEPS, show: (v) => String(v), detents: [16, 32, 48], catch: 2.5 });
-nsFader('density', 'density', { min: 0, max: 100, step: 5, show: (v) => v + '%' });
+nsFader('density', 'density', { set: (v) => { seq.density = v; nsChanged(); drawAll(); }, min: 0, max: 100, step: 5, show: (v) => v + '%' });
 nsFader('glide', 'glide', { min: 0, max: 100, step: 5, show: (v) => v + '%' });
 // morph: off, or the voice parameter the morph lane moves
 nsFader('morph', 'morph', { min: 0, max: MORPH_DESTS.length, show: (v) => (v ? MORPH_DESTS[v - 1][0] : 'off') });
@@ -262,4 +260,9 @@ $('m-ncopy').addEventListener('click', (e) => {
 });
 // the algorithm random uses: its number on the fader, its name on the random button
 mFader($('m-seqf'), 'algo', { min: 0, max: SEQ_ALGOS.length - 1, get: () => seq.algo, set: (v) => { seq.algo = v; drawAll(); }, show: (v) => String(v + 1), dflt: SEQ0.algo });
+// the main page has algo, density and length too, under the notes' randomisers (the same settings: a move of either
+// fader redraws both)
+mFader($('m-mlen'), 'algo', { min: 0, max: SEQ_ALGOS.length - 1, get: () => seq.algo, set: (v) => { seq.algo = v; drawAll(); }, show: (v) => SEQ_ALGOS[v][0], dflt: SEQ0.algo });
+mFader($('m-mlen'), 'density', { get: () => seq.density, set: (v) => { seq.density = v; nsChanged(); drawAll(); }, dflt: SEQ0.density, min: 0, max: 100, step: 5, show: (v) => v + '%' });
+mFader($('m-mlen'), 'length', { get: () => seq.len, set: nsLen, dflt: SEQ0.len, min: 1, max: NSTEPS, show: (v) => String(v), detents: [16, 32, 48], catch: 2.5 });
 drawHooks.push(() => { document.querySelectorAll('[data-nalgo]').forEach((e) => { e.textContent = `${seq.algo + 1} ${SEQ_ALGOS[seq.algo][0]}`; }); });

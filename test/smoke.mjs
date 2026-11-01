@@ -74,9 +74,16 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(await pg.evaluate(() => !mFaders.some((f) => f.seq) && !document.querySelector('.m-vf.seq')), 'main: knob seqs off clears them');
   // length on the main page is the seq page's length
   await pg.evaluate(() => { seq.len = 64; drawAll(); });
-  { const r = await box('#m-mlen .m-vtrack'); await drag(r.x + r.width / 2, r.y + 4, r.x + r.width / 2, r.y + 4 + r.height * (64 - 33) / 63, 6); }
+  { const r = await box('#m-mlen .m-vf:nth-child(3) .m-vtrack'); await drag(r.x + r.width / 2, r.y + 4, r.x + r.width / 2, r.y + 4 + r.height * (64 - 33) / 63, 6); }
   check(await pg.evaluate(() => seq.len === 32 && document.querySelector('#m-seqf .m-vf:nth-child(4) output').textContent === '32'), `main: the length fader sets the seq's length (${await pg.evaluate(() => seq.len)})`);
   await pg.evaluate(() => { seq.len = 64; sendSeq(); drawAll(); });
+  // algo and density there are the seq page's too
+  await pg.evaluate(() => { seq.algo = 0; seq.density = 100; drawAll(); });
+  await pg.focus('#m-mlen .m-vf:nth-child(1) .m-vtrack'); await pg.keyboard.press('ArrowUp');
+  await pg.focus('#m-mlen .m-vf:nth-child(2) .m-vtrack'); await pg.keyboard.press('ArrowDown');
+  check(await pg.evaluate(() => seq.algo === 1 && seq.density === 95 && document.querySelector('#m-seqf .m-vf:nth-child(5) output').textContent === '95%'
+    && document.querySelector('#m-mlen .m-vf:nth-child(1) output').textContent === SEQ_ALGOS[1][0]), 'main: algo and density faders set the seq\'s');
+  await pg.evaluate(() => { seq.algo = 0; seq.density = 100; sendSeq(); drawAll(); });
   // the metronome: a toggle kept in this browser; the player clicks on each beat with it on, and is silent with it off
   await pg.click('#m-metro');
   check(await pg.evaluate(() => metroOn && $('m-metro').getAttribute('aria-pressed') === 'true' && localStorage.getItem('elixir-synth-metro') === '1'), 'main: the metronome turns on and is kept');
