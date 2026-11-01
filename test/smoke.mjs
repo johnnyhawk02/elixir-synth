@@ -72,6 +72,19 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
     check(JSON.stringify(await snap()) === JSON.stringify(was), 'voice: undo puts it back');
     await pg.click('#m-vsec .m-btn >> nth=0');
   }
+  // the fx page's randomisers, down its right: one effect's button changes only that effect; undo puts it back
+  await pg.click('[data-m-tab="fx"]');
+  {
+    const snap = () => pg.evaluate(() => JSON.stringify([fx, delayPos, values[PAR.FX_P3], values[PAR.FX_P4], values[PAR.FX_DELAY_TYPE]]));
+    const o = (j) => { const [f, ...r] = JSON.parse(j); return { ...f, rest: r }; };
+    const was = o(await snap());
+    check(await pg.evaluate(() => document.querySelector('.m-fx-card .m-vbtns').getBoundingClientRect().left >= document.querySelector('.m-fxsets').getBoundingClientRect().right), 'fx: the randomisers sit on the right');
+    await pg.click('[data-fxrand="reverb"]');
+    const now = o(await snap()), V = ['verb', 'vPre', 'vDecay', 'vTone', 'vEarly'];
+    check(Object.keys(now).every((k) => V.includes(k) || JSON.stringify(now[k]) === JSON.stringify(was[k])) && V.some((k) => now[k] !== was[k]), 'fx: random reverb changes the reverb only');
+    await pg.click('.m-fx-card [data-undo]');
+    check(JSON.stringify(o(await snap())) === JSON.stringify(was), 'fx: undo puts it back');
+  }
   // targets: every button at least 36 px high in the 1000 x 600 layout
   const small = await pg.evaluate(() => [...document.querySelectorAll('.m button, .m .m-btn')].filter((e) => { const r = e.getBoundingClientRect(); return r.width && r.height / mK < 36; }).map((e) => e.textContent.trim()));
   check(!small.length, `buttons at least 36 px high ${small.length ? small.join(', ') : ''}`);

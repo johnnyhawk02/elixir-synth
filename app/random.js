@@ -68,15 +68,17 @@ function alterSound(a = 0.1, pns = DR1) {
 }
 // random fx: the echo on (half the time) at a musical length, the reverb as often (a room to a long hall), the ring mod
 // now and then; alter fx: each moved a little
-function randomFx() {
-  fx.send = chance(0.55) ? rIn(10, 60) : 0; fx.ring = chance(0.2) ? rIn(10, 60) : 0;
-  fx.verb = chance(0.5) ? rIn(10, 55) : 0;
-  fx.vPre = rIn(0, 90); fx.vDecay = rIn(70, 122); fx.vTone = rIn(30, 85); fx.vEarly = rIn(0, 127);
-  setDelay(randomDelayPos());
-  setValue(PAR.FX_DELAY_TYPE, chance(0.6) ? 1 : 0); setValue(PAR.FX_P3, rIn(40, 110)); setValue(PAR.FX_P4, chance(0.2) ? rIn(70, 105) : rIn(15, 70));
-  fx.width = rIn(60, 160); fx.ringWave = rIn(0, RING_W.length - 1); fx.ringFreq = rIn(5, 120);
-  sendMix();
-}
+// (one part per effect, so the fx page can randomise each on its own)
+const RANDOM_FX = {
+  echo() {
+    fx.send = chance(0.55) ? rIn(10, 60) : 0;
+    setDelay(randomDelayPos());
+    setValue(PAR.FX_DELAY_TYPE, chance(0.6) ? 1 : 0); setValue(PAR.FX_P3, rIn(40, 110)); setValue(PAR.FX_P4, chance(0.2) ? rIn(70, 105) : rIn(15, 70));
+    fx.width = rIn(60, 160);
+  },
+  reverb() { fx.verb = chance(0.5) ? rIn(10, 55) : 0; fx.vPre = rIn(0, 90); fx.vDecay = rIn(70, 122); fx.vTone = rIn(30, 85); fx.vEarly = rIn(0, 127); },
+  ring() { fx.ring = chance(0.2) ? rIn(10, 60) : 0; fx.ringWave = rIn(0, RING_W.length - 1); fx.ringFreq = rIn(5, 120); } };
+function randomFx() { Object.values(RANDOM_FX).forEach((f) => f()); sendMix(); }
 function alterFx(a = 0.1) {
   const nudge = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(v + (rnd() * 2 - 1) * a * (hi - lo))));
   if (fx.send) fx.send = nudge(fx.send, 1, 100);
@@ -99,6 +101,7 @@ for (const b of document.querySelectorAll('[data-vrand]')) b.addEventListener('c
   mRandomise(e.currentTarget, RANDOM_VOICE[sec]);
 });
 $('m-pattern').addEventListener('click', (e) => mRandomise(e.currentTarget, randomNotes));
+for (const b of document.querySelectorAll('[data-fxrand]')) b.addEventListener('click', (e) => mRandomise(e.currentTarget, () => { RANDOM_FX[b.dataset.fxrand](); sendMix(); }));
 for (const id of ['m-fxr', 'm-fxr2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomFx));
 for (const id of ['m-fxa', 'm-fxa2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterFx()));
 

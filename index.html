@@ -245,15 +245,15 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-sm b:hover { background: var(--tint-2); }
 .m-seqlow { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; min-height: 0; border-top: var(--rule); padding-top: 6px; }
 .m-seqf { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
-.m-seqbtns, .m-fxbtns { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 6px; min-height: 0; }
+.m-seqbtns { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 6px; min-height: 0; }
 .m-nalgo { display: block; margin-top: 4px; font-size: .85em; letter-spacing: 0; opacity: .8; }
-.m .m-seqbtns .m-btn, .m .m-fxbtns .m-btn { flex-direction: column; min-height: 0; font-size: min(var(--fs-xs), 15.6px) !important; padding: 0 2px; }
+.m .m-seqbtns .m-btn { flex-direction: column; min-height: 0; font-size: min(var(--fs-xs), 15.6px) !important; padding: 0 2px; }
 
 /* ---- voice: two tabs (tone + shape, filter + mod), each two sections side by side, two rows of faders in each ---- */
 .m-voice-card { display: grid; grid-template-rows: auto minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) 118px; gap: 10px 10px; min-height: 0; padding: 10px 2px; }
 .m-vsec, .m-vsets { grid-column: 1; }
-/* the voice's randomisers, a column down the right: the whole voice, each section, alter, undo */
-.m-vbtns { grid-column: 2; grid-row: 1 / 3; display: grid; grid-template-rows: 1.4fr repeat(6, minmax(0, 1fr)); gap: 6px; min-height: 0; }
+/* the voice's and the fx page's randomisers, a column down the right: the whole page, each section, alter, undo */
+.m-vbtns { grid-column: 2; grid-row: 1 / 3; display: grid; grid-template-rows: 1.4fr; grid-auto-rows: minmax(0, 1fr); gap: 6px; min-height: 0; }
 .m .m-vbtns .m-btn { min-height: 0; font-size: min(var(--fs-xs), 15.6px) !important; padding: 0 4px; }
 .m-vsec { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; align-items: end; border-bottom: 2px solid var(--ink); }
 .m .m-vsec .m-btn { min-height: 44px; margin-bottom: -2px; border-color: transparent; border-bottom: 0; border-radius: 4px 4px 0 0; box-shadow: none; opacity: .8; }
@@ -267,13 +267,12 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 /* ---- fx: the echo, the reverb and the ring mod side by side (as the voice page's sections), each its name over one
    row of full-height faders, then random, alter, undo ---- */
-.m-fx-card { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 8px; min-height: 0; padding: 8px 2px; }
+.m-fx-card { display: grid; grid-template-columns: minmax(0, 1fr) 118px; gap: 10px; min-height: 0; padding: 8px 2px; }
+.m-fx-card .m-vbtns { grid-row: 1; }
 .m-fxsets { display: grid; grid-template-columns: 5fr 5fr 3fr; min-height: 0; }
 .m-fxsets .m-vpart { padding: 0 6px; }
 .m-fxsets .m-vpart:first-child { padding-left: 2px; }
 .m-fxsets .m-vpart:last-child { padding-right: 2px; }
-.m-fxbtns { grid-template-rows: none; grid-template-columns: 1.3fr 1fr 1fr; }
-.m .m-fxbtns .m-btn { min-height: 52px; }
 .m-fxhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; }
 .m-fxhead b { font-weight: 400; text-transform: uppercase; letter-spacing: .08em; font-size: var(--fs-m); padding-left: 4px; }
 .m-fxhead .m-chk { min-height: 36px; gap: 8px; }
@@ -377,7 +376,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v41</small></b>
+    <b class="m-title">elixir<small class="m-ver">synth v42</small></b>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
     <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
   </header>
@@ -436,8 +435,11 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <div class="m-vpart"><div class="m-fxhead"><b>reverb</b></div><div class="m-faders m-row" id="m-verb"></div></div>
         <div class="m-vpart"><div class="m-fxhead"><b>ring mod</b></div><div class="m-faders m-row" id="m-ring"></div></div>
       </div>
-      <div class="m-fxbtns">
-        <button class="m-btn m-big" id="m-fxr2" type="button">random</button>
+      <div class="m-vbtns" role="group" aria-label="randomise the effects">
+        <button class="m-btn m-big" id="m-fxr2" type="button">random fx</button>
+        <button class="m-btn" data-fxrand="echo" type="button">echo</button>
+        <button class="m-btn" data-fxrand="reverb" type="button">reverb</button>
+        <button class="m-btn" data-fxrand="ring" type="button">ring mod</button>
         <button class="m-btn" id="m-fxa2" type="button">alter</button>
         <button class="m-btn" data-undo type="button" disabled>undo</button>
       </div>
@@ -465,7 +467,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v41, 1 Nov, 13:22</footer>
+      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v42, 1 Nov, 13:52</footer>
     </section>
   </div>
   </div>
@@ -5509,15 +5511,17 @@ function alterSound(a = 0.1, pns = DR1) {
 }
 // random fx: the echo on (half the time) at a musical length, the reverb as often (a room to a long hall), the ring mod
 // now and then; alter fx: each moved a little
-function randomFx() {
-  fx.send = chance(0.55) ? rIn(10, 60) : 0; fx.ring = chance(0.2) ? rIn(10, 60) : 0;
-  fx.verb = chance(0.5) ? rIn(10, 55) : 0;
-  fx.vPre = rIn(0, 90); fx.vDecay = rIn(70, 122); fx.vTone = rIn(30, 85); fx.vEarly = rIn(0, 127);
-  setDelay(randomDelayPos());
-  setValue(PAR.FX_DELAY_TYPE, chance(0.6) ? 1 : 0); setValue(PAR.FX_P3, rIn(40, 110)); setValue(PAR.FX_P4, chance(0.2) ? rIn(70, 105) : rIn(15, 70));
-  fx.width = rIn(60, 160); fx.ringWave = rIn(0, RING_W.length - 1); fx.ringFreq = rIn(5, 120);
-  sendMix();
-}
+// (one part per effect, so the fx page can randomise each on its own)
+const RANDOM_FX = {
+  echo() {
+    fx.send = chance(0.55) ? rIn(10, 60) : 0;
+    setDelay(randomDelayPos());
+    setValue(PAR.FX_DELAY_TYPE, chance(0.6) ? 1 : 0); setValue(PAR.FX_P3, rIn(40, 110)); setValue(PAR.FX_P4, chance(0.2) ? rIn(70, 105) : rIn(15, 70));
+    fx.width = rIn(60, 160);
+  },
+  reverb() { fx.verb = chance(0.5) ? rIn(10, 55) : 0; fx.vPre = rIn(0, 90); fx.vDecay = rIn(70, 122); fx.vTone = rIn(30, 85); fx.vEarly = rIn(0, 127); },
+  ring() { fx.ring = chance(0.2) ? rIn(10, 60) : 0; fx.ringWave = rIn(0, RING_W.length - 1); fx.ringFreq = rIn(5, 120); } };
+function randomFx() { Object.values(RANDOM_FX).forEach((f) => f()); sendMix(); }
 function alterFx(a = 0.1) {
   const nudge = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(v + (rnd() * 2 - 1) * a * (hi - lo))));
   if (fx.send) fx.send = nudge(fx.send, 1, 100);
@@ -5540,6 +5544,7 @@ for (const b of document.querySelectorAll('[data-vrand]')) b.addEventListener('c
   mRandomise(e.currentTarget, RANDOM_VOICE[sec]);
 });
 $('m-pattern').addEventListener('click', (e) => mRandomise(e.currentTarget, randomNotes));
+for (const b of document.querySelectorAll('[data-fxrand]')) b.addEventListener('click', (e) => mRandomise(e.currentTarget, () => { RANDOM_FX[b.dataset.fxrand](); sendMix(); }));
 for (const id of ['m-fxr', 'm-fxr2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomFx));
 for (const id of ['m-fxa', 'm-fxa2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterFx()));
 

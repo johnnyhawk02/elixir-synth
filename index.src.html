@@ -77,8 +77,11 @@
         <div class="m-vpart"><div class="m-fxhead"><b>reverb</b></div><div class="m-faders m-row" id="m-verb"></div></div>
         <div class="m-vpart"><div class="m-fxhead"><b>ring mod</b></div><div class="m-faders m-row" id="m-ring"></div></div>
       </div>
-      <div class="m-fxbtns">
-        <button class="m-btn m-big" id="m-fxr2" type="button">random</button>
+      <div class="m-vbtns" role="group" aria-label="randomise the effects">
+        <button class="m-btn m-big" id="m-fxr2" type="button">random fx</button>
+        <button class="m-btn" data-fxrand="echo" type="button">echo</button>
+        <button class="m-btn" data-fxrand="reverb" type="button">reverb</button>
+        <button class="m-btn" data-fxrand="ring" type="button">ring mod</button>
         <button class="m-btn" id="m-fxa2" type="button">alter</button>
         <button class="m-btn" data-undo type="button" disabled>undo</button>
       </div>
