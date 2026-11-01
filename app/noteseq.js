@@ -99,7 +99,7 @@ function nsNow() {
 }
 eventHandlers.push((ev) => {
   if (ev.type !== 'step') return;
-  setTimeout(() => { if (playing) { nsAt = ev; nsNow(); } }, ctx && ctx.outputLatency ? ctx.outputLatency * 1000 : 0);
+  whenHeard(() => { if (playing) { nsAt = ev; nsNow(); } });
 });
 stopHooks.push(() => { nsAt = null; nsNow(); });
 

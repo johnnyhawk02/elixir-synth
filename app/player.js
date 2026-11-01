@@ -12,6 +12,8 @@ const GATE_RING = 5;
 // curve, time constant 2 ms); the new note itself plays exactly as the engine renders it. Matching the slope as well as
 // the level matters when the filter is closed down: a near-sine has nothing on top to hide a kink
 const DECLICK_K = Math.exp(-1 / (0.002 * LXR.REAL_FS));
+// a sample into the engine's int16 buses, saturated
+const int16 = (x) => Math.max(-32768, Math.min(32767, Math.round(x)));
 class Player {
   constructor(outRate) {
     this.e = new LXR.LxrEngine();
@@ -185,8 +187,8 @@ class Player {
     const bi = this.busIn, bo = this.busOut;
     const busFeed = (bus, gain) => {
       for (let i = 0; i < 64; i++) {
-        bi[2 * i] = gain ? Math.max(-32768, Math.min(32767, Math.round(o[i] * v.triggeredPanL * gain))) : 0;
-        bi[2 * i + 1] = gain ? Math.max(-32768, Math.min(32767, Math.round(o[i] * v.triggeredPanR * gain))) : 0;
+        bi[2 * i] = gain ? int16(o[i] * v.triggeredPanL * gain) : 0;
+        bi[2 * i + 1] = gain ? int16(o[i] * v.triggeredPanR * gain) : 0;
       }
       bus.input.set(bi); bo.fill(0);
       bus.process(bo, 64, this.fxRng);
@@ -207,7 +209,7 @@ class Player {
     // ramped across the block; at 0 it's bypassed
     if (this.distMix || this.distAt) {
       const di = this.dist.input;
-      for (let i = 0; i < 64; i++) { di[2 * i] = Math.max(-32768, Math.min(32767, Math.round(L[i] * 32768))); di[2 * i + 1] = Math.max(-32768, Math.min(32767, Math.round(R[i] * 32768))); }
+      for (let i = 0; i < 64; i++) { di[2 * i] = int16(L[i] * 32768); di[2 * i + 1] = int16(R[i] * 32768); }
       bo.fill(0);
       this.dist.process(bo, 64, this.fxRng);
       const m0 = this.distAt, m1 = this.distMix;

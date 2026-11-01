@@ -6,6 +6,20 @@ const { PAR, PARAM_DTYPES, MOD_TARGETS, MOD_TARGET_VOICE_RANGES, VOICE_PAGES, IN
 try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
 const rnd = Math.random;
 const rIn = (lo, hi) => lo + Math.floor(rnd() * (hi - lo + 1));
+const pick = (a) => a[Math.floor(rnd() * a.length)];
+const chance = (p) => rnd() < p;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+// this device's own settings (localStorage, which a private window may refuse): get(key) is null when there's none
+const store = {
+  get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+// a checkbox kept on this device, on unless dflt is off
+function storedCheck(id, key, dflt = true) {
+  const v = store.get(key);
+  $(id).checked = v === null ? dflt : v === '1';
+  $(id).addEventListener('change', () => store.set(key, $(id).checked ? '1' : '0'));
+}
 
 // ---- the sound: parameter values 0..127 by parameter number. Only drum 1's are used; the firmware's init kit, made
 // into a plain saw pluck (no kick drop, a low-pass with some resonance), is where everything starts ----
@@ -157,7 +171,9 @@ let ctx = null, node = null, fallback = null;
 const pending = [];
 // while barSync is set (a preset, or a randomise with next bar ticked), messages wait in the player for the next bar
 let barSync = false;
-function send(m) { if (barSync) m = { type: 'atBar', m }; if (node) node.port.postMessage(m); else if (fallback) fallback.msg(m); else pending.push(m); }
+// post: straight to the audio thread if it's running; send: through barSync, and kept until the audio starts
+function post(m) { if (node) node.port.postMessage(m); else if (fallback) fallback.msg(m); else return false; return true; }
+function send(m) { if (barSync) m = { type: 'atBar', m }; if (!post(m)) pending.push(m); }
 async function startAudio() {
   if (ctx) { if (ctx.state === 'suspended') await ctx.resume(); return; }
   ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
@@ -198,6 +214,8 @@ function sendAll() {
 // events from the audio thread: each file adds its own handlers
 const eventHandlers = [];
 function onEvent(ev) { for (const h of eventHandlers) h(ev); }
+// the audio thread runs ahead of what's heard: fn when its latest event reaches the speakers
+const whenHeard = (fn) => setTimeout(fn, ctx && ctx.outputLatency ? ctx.outputLatency * 1000 : 0);
 
 // ---- a snapshot of everything a preset keeps, and putting one back ----
 const PRESET_V = 1;

@@ -2,16 +2,15 @@
 // two-word name, kept in this browser under elixir-synth's own key. Save new, save over the loaded one, load, delete,
 // import and export. While playing, a preset waits for the next bar: until it's heard, the one playing stays marked
 // and the new one's row flashes ----
-const SAVE_KEY = 'elixir-synth-presets', BPM_KEY = 'elixir-synth-presetbpm';
+const SAVE_KEY = 'elixir-synth-presets';
 const fromData = (p, extra) => ({ ...structuredClone(p), ...extra });
 const presetList = [{ name: 'Init', ...snapshot(), builtin: true },
   ...BUILTIN_PRESETS.filter((p) => p && p.v === PRESET_V && p.kit).map((p) => fromData(p, { builtin: true }))];
 const presetData = (k) => { const { builtin, saved, ...p } = k; return structuredClone(p); };
-try { for (const p of JSON.parse(localStorage.getItem(SAVE_KEY)) || []) if (p && p.v === PRESET_V && p.kit) presetList.push(fromData(p, { saved: true })); } catch (e) {}
-function storePresets() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(presetList.filter((k) => k.saved).map(presetData))); } catch (e) {} }
+try { for (const p of JSON.parse(store.get(SAVE_KEY)) || []) if (p && p.v === PRESET_V && p.kit) presetList.push(fromData(p, { saved: true })); } catch (e) {}
+const storePresets = () => store.set(SAVE_KEY, JSON.stringify(presetList.filter((k) => k.saved).map(presetData)));
 let pCur = presetList[0], pPending = null, pShown = null;
-try { $('m-pbpm').checked = localStorage.getItem(BPM_KEY) !== '0'; } catch (e) {}
-$('m-pbpm').addEventListener('change', () => { try { localStorage.setItem(BPM_KEY, $('m-pbpm').checked ? '1' : '0'); } catch (e) {} });
+storedCheck('m-pbpm', 'elixir-synth-presetbpm');
 // a new name: two made-up words
 const SYL = ['ka', 'zu', 'mo', 'ree', 'vax', 'lo', 'quin', 'tor', 'ba', 'shi', 'nek', 'ul', 'dra', 'po', 'ix', 'fen', 'yo', 'gar', 'mi', 'sol'];
 const word = () => { const w = Array.from({ length: rIn(2, 3) }, () => pick(SYL)).join(''); return w[0].toUpperCase() + w.slice(1); };
@@ -27,7 +26,7 @@ function pLoad(k) {
 }
 eventHandlers.push((ev) => {
   if (ev.type !== 'step' || ev.step !== 0 || !pPending) return;
-  const p = pPending; setTimeout(() => { if (pPending === p) { pPending = null; pDraw(); } }, ctx && ctx.outputLatency ? ctx.outputLatency * 1000 : 0);
+  const p = pPending; whenHeard(() => { if (pPending === p) { pPending = null; pDraw(); } });
 });
 stopHooks.push(() => { if (pPending) { pPending = null; pDraw(); } });
 function pDraw() {

@@ -114,8 +114,8 @@ const FS_RAND = [
   ['sparse', () => Array.from({ length: FS_MAX }, () => (rnd() < 0.22 ? rr() : 0))],
 ];
 const FS_TYPE_KEY = 'elixir-synth-seqrand';
-let fsType = (() => { try { const i = FS_RAND.findIndex(([n]) => n === localStorage.getItem(FS_TYPE_KEY)); return i < 0 ? 0 : i; } catch (e) { return 0; } })();
-$('m-fs-type').addEventListener('click', () => { fsType = (fsType + 1) % FS_RAND.length; try { localStorage.setItem(FS_TYPE_KEY, FS_RAND[fsType][0]); } catch (e) {} fsDraw(); });
+let fsType = Math.max(0, FS_RAND.findIndex(([n]) => n === store.get(FS_TYPE_KEY)));
+$('m-fs-type').addEventListener('click', () => { fsType = (fsType + 1) % FS_RAND.length; store.set(FS_TYPE_KEY, FS_RAND[fsType][0]); fsDraw(); });
 $('m-fs-rand').addEventListener('click', () => { const q = fsF.seq; q.vals = FS_RAND[fsType][1](q.len).map(fsOff); q.on = true; fsDraw(); });
 $('m-fs-on').addEventListener('click', () => { fsF.seq.on = !fsF.seq.on; if (!fsF.seq.on) fsRelease(fsF); fsDraw(); });
 $('m-fs-close').addEventListener('click', () => { $('m-fs').hidden = true; fsF = null; });

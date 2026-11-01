@@ -11,14 +11,13 @@ function recUi() {
     tick(); recTimer = setInterval(tick, 250);
   } else ind.textContent = recState === 'saving' ? 'saving' : '';
 }
-const recSend = (m) => { if (node) node.port.postMessage(m); else if (fallback) fallback.msg(m); };
 async function recToggle() {
   if (recState === 'off') {
     await startAudio();
     recChunks = []; recState = 'on'; recT0 = performance.now();
-    recSend({ type: 'rec' });
+    post({ type: 'rec' });
     if (!playing) setPlaying(true);
-  } else if (recState === 'on') { recState = 'saving'; recSend({ type: 'recStop' }); }
+  } else if (recState === 'on') { recState = 'saving'; post({ type: 'recStop' }); }
   recUi();
 }
 eventHandlers.push((ev) => {

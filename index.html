@@ -364,7 +364,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v32</small></b>
+    <b class="m-title">elixir<small class="m-ver">synth v33</small></b>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
     <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
   </header>
@@ -441,7 +441,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v32, 1 Nov, 09:51</footer>
+      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v33, 1 Nov, 09:58</footer>
     </section>
   </div>
   </div>
@@ -4182,6 +4182,8 @@ const GATE_RING = 5;
 // curve, time constant 2 ms); the new note itself plays exactly as the engine renders it. Matching the slope as well as
 // the level matters when the filter is closed down: a near-sine has nothing on top to hide a kink
 const DECLICK_K = Math.exp(-1 / (0.002 * LXR.REAL_FS));
+// a sample into the engine's int16 buses, saturated
+const int16 = (x) => Math.max(-32768, Math.min(32767, Math.round(x)));
 class Player {
   constructor(outRate) {
     this.e = new LXR.LxrEngine();
@@ -4355,8 +4357,8 @@ class Player {
     const bi = this.busIn, bo = this.busOut;
     const busFeed = (bus, gain) => {
       for (let i = 0; i < 64; i++) {
-        bi[2 * i] = gain ? Math.max(-32768, Math.min(32767, Math.round(o[i] * v.triggeredPanL * gain))) : 0;
-        bi[2 * i + 1] = gain ? Math.max(-32768, Math.min(32767, Math.round(o[i] * v.triggeredPanR * gain))) : 0;
+        bi[2 * i] = gain ? int16(o[i] * v.triggeredPanL * gain) : 0;
+        bi[2 * i + 1] = gain ? int16(o[i] * v.triggeredPanR * gain) : 0;
       }
       bus.input.set(bi); bo.fill(0);
       bus.process(bo, 64, this.fxRng);
@@ -4377,7 +4379,7 @@ class Player {
     // ramped across the block; at 0 it's bypassed
     if (this.distMix || this.distAt) {
       const di = this.dist.input;
-      for (let i = 0; i < 64; i++) { di[2 * i] = Math.max(-32768, Math.min(32767, Math.round(L[i] * 32768))); di[2 * i + 1] = Math.max(-32768, Math.min(32767, Math.round(R[i] * 32768))); }
+      for (let i = 0; i < 64; i++) { di[2 * i] = int16(L[i] * 32768); di[2 * i + 1] = int16(R[i] * 32768); }
       bo.fill(0);
       this.dist.process(bo, 64, this.fxRng);
       const m0 = this.distAt, m1 = this.distMix;
@@ -4434,6 +4436,20 @@ const { PAR, PARAM_DTYPES, MOD_TARGETS, MOD_TARGET_VOICE_RANGES, VOICE_PAGES, IN
 try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
 const rnd = Math.random;
 const rIn = (lo, hi) => lo + Math.floor(rnd() * (hi - lo + 1));
+const pick = (a) => a[Math.floor(rnd() * a.length)];
+const chance = (p) => rnd() < p;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+// this device's own settings (localStorage, which a private window may refuse): get(key) is null when there's none
+const store = {
+  get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+// a checkbox kept on this device, on unless dflt is off
+function storedCheck(id, key, dflt = true) {
+  const v = store.get(key);
+  $(id).checked = v === null ? dflt : v === '1';
+  $(id).addEventListener('change', () => store.set(key, $(id).checked ? '1' : '0'));
+}
 
 // ---- the sound: parameter values 0..127 by parameter number. Only drum 1's are used; the firmware's init kit, made
 // into a plain saw pluck (no kick drop, a low-pass with some resonance), is where everything starts ----
@@ -4585,7 +4601,9 @@ let ctx = null, node = null, fallback = null;
 const pending = [];
 // while barSync is set (a preset, or a randomise with next bar ticked), messages wait in the player for the next bar
 let barSync = false;
-function send(m) { if (barSync) m = { type: 'atBar', m }; if (node) node.port.postMessage(m); else if (fallback) fallback.msg(m); else pending.push(m); }
+// post: straight to the audio thread if it's running; send: through barSync, and kept until the audio starts
+function post(m) { if (node) node.port.postMessage(m); else if (fallback) fallback.msg(m); else return false; return true; }
+function send(m) { if (barSync) m = { type: 'atBar', m }; if (!post(m)) pending.push(m); }
 async function startAudio() {
   if (ctx) { if (ctx.state === 'suspended') await ctx.resume(); return; }
   ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
@@ -4626,6 +4644,8 @@ function sendAll() {
 // events from the audio thread: each file adds its own handlers
 const eventHandlers = [];
 function onEvent(ev) { for (const h of eventHandlers) h(ev); }
+// the audio thread runs ahead of what's heard: fn when its latest event reaches the speakers
+const whenHeard = (fn) => setTimeout(fn, ctx && ctx.outputLatency ? ctx.outputLatency * 1000 : 0);
 
 // ---- a snapshot of everything a preset keeps, and putting one back ----
 const PRESET_V = 1;
@@ -4658,7 +4678,7 @@ function useSnapshot(p, keepTempo) {
 // ---- pages: perf stays on the left; the others sit on the right, one at a time: swipe across them, or tap a page button. A swipe starts anywhere but on a fader, the
 // steps or a list, so dragging those never turns the page ----
 const mPages = $('m-pages'), PANELS = [...mPages.querySelectorAll('[data-m-panel]')];
-const PAGE_NAMES = { play: 'perform', seq: 'notes', voice: 'voice', fx: 'effects', comp: 'master', presets: 'presets' };
+const PAGE_NAMES = { seq: 'notes', voice: 'voice', fx: 'effects', comp: 'master', presets: 'presets' };
 // the screen is laid out once at 1000 x 600 and scaled as a whole to fit the window, as a plugin window resizes
 const M_W = 1000, M_H = 600;
 let mK = 1;
@@ -4780,10 +4800,23 @@ function mFader(box, label, { min, max, step = 1, get, set, show, dflt, travel =
 }
 const pct = (v) => (v === 100 ? '0%' : (v > 100 ? '+' : '−') + Math.abs(v - 100) + '%');
 
-// ---- perf: eight dials in a line along the top, MIDI CC 1 to 8 in order: tempo, pitch, decay, filter, reso, fm, the
-// echo send and the reverb send. Decay, filter and fm are macros on top of
-// the sound; the rest move the same settings as their faders on the other pages ----
 const sendPct = (v) => (v ? v + '%' : 'off');
+// ---- the glass isn't flat: each control's ink shadow deepens a little toward the top right of the screen (--d, used
+// by the CSS), worked out from where it sits on its own page, and again when the screen's size changes ----
+function mDepth() {
+  const m = $('m').getBoundingClientRect();
+  for (const el of document.querySelectorAll('.m-vf, .m-btn, .m-toggle, .m-pload, .m-tabs button, .m-chead, .m-title, .m-seq-lenrow, .m-step')) {
+    const r = el.getBoundingClientRect();
+    if (!r.width) continue;
+    const x = (((r.left + r.width / 2 - m.left) % m.width) + m.width) % m.width / m.width, y = (r.top + r.height / 2 - m.top) / m.height;
+    el.style.setProperty('--d', (1 + 0.7 * Math.max(0, Math.min(1, x)) * Math.max(0, Math.min(1, 1 - y))).toFixed(2));
+  }
+}
+addEventListener('resize', mDepth);
+
+// ---- perf: eight dials in a line along the top, MIDI CC 1 to 8 in order: tempo, pitch, decay, filter, reso, fm, the
+// echo send and the reverb send. Decay, filter and fm are macros on top of the sound; the rest move the same settings
+// as their faders on the other pages ----
 const PERF_DIALS = [
   ['tempo', { min: 40, max: 240, travel: 2, get: () => tempo, set: (v) => { tempo = v; sendSeq(); }, show: (v) => `${v} bpm`, dflt: 120 }],
   // pitch is free: hundredths of a semitone, over twice the travel
@@ -4792,8 +4825,7 @@ const PERF_DIALS = [
   ...['decay', 'filter'].map((m) => [m, { min: 0, max: 200, get: () => macro[m], set: (v) => setMacro(m, v), show: pct, dflt: 100 }]),
   ['reso', { min: 0, max: 127, get: () => values[PAR.RESO_1], set: (v) => setValue(PAR.RESO_1, v), show: String, dflt: () => factoryInit[PAR.RESO_1] }],
   ['fm', { min: 0, max: 200, get: () => macro.fm, set: (v) => setMacro('fm', v), show: pct, dflt: 100 }],
-  ['echo', { min: 0, max: 100, get: () => fx.send, set: (v) => { fx.send = v; sendMix(); }, show: sendPct, dflt: 0 }],
-  ['reverb', { min: 0, max: 100, get: () => fx.verb, set: (v) => { fx.verb = v; sendMix(); }, show: sendPct, dflt: 0 }]];
+  ...[['echo', 'send'], ['reverb', 'verb']].map(([l, k]) => [l, { min: 0, max: 100, get: () => fx[k], set: (v) => { fx[k] = v; sendMix(); }, show: sendPct, dflt: 0 }])];
 const ccDials = PERF_DIALS.map(([label, o], i) => mFader($('m-perf'), label, { ...o, cc: i + 1 }));
 // MIDI in (Web MIDI, any input, any channel): CC 1 to 8 turn the dials, 0..127 over each one's range. Access is asked
 // for at the first touch (or straight away if it was given before); controllers plugged in later are picked up
@@ -4869,30 +4901,32 @@ mVoiceShow();
 // ---- fx: the echo (ping pong, send, time on the musical lengths, tone, feedback, width) and the ring mod (send,
 // carrier wave and frequency) ----
 const fxF = (box, label, o) => mFader($(box), label, { show: String, ...o });
+// a fader on one of the mix's settings (obj[key], fx, dist or master), sent with the mix
+const mixF = (box, label, obj, key, o) => fxF(box, label, { get: () => obj[key], set: (v) => { obj[key] = v; sendMix(); }, ...o });
 $('m-pp').addEventListener('change', () => setValue(PAR.FX_DELAY_TYPE, $('m-pp').checked ? 1 : 0));
 drawHooks.push(() => { $('m-pp').checked = values[PAR.FX_DELAY_TYPE] === 1; });
-fxF('m-echo', 'send', { min: 0, max: 100, get: () => fx.send, set: (v) => { fx.send = v; sendMix(); }, show: sendPct, dflt: 0 });
+mixF('m-echo', 'send', fx, 'send', { min: 0, max: 100, show: sendPct, dflt: 0 });
 fxF('m-echo', 'time', { min: 0, max: 1000, get: () => Math.round(delayPos * 1000), set: (v) => setDelay(v / 1000), show: showDelay, dflt: Math.round(posOf(3 / 16) * 1000) });
 fxF('m-echo', 'tone', { min: 0, max: 127, get: () => values[PAR.FX_P3], set: (v) => setValue(PAR.FX_P3, v), dflt: 90 });
 fxF('m-echo', 'feedback', { min: 0, max: 127, get: () => values[PAR.FX_P4], set: (v) => setValue(PAR.FX_P4, v), dflt: 50 });
-fxF('m-echo', 'width', { min: 0, max: 200, get: () => fx.width, set: (v) => { fx.width = v; sendMix(); }, show: (v) => v + '%', dflt: 100 });
+mixF('m-echo', 'width', fx, 'width', { min: 0, max: 200, show: (v) => v + '%', dflt: 100 });
 // the reverb: send, then the firmware's four: predelay (1 to 46 ms), decay (its feedback; at the top it holds), tone (a
 // tilt: in the middle it's flat, down darkens and damps the tail, up thins it) and early (the early reflections' level)
 const preMs = (v) => Math.round(2031 * (0.02166 + v / 127 * 0.97784) / (LXR.REAL_FS / 1000)) + ' ms';
-fxF('m-verb', 'send', { min: 0, max: 100, get: () => fx.verb, set: (v) => { fx.verb = v; sendMix(); }, show: sendPct, dflt: 0 });
+mixF('m-verb', 'send', fx, 'verb', { min: 0, max: 100, show: sendPct, dflt: 0 });
 [['predelay', 'vPre', preMs], ['decay', 'vDecay'], ['tone', 'vTone'], ['early', 'vEarly']].forEach(([l, k, show]) =>
-  fxF('m-verb', l, { min: 0, max: 127, get: () => fx[k], set: (v) => { fx[k] = v; sendMix(); }, show: show || String, dflt: FX0[k] }));
+  mixF('m-verb', l, fx, k, { min: 0, max: 127, show: show || String, dflt: FX0[k] }));
 const RING_W = OSC_WAVE_NAMES.map((n) => n.toLowerCase());
-fxF('m-ring', 'send', { min: 0, max: 100, get: () => fx.ring, set: (v) => { fx.ring = v; sendMix(); }, show: sendPct, dflt: 0 });
-fxF('m-ring', 'wave', { min: 0, max: RING_W.length - 1, get: () => fx.ringWave, set: (v) => { fx.ringWave = v; sendMix(); }, show: (v) => RING_W[v], dflt: 0 });
-fxF('m-ring', 'freq', { min: 0, max: 127, get: () => fx.ringFreq, set: (v) => { fx.ringFreq = v; sendMix(); }, dflt: 40 });
+mixF('m-ring', 'send', fx, 'ring', { min: 0, max: 100, show: sendPct, dflt: 0 });
+mixF('m-ring', 'wave', fx, 'ringWave', { min: 0, max: RING_W.length - 1, show: (v) => RING_W[v], dflt: 0 });
+mixF('m-ring', 'freq', fx, 'ringFreq', { min: 0, max: 127, dflt: 40 });
 
 // ---- master, in signal order: the distortion on the whole mix (mix 0 bypasses it; tube, fold or rat), then the compressor ----
 const DIST_T = LXR.DIST_NAMES.map((n) => n.toLowerCase());
-fxF('m-dist', 'mix', { min: 0, max: 100, get: () => dist.mix, set: (v) => { dist.mix = v; sendMix(); }, show: sendPct, dflt: 0 });
-fxF('m-dist', 'type', { min: 0, max: DIST_T.length - 1, get: () => dist.type, set: (v) => { dist.type = v; sendMix(); }, show: (v) => DIST_T[v], dflt: 0 });
-['drive', 'color', 'tone', 'volume'].forEach((l, i) => fxF('m-dist', l, { min: 0, max: 127, get: () => dist.p[i], set: (v) => { dist.p[i] = v; sendMix(); }, dflt: DIST0.p[i] }));
-const mMaster = (label, key, lo, hi, step, show) => fxF('m-comp', label, { min: lo, max: hi, step, get: () => master[key], set: (v) => { master[key] = v; sendMix(); }, show, dflt: MASTER0[key] });
+mixF('m-dist', 'mix', dist, 'mix', { min: 0, max: 100, show: sendPct, dflt: 0 });
+mixF('m-dist', 'type', dist, 'type', { min: 0, max: DIST_T.length - 1, show: (v) => DIST_T[v], dflt: 0 });
+['drive', 'color', 'tone', 'volume'].forEach((l, i) => mixF('m-dist', l, dist.p, i, { min: 0, max: 127, dflt: DIST0.p[i] }));
+const mMaster = (label, key, lo, hi, step, show) => mixF('m-comp', label, master, key, { min: lo, max: hi, step, show, dflt: MASTER0[key] });
 mMaster('threshold', 'thresh', -40, 0, 1, (v) => v + ' dB');
 fxF('m-comp', 'ratio', { min: 0, max: RATIOS.length - 1, get: () => Math.max(0, RATIOS.indexOf(master.ratio)), set: (v) => { master.ratio = RATIOS[v]; sendMix(); }, show: (v) => RATIOS[v] + ':1', dflt: RATIOS.indexOf(MASTER0.ratio) });
 mMaster('attack', 'attack', 1, 50, 1, (v) => v + ' ms');
@@ -4907,142 +4941,6 @@ eventHandlers.push((ev) => {
   $('m-gr').style.width = (Math.log1p(d) / Math.log1p(20) * 100).toFixed(1) + '%'; $('m-gr-out').textContent = `${d.toFixed(1)} dB`;
 });
 stopHooks.push(() => { $('m-gr').style.width = '0%'; $('m-gr-out').textContent = '0.0 dB'; });
-
-// ---- randomisers. Each keeps everything as it was for undo (one step back; a preset load clears it). With next bar
-// ticked, while playing, a randomise's changes wait for the start of the next bar, its button flashing until then ----
-let mUndoSnap = null;
-const mUndoDraw = () => document.querySelectorAll('[data-undo]').forEach((b) => { b.disabled = !mUndoSnap; });
-const mBarBtns = new Set();
-function mRandomise(btn, fn) {
-  startAudio();
-  const was = snapshot();
-  const bar = $('m-nextbar').checked && playing;
-  if (bar) { barSync = true; mBarBtns.add(btn); btn.classList.add('pending'); }
-  try { fn(); } finally { barSync = false; }
-  mUndoSnap = was; mUndoDraw(); drawAll();
-}
-document.querySelectorAll('[data-undo]').forEach((b) => b.addEventListener('click', () => {
-  if (!mUndoSnap) return;
-  const s = mUndoSnap; mUndoSnap = null;
-  const bar = $('m-nextbar').checked && playing;
-  if (bar) barSync = true;
-  try { useSnapshot(s, true); } finally { barSync = false; }
-  mUndoDraw();
-}));
-eventHandlers.push((ev) => {
-  if (ev.type !== 'step' || ev.step !== 0 || !mBarBtns.size) return;
-  const bs = [...mBarBtns]; mBarBtns.clear();
-  setTimeout(() => bs.forEach((b) => b.classList.remove('pending')), ctx && ctx.outputLatency ? ctx.outputLatency * 1000 : 0);
-});
-stopHooks.push(() => { mBarBtns.forEach((b) => b.classList.remove('pending')); mBarBtns.clear(); });
-// ---- the screen's colours: five LCD looks, picked on the presets page and kept on this device. Each sets the
-// colour variables on the screen (style.css), so the whole screen changes at once. glow is how much the lit pixels
-// bloom: full on the backlit (negative) looks, little on the ones with dark pixels on a light panel ----
-const LCD_LOOKS = [
-  ['blue', { panel: '#2238e6', ink: '#eef3ff', 'panel-rgb': '34 56 230', 'ink-rgb': '225 235 255', 'light-rgb': '185 215 255', 'shade-rgb': '6 12 90', glow: 1 }],
-  ['green', { panel: '#9fbf3b', ink: '#1d2b0c', 'panel-rgb': '159 191 59', 'ink-rgb': '29 43 12', 'light-rgb': '214 236 140', 'shade-rgb': '40 60 10', glow: 0.3 }],
-  ['amber', { panel: '#2a1300', ink: '#ffb43a', 'panel-rgb': '42 19 0', 'ink-rgb': '255 180 58', 'light-rgb': '140 70 0', 'shade-rgb': '0 0 0', glow: 1 }],
-  ['grey', { panel: '#c9cdc2', ink: '#20242a', 'panel-rgb': '201 205 194', 'ink-rgb': '32 36 42', 'light-rgb': '240 244 236', 'shade-rgb': '70 75 70', glow: 0.3 }],
-  ['red', { panel: '#1e0306', ink: '#ff4a3d', 'panel-rgb': '30 3 6', 'ink-rgb': '255 74 61', 'light-rgb': '130 20 20', 'shade-rgb': '0 0 0', glow: 1 }],
-];
-const LCD_KEY = 'elixir-synth-lcd';
-let lcdLook = 0;
-function setLcd(i) {
-  lcdLook = LCD_LOOKS[i] ? i : 0;
-  const m = document.querySelector('.m');
-  for (const [k, v] of Object.entries(LCD_LOOKS[lcdLook][1])) m.style.setProperty('--' + k, String(v));
-  document.querySelectorAll('#m-lcd [data-lcd]').forEach((b) => b.setAttribute('aria-pressed', +b.dataset.lcd === lcdLook));
-  try { localStorage.setItem(LCD_KEY, LCD_LOOKS[lcdLook][0]); } catch (e) {}
-}
-LCD_LOOKS.forEach(([name], i) => {
-  const b = document.createElement('button'); b.className = 'm-btn'; b.type = 'button'; b.dataset.lcd = i; b.textContent = name;
-  b.addEventListener('click', () => setLcd(i)); $('m-lcd').append(b);
-});
-setLcd((() => { try { return LCD_LOOKS.findIndex(([n]) => n === localStorage.getItem(LCD_KEY)); } catch (e) { return 0; } })());
-
-const NB_KEY = 'elixir-synth-nextbar';
-try { $('m-nextbar').checked = localStorage.getItem(NB_KEY) === '1'; } catch (e) {}
-$('m-nextbar').addEventListener('change', () => { try { localStorage.setItem(NB_KEY, $('m-nextbar').checked ? '1' : '0'); } catch (e) {} });
-
-// sound: a new patch for the voice, in ranges that still play notes: the note (coarse) and the level and pan stay;
-// mostly saw, square or pwm through a low-pass, now and then fm, a pitch blip, a click or the lfo on a parameter
-const pick = (a) => a[Math.floor(rnd() * a.length)];
-const chance = (p) => rnd() < p;
-function randomSound() {
-  const set = (n, v) => setValue(PAR[n], Math.max(0, Math.min(spec(PAR[n]).max, Math.round(v))));
-  const T = (name) => TARGETS.findIndex((i) => MOD_TARGETS[i][0] === name && i >= T0 && i <= T1);
-  set('OSC_WAVE_DRUM1', pick([2, 2, 3, 5, 1, 0])); set('PWM_1', rIn(0, 127)); set('FINE1', 63);
-  set('VELOA1', chance(0.7) ? rIn(0, 6) : rIn(6, 40)); set('VELOD1', rIn(30, 115)); set('VOL_SLOPE1', rIn(10, 90));
-  const blip = chance(0.3);
-  set('MODAMNT1', blip ? rIn(4, 40) : 0); set('MOD_EG1', rIn(5, 40)); set('PITCH_SLOPE1', rIn(0, 80));
-  const fm = chance(0.35);
-  set('FMAMNT1', fm ? rIn(5, 70) : 0); set('FM_FREQ1', pick([48, 60, 60, 67, 72, 79, 84]) + (chance(0.2) ? rIn(-3, 3) : 0));
-  set('MOD_WAVE_DRUM1', pick([0, 0, 1, 2, 3])); set('MIX_MOD_1', chance(0.85) ? 0 : 1);
-  set('TRANS1_WAVE', rIn(0, 13)); set('TRANS1_VOL', chance(0.25) ? rIn(10, 60) : 0); set('TRANS1_FREQ', rIn(20, 110));
-  set('FILTER_TYPE_1', chance(0.75) ? 0 : pick([2, 6, 5])); set('FILTER_FREQ_1', rIn(35, 110)); set('RESO_1', rIn(0, 105)); set('FILTER_DRIVE_1', rIn(0, 60));
-  set('VOICE_DECIMATION1', chance(0.1) ? rIn(40, 120) : 127); set('DRIVE1', rIn(40, 95));
-  const lfo = chance(0.35);
-  setValue(PAR.TARGET_LFO1, lfo ? TARGETS[pick([T('FILTER_F'), T('PWM'), T('FM_AMOUNT'), T('FILTER_RESO')].filter((i) => i > 0))] : 0);
-  set('AMOUNT_LFO1', lfo ? rIn(10, 70) : 0); set('SYNC_LFO1', chance(0.6) ? rIn(3, 10) : 0); set('FREQ_LFO1', rIn(10, 90));
-  set('WAVE_LFO1', rIn(0, 7)); set('RETRIGGER_LFO1', chance(0.5) ? 1 : 0); set('OFFSET_LFO1', rIn(0, 127));
-}
-// alter: every continuous parameter moved up to 10% of its range either way (menus, note, level and pan stay)
-function alterSound(a = 0.1) {
-  for (const pn of DR1) {
-    const par = PAR[pn], sp = spec(par);
-    if (sp.max < 20 || sp.idx || ['COARSE1', 'VOL1', 'PAN1', 'FINE1'].includes(pn)) continue;
-    if (pn === 'MODAMNT1' && !values[par]) continue;
-    setValue(par, Math.max(0, Math.min(sp.max, Math.round(values[par] + (rnd() * 2 - 1) * a * sp.max))));
-  }
-}
-// random fx: the echo on (half the time) at a musical length, the reverb as often (a room to a long hall), the ring mod
-// now and then; alter fx: each moved a little
-function randomFx() {
-  fx.send = chance(0.55) ? rIn(10, 60) : 0; fx.ring = chance(0.2) ? rIn(10, 60) : 0;
-  fx.verb = chance(0.5) ? rIn(10, 55) : 0;
-  fx.vPre = rIn(0, 90); fx.vDecay = rIn(70, 122); fx.vTone = rIn(30, 85); fx.vEarly = rIn(0, 127);
-  setDelay(randomDelayPos());
-  setValue(PAR.FX_DELAY_TYPE, chance(0.6) ? 1 : 0); setValue(PAR.FX_P3, rIn(40, 110)); setValue(PAR.FX_P4, chance(0.2) ? rIn(70, 105) : rIn(15, 70));
-  fx.width = rIn(60, 160); fx.ringWave = rIn(0, RING_W.length - 1); fx.ringFreq = rIn(5, 120);
-  sendMix();
-}
-function alterFx(a = 0.1) {
-  const nudge = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(v + (rnd() * 2 - 1) * a * (hi - lo))));
-  if (fx.send) fx.send = nudge(fx.send, 1, 100);
-  if (fx.ring) fx.ring = nudge(fx.ring, 1, 100);
-  if (fx.verb) fx.verb = nudge(fx.verb, 1, 100);
-  fx.vPre = nudge(fx.vPre, 0, 127); fx.vDecay = nudge(fx.vDecay, 0, 124); fx.vTone = nudge(fx.vTone, 8, 120); fx.vEarly = nudge(fx.vEarly, 0, 127);
-  setDelay(Math.max(0, Math.min(1, delayPos + (rnd() * 2 - 1) * a / 2)));
-  setValue(PAR.FX_P3, nudge(values[PAR.FX_P3], 0, 127)); setValue(PAR.FX_P4, nudge(values[PAR.FX_P4], 0, 110));
-  fx.width = nudge(fx.width, 0, 200); fx.ringFreq = nudge(fx.ringFreq, 0, 127);
-  sendMix();
-}
-$('m-everything').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { randomSound(); randomNotes(); randomFx(); }));
-$('m-sound').addEventListener('click', (e) => mRandomise(e.currentTarget, randomSound));
-$('m-alter').addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterSound()));
-$('m-pattern').addEventListener('click', (e) => mRandomise(e.currentTarget, randomNotes));
-for (const id of ['m-fxr', 'm-fxr2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomFx));
-for (const id of ['m-fxa', 'm-fxa2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterFx()));
-
-// the randomise popup: opens over the pages and stays open while its buttons are used (next bar's pending flash shows
-// there); done, the opener again, or Escape closes it
-function mRnd(on) { $('m-rnd').hidden = !on; $('m-rnd-open').setAttribute('aria-expanded', on); $('m-rnd-open').classList.toggle('on', on); if (on) mDepth(); }
-$('m-rnd-open').addEventListener('click', () => mRnd($('m-rnd').hidden));
-$('m-rnd-close').addEventListener('click', () => mRnd(false));
-addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('m-rnd').hidden) mRnd(false); });
-
-// ---- the glass isn't flat: each control's ink shadow deepens a little toward the top right of the screen (--d, used
-// by the CSS), worked out from where it sits on its own page, and again when the screen's size changes ----
-function mDepth() {
-  const m = $('m').getBoundingClientRect();
-  for (const el of document.querySelectorAll('.m-vf, .m-btn, .m-toggle, .m-pload, .m-tabs button, .m-chead, .m-title, .m-seq-lenrow, .m-step')) {
-    const r = el.getBoundingClientRect();
-    if (!r.width) continue;
-    const x = (((r.left + r.width / 2 - m.left) % m.width) + m.width) % m.width / m.width, y = (r.top + r.height / 2 - m.top) / m.height;
-    el.style.setProperty('--d', (1 + 0.7 * Math.max(0, Math.min(1, x)) * Math.max(0, Math.min(1, 1 - y))).toFixed(2));
-  }
-}
-addEventListener('resize', mDepth);
 
 // ---- the seq page: the note sequencer. Four pages of sixteen steps; length says how many of them play (1 to 64,
 // through the pages in turn). Along the top: the page tabs (the one playing underlined, those past the length faded),
@@ -5145,7 +5043,7 @@ function nsNow() {
 }
 eventHandlers.push((ev) => {
   if (ev.type !== 'step') return;
-  setTimeout(() => { if (playing) { nsAt = ev; nsNow(); } }, ctx && ctx.outputLatency ? ctx.outputLatency * 1000 : 0);
+  whenHeard(() => { if (playing) { nsAt = ev; nsNow(); } });
 });
 stopHooks.push(() => { nsAt = null; nsNow(); });
 
@@ -5390,8 +5288,8 @@ const FS_RAND = [
   ['sparse', () => Array.from({ length: FS_MAX }, () => (rnd() < 0.22 ? rr() : 0))],
 ];
 const FS_TYPE_KEY = 'elixir-synth-seqrand';
-let fsType = (() => { try { const i = FS_RAND.findIndex(([n]) => n === localStorage.getItem(FS_TYPE_KEY)); return i < 0 ? 0 : i; } catch (e) { return 0; } })();
-$('m-fs-type').addEventListener('click', () => { fsType = (fsType + 1) % FS_RAND.length; try { localStorage.setItem(FS_TYPE_KEY, FS_RAND[fsType][0]); } catch (e) {} fsDraw(); });
+let fsType = Math.max(0, FS_RAND.findIndex(([n]) => n === store.get(FS_TYPE_KEY)));
+$('m-fs-type').addEventListener('click', () => { fsType = (fsType + 1) % FS_RAND.length; store.set(FS_TYPE_KEY, FS_RAND[fsType][0]); fsDraw(); });
 $('m-fs-rand').addEventListener('click', () => { const q = fsF.seq; q.vals = FS_RAND[fsType][1](q.len).map(fsOff); q.on = true; fsDraw(); });
 $('m-fs-on').addEventListener('click', () => { fsF.seq.on = !fsF.seq.on; if (!fsF.seq.on) fsRelease(fsF); fsDraw(); });
 $('m-fs-close').addEventListener('click', () => { $('m-fs').hidden = true; fsF = null; });
@@ -5428,20 +5326,113 @@ eventHandlers.push((ev) => {
   for (const f of mFaders) if (f.seq && f.seq.on && n % f.seq.step === 0) fsStep(f, n / f.seq.step, stepMs * f.seq.step);
 });
 
+// ---- randomisers. Each keeps everything as it was for undo (one step back; a preset load clears it). With next bar
+// ticked, while playing, a randomise's changes wait for the start of the next bar, its button flashing until then ----
+let mUndoSnap = null;
+const mUndoDraw = () => document.querySelectorAll('[data-undo]').forEach((b) => { b.disabled = !mUndoSnap; });
+const mBarBtns = new Set();
+function mRandomise(btn, fn) {
+  startAudio();
+  const was = snapshot();
+  const bar = $('m-nextbar').checked && playing;
+  if (bar) { barSync = true; mBarBtns.add(btn); btn.classList.add('pending'); }
+  try { fn(); } finally { barSync = false; }
+  mUndoSnap = was; mUndoDraw(); drawAll();
+}
+document.querySelectorAll('[data-undo]').forEach((b) => b.addEventListener('click', () => {
+  if (!mUndoSnap) return;
+  const s = mUndoSnap; mUndoSnap = null;
+  const bar = $('m-nextbar').checked && playing;
+  if (bar) barSync = true;
+  try { useSnapshot(s, true); } finally { barSync = false; }
+  mUndoDraw();
+}));
+eventHandlers.push((ev) => {
+  if (ev.type !== 'step' || ev.step !== 0 || !mBarBtns.size) return;
+  const bs = [...mBarBtns]; mBarBtns.clear();
+  whenHeard(() => bs.forEach((b) => b.classList.remove('pending')));
+});
+stopHooks.push(() => { mBarBtns.forEach((b) => b.classList.remove('pending')); mBarBtns.clear(); });
+storedCheck('m-nextbar', 'elixir-synth-nextbar', false);
+
+// sound: a new patch for the voice, in ranges that still play notes: the note (coarse) and the level and pan stay;
+// mostly saw, square or pwm through a low-pass, now and then fm, a pitch blip, a click or the lfo on a parameter
+function randomSound() {
+  const set = (n, v) => setValue(PAR[n], Math.max(0, Math.min(spec(PAR[n]).max, Math.round(v))));
+  const T = (name) => TARGETS.findIndex((i) => MOD_TARGETS[i][0] === name && i >= T0 && i <= T1);
+  set('OSC_WAVE_DRUM1', pick([2, 2, 3, 5, 1, 0])); set('PWM_1', rIn(0, 127)); set('FINE1', 63);
+  set('VELOA1', chance(0.7) ? rIn(0, 6) : rIn(6, 40)); set('VELOD1', rIn(30, 115)); set('VOL_SLOPE1', rIn(10, 90));
+  const blip = chance(0.3);
+  set('MODAMNT1', blip ? rIn(4, 40) : 0); set('MOD_EG1', rIn(5, 40)); set('PITCH_SLOPE1', rIn(0, 80));
+  const fm = chance(0.35);
+  set('FMAMNT1', fm ? rIn(5, 70) : 0); set('FM_FREQ1', pick([48, 60, 60, 67, 72, 79, 84]) + (chance(0.2) ? rIn(-3, 3) : 0));
+  set('MOD_WAVE_DRUM1', pick([0, 0, 1, 2, 3])); set('MIX_MOD_1', chance(0.85) ? 0 : 1);
+  set('TRANS1_WAVE', rIn(0, 13)); set('TRANS1_VOL', chance(0.25) ? rIn(10, 60) : 0); set('TRANS1_FREQ', rIn(20, 110));
+  set('FILTER_TYPE_1', chance(0.75) ? 0 : pick([2, 6, 5])); set('FILTER_FREQ_1', rIn(35, 110)); set('RESO_1', rIn(0, 105)); set('FILTER_DRIVE_1', rIn(0, 60));
+  set('VOICE_DECIMATION1', chance(0.1) ? rIn(40, 120) : 127); set('DRIVE1', rIn(40, 95));
+  const lfo = chance(0.35);
+  setValue(PAR.TARGET_LFO1, lfo ? TARGETS[pick([T('FILTER_F'), T('PWM'), T('FM_AMOUNT'), T('FILTER_RESO')].filter((i) => i > 0))] : 0);
+  set('AMOUNT_LFO1', lfo ? rIn(10, 70) : 0); set('SYNC_LFO1', chance(0.6) ? rIn(3, 10) : 0); set('FREQ_LFO1', rIn(10, 90));
+  set('WAVE_LFO1', rIn(0, 7)); set('RETRIGGER_LFO1', chance(0.5) ? 1 : 0); set('OFFSET_LFO1', rIn(0, 127));
+}
+// alter: every continuous parameter moved up to 10% of its range either way (menus, note, level and pan stay)
+function alterSound(a = 0.1) {
+  for (const pn of DR1) {
+    const par = PAR[pn], sp = spec(par);
+    if (sp.max < 20 || sp.idx || ['COARSE1', 'VOL1', 'PAN1', 'FINE1'].includes(pn)) continue;
+    if (pn === 'MODAMNT1' && !values[par]) continue;
+    setValue(par, Math.max(0, Math.min(sp.max, Math.round(values[par] + (rnd() * 2 - 1) * a * sp.max))));
+  }
+}
+// random fx: the echo on (half the time) at a musical length, the reverb as often (a room to a long hall), the ring mod
+// now and then; alter fx: each moved a little
+function randomFx() {
+  fx.send = chance(0.55) ? rIn(10, 60) : 0; fx.ring = chance(0.2) ? rIn(10, 60) : 0;
+  fx.verb = chance(0.5) ? rIn(10, 55) : 0;
+  fx.vPre = rIn(0, 90); fx.vDecay = rIn(70, 122); fx.vTone = rIn(30, 85); fx.vEarly = rIn(0, 127);
+  setDelay(randomDelayPos());
+  setValue(PAR.FX_DELAY_TYPE, chance(0.6) ? 1 : 0); setValue(PAR.FX_P3, rIn(40, 110)); setValue(PAR.FX_P4, chance(0.2) ? rIn(70, 105) : rIn(15, 70));
+  fx.width = rIn(60, 160); fx.ringWave = rIn(0, RING_W.length - 1); fx.ringFreq = rIn(5, 120);
+  sendMix();
+}
+function alterFx(a = 0.1) {
+  const nudge = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(v + (rnd() * 2 - 1) * a * (hi - lo))));
+  if (fx.send) fx.send = nudge(fx.send, 1, 100);
+  if (fx.ring) fx.ring = nudge(fx.ring, 1, 100);
+  if (fx.verb) fx.verb = nudge(fx.verb, 1, 100);
+  fx.vPre = nudge(fx.vPre, 0, 127); fx.vDecay = nudge(fx.vDecay, 0, 124); fx.vTone = nudge(fx.vTone, 8, 120); fx.vEarly = nudge(fx.vEarly, 0, 127);
+  setDelay(Math.max(0, Math.min(1, delayPos + (rnd() * 2 - 1) * a / 2)));
+  setValue(PAR.FX_P3, nudge(values[PAR.FX_P3], 0, 127)); setValue(PAR.FX_P4, nudge(values[PAR.FX_P4], 0, 110));
+  fx.width = nudge(fx.width, 0, 200); fx.ringFreq = nudge(fx.ringFreq, 0, 127);
+  sendMix();
+}
+$('m-everything').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { randomSound(); randomNotes(); randomFx(); }));
+$('m-sound').addEventListener('click', (e) => mRandomise(e.currentTarget, randomSound));
+$('m-alter').addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterSound()));
+$('m-pattern').addEventListener('click', (e) => mRandomise(e.currentTarget, randomNotes));
+for (const id of ['m-fxr', 'm-fxr2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomFx));
+for (const id of ['m-fxa', 'm-fxa2']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterFx()));
+
+// the randomise popup: opens over the pages and stays open while its buttons are used (next bar's pending flash shows
+// there); done, the opener again, or Escape closes it
+function mRnd(on) { $('m-rnd').hidden = !on; $('m-rnd-open').setAttribute('aria-expanded', on); $('m-rnd-open').classList.toggle('on', on); if (on) mDepth(); }
+$('m-rnd-open').addEventListener('click', () => mRnd($('m-rnd').hidden));
+$('m-rnd-close').addEventListener('click', () => mRnd(false));
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('m-rnd').hidden) mRnd(false); });
+
 // ---- presets: everything (the sound, perf macros, notes, tempo, effects, master and the fader sequencers) under a
 // two-word name, kept in this browser under elixir-synth's own key. Save new, save over the loaded one, load, delete,
 // import and export. While playing, a preset waits for the next bar: until it's heard, the one playing stays marked
 // and the new one's row flashes ----
-const SAVE_KEY = 'elixir-synth-presets', BPM_KEY = 'elixir-synth-presetbpm';
+const SAVE_KEY = 'elixir-synth-presets';
 const fromData = (p, extra) => ({ ...structuredClone(p), ...extra });
 const presetList = [{ name: 'Init', ...snapshot(), builtin: true },
   ...BUILTIN_PRESETS.filter((p) => p && p.v === PRESET_V && p.kit).map((p) => fromData(p, { builtin: true }))];
 const presetData = (k) => { const { builtin, saved, ...p } = k; return structuredClone(p); };
-try { for (const p of JSON.parse(localStorage.getItem(SAVE_KEY)) || []) if (p && p.v === PRESET_V && p.kit) presetList.push(fromData(p, { saved: true })); } catch (e) {}
-function storePresets() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(presetList.filter((k) => k.saved).map(presetData))); } catch (e) {} }
+try { for (const p of JSON.parse(store.get(SAVE_KEY)) || []) if (p && p.v === PRESET_V && p.kit) presetList.push(fromData(p, { saved: true })); } catch (e) {}
+const storePresets = () => store.set(SAVE_KEY, JSON.stringify(presetList.filter((k) => k.saved).map(presetData)));
 let pCur = presetList[0], pPending = null, pShown = null;
-try { $('m-pbpm').checked = localStorage.getItem(BPM_KEY) !== '0'; } catch (e) {}
-$('m-pbpm').addEventListener('change', () => { try { localStorage.setItem(BPM_KEY, $('m-pbpm').checked ? '1' : '0'); } catch (e) {} });
+storedCheck('m-pbpm', 'elixir-synth-presetbpm');
 // a new name: two made-up words
 const SYL = ['ka', 'zu', 'mo', 'ree', 'vax', 'lo', 'quin', 'tor', 'ba', 'shi', 'nek', 'ul', 'dra', 'po', 'ix', 'fen', 'yo', 'gar', 'mi', 'sol'];
 const word = () => { const w = Array.from({ length: rIn(2, 3) }, () => pick(SYL)).join(''); return w[0].toUpperCase() + w.slice(1); };
@@ -5457,7 +5448,7 @@ function pLoad(k) {
 }
 eventHandlers.push((ev) => {
   if (ev.type !== 'step' || ev.step !== 0 || !pPending) return;
-  const p = pPending; setTimeout(() => { if (pPending === p) { pPending = null; pDraw(); } }, ctx && ctx.outputLatency ? ctx.outputLatency * 1000 : 0);
+  const p = pPending; whenHeard(() => { if (pPending === p) { pPending = null; pDraw(); } });
 });
 stopHooks.push(() => { if (pPending) { pPending = null; pDraw(); } });
 function pDraw() {
@@ -5541,14 +5532,13 @@ function recUi() {
     tick(); recTimer = setInterval(tick, 250);
   } else ind.textContent = recState === 'saving' ? 'saving' : '';
 }
-const recSend = (m) => { if (node) node.port.postMessage(m); else if (fallback) fallback.msg(m); };
 async function recToggle() {
   if (recState === 'off') {
     await startAudio();
     recChunks = []; recState = 'on'; recT0 = performance.now();
-    recSend({ type: 'rec' });
+    post({ type: 'rec' });
     if (!playing) setPlaying(true);
-  } else if (recState === 'on') { recState = 'saving'; recSend({ type: 'recStop' }); }
+  } else if (recState === 'on') { recState = 'saving'; post({ type: 'recStop' }); }
   recUi();
 }
 eventHandlers.push((ev) => {
@@ -5595,6 +5585,31 @@ async function mOffer(t, type) {
   return true;
 }
 recUi();
+
+// ---- the screen's colours: five LCD looks, picked on the presets page and kept on this device. Each sets the
+// colour variables on the screen (style.css), so the whole screen changes at once. glow is how much the lit pixels
+// bloom: full on the backlit (negative) looks, little on the ones with dark pixels on a light panel ----
+const LCD_LOOKS = [
+  ['blue', { panel: '#2238e6', ink: '#eef3ff', 'panel-rgb': '34 56 230', 'ink-rgb': '225 235 255', 'light-rgb': '185 215 255', 'shade-rgb': '6 12 90', glow: 1 }],
+  ['green', { panel: '#9fbf3b', ink: '#1d2b0c', 'panel-rgb': '159 191 59', 'ink-rgb': '29 43 12', 'light-rgb': '214 236 140', 'shade-rgb': '40 60 10', glow: 0.3 }],
+  ['amber', { panel: '#2a1300', ink: '#ffb43a', 'panel-rgb': '42 19 0', 'ink-rgb': '255 180 58', 'light-rgb': '140 70 0', 'shade-rgb': '0 0 0', glow: 1 }],
+  ['grey', { panel: '#c9cdc2', ink: '#20242a', 'panel-rgb': '201 205 194', 'ink-rgb': '32 36 42', 'light-rgb': '240 244 236', 'shade-rgb': '70 75 70', glow: 0.3 }],
+  ['red', { panel: '#1e0306', ink: '#ff4a3d', 'panel-rgb': '30 3 6', 'ink-rgb': '255 74 61', 'light-rgb': '130 20 20', 'shade-rgb': '0 0 0', glow: 1 }],
+];
+const LCD_KEY = 'elixir-synth-lcd';
+let lcdLook = 0;
+function setLcd(i) {
+  lcdLook = LCD_LOOKS[i] ? i : 0;
+  const m = document.querySelector('.m');
+  for (const [k, v] of Object.entries(LCD_LOOKS[lcdLook][1])) m.style.setProperty('--' + k, String(v));
+  document.querySelectorAll('#m-lcd [data-lcd]').forEach((b) => b.setAttribute('aria-pressed', +b.dataset.lcd === lcdLook));
+  store.set(LCD_KEY, LCD_LOOKS[lcdLook][0]);
+}
+LCD_LOOKS.forEach(([name], i) => {
+  const b = document.createElement('button'); b.className = 'm-btn'; b.type = 'button'; b.dataset.lcd = i; b.textContent = name;
+  b.addEventListener('click', () => setLcd(i)); $('m-lcd').append(b);
+});
+setLcd(LCD_LOOKS.findIndex(([n]) => n === store.get(LCD_KEY)));
 
 // ---- installable: a service worker keeps the app for offline use (sw.js: the page comes from the network first, so a
 // new version arrives as soon as there's a connection), and the presets page offers to install it where the browser

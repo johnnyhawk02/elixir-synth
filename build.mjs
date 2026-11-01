@@ -27,7 +27,7 @@ const presets = existsSync(presetDir) ? readdirSync(presetDir).filter((f) => /\.
 for (const p of presets) if (p.v !== PRESET_V) throw new Error(`presets/: ${p.name} is format v${p.v}, the page reads v${PRESET_V}`);
 
 // the page's own code, run in this order as one classic script (each file sees the ones before it)
-const APP = ['core', 'ui', 'noteseq', 'fseq', 'presets', 'record', 'pwa'];
+const APP = ['core', 'ui', 'perf', 'voice', 'fx', 'noteseq', 'fseq', 'random', 'presets', 'record', 'lcd', 'pwa'];
 const app = APP.map((f) => read(`app/${f}.js`)).join('\n');
 const esc = (t) => t.replace(/<\/script/gi, '<\\/script');
 const page = read('index.src.html')
