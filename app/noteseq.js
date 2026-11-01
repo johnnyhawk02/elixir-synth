@@ -221,7 +221,10 @@ const SEQ_ALGOS = [
       d = Math.max(0, Math.min(2 * n, d + pick([-2, -1, -1, 1, 1, 2, 3])));
     }
     return out.slice(0, 16);
-  }]];
+  }],
+  // 9 pure: no shaping at all: each step on its own, any note of the two octaves, any gate (a rest as likely as any
+  // other), an accent and a slide each one time in two
+  ['pure', (n) => Array.from({ length: 16 }, () => st(rIn(0, 2 * n), rIn(0, 5), chance(0.5), chance(0.5)))]];
 function randomPage(pg) {
   const n = SCALES[seq.scale][1].length;
   const algo = SEQ_ALGOS[seq.algo] || SEQ_ALGOS[0];

@@ -101,7 +101,7 @@ const OCT_MIN = -2, OCT_MAX = 2;
 // up to the top, gliding between steps on a slide (so the timbre moves with the pitch); off, the steps' values are kept
 // but nothing is heard of them
 const MORPH_DESTS = [['cutoff', 'FILTER_FREQ_1'], ['pwm', 'PWM_1'], ['fm amt', 'FMAMNT1'], ['fm freq', 'FM_FREQ1'], ['reso', 'RESO_1'], ['flt drive', 'FILTER_DRIVE_1']];
-const SEQ0 = { root: 0, scale: 1, oct: 0, density: 100, len: 64, accent: 6, glide: 35, vel: 100, algo: 0, morph: 0,
+const SEQ0 = { root: 0, scale: 1, oct: 0, density: 100, len: 64, accent: 6, glide: 35, vel: 100, algo: 8, morph: 0,
   steps: [[0, 4, 1, 0], [0, 2, 0, 0], [7, 3, 0, 1], [8, 4, 0, 0], [0, 0, 0, 0], [3, 3, 1, 0], [0, 2, 0, 0], [5, 4, 0, 1],
     [4, 4, 0, 0], [0, 2, 1, 0], [0, 0, 0, 0], [7, 3, 0, 0], [6, 4, 1, 1], [7, 4, 0, 0], [2, 2, 0, 0], [0, 3, 0, 0]].map(([d, gate, acc, slide]) => ({ d, gate, acc: !!acc, slide: !!slide })) };
 const PAGES = 4, NSTEPS = PAGES * 16;

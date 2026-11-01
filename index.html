@@ -434,7 +434,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v93</small></button>
+    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v61</small></button>
     <div class="m-tport">
       <button class="m-btn m-play" id="m-play" type="button" aria-pressed="false" aria-label="play (space)" title="play (space)"><i aria-hidden="true"></i></button>
       <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
@@ -593,7 +593,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
         <label class="m-chk"><input id="m-bigbuf" type="checkbox"><i aria-hidden="true"></i>bigger audio buffer (slower to respond, try it if the sound breaks up)</label>
         <output class="m-aload" id="m-aload">audio: not started</output>
-        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v93, 1 Nov, 18:09</footer>
+        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v61, 1 Nov, 18:43</footer>
       </div>
     </section>
   </div>
@@ -4905,7 +4905,7 @@ const OCT_MIN = -2, OCT_MAX = 2;
 // up to the top, gliding between steps on a slide (so the timbre moves with the pitch); off, the steps' values are kept
 // but nothing is heard of them
 const MORPH_DESTS = [['cutoff', 'FILTER_FREQ_1'], ['pwm', 'PWM_1'], ['fm amt', 'FMAMNT1'], ['fm freq', 'FM_FREQ1'], ['reso', 'RESO_1'], ['flt drive', 'FILTER_DRIVE_1']];
-const SEQ0 = { root: 0, scale: 1, oct: 0, density: 100, len: 64, accent: 6, glide: 35, vel: 100, algo: 0, morph: 0,
+const SEQ0 = { root: 0, scale: 1, oct: 0, density: 100, len: 64, accent: 6, glide: 35, vel: 100, algo: 8, morph: 0,
   steps: [[0, 4, 1, 0], [0, 2, 0, 0], [7, 3, 0, 1], [8, 4, 0, 0], [0, 0, 0, 0], [3, 3, 1, 0], [0, 2, 0, 0], [5, 4, 0, 1],
     [4, 4, 0, 0], [0, 2, 1, 0], [0, 0, 0, 0], [7, 3, 0, 0], [6, 4, 1, 1], [7, 4, 0, 0], [2, 2, 0, 0], [0, 3, 0, 0]].map(([d, gate, acc, slide]) => ({ d, gate, acc: !!acc, slide: !!slide })) };
 const PAGES = 4, NSTEPS = PAGES * 16;
@@ -5591,7 +5591,10 @@ const SEQ_ALGOS = [
       d = Math.max(0, Math.min(2 * n, d + pick([-2, -1, -1, 1, 1, 2, 3])));
     }
     return out.slice(0, 16);
-  }]];
+  }],
+  // 9 pure: no shaping at all: each step on its own, any note of the two octaves, any gate (a rest as likely as any
+  // other), an accent and a slide each one time in two
+  ['pure', (n) => Array.from({ length: 16 }, () => st(rIn(0, 2 * n), rIn(0, 5), chance(0.5), chance(0.5)))]];
 function randomPage(pg) {
   const n = SCALES[seq.scale][1].length;
   const algo = SEQ_ALGOS[seq.algo] || SEQ_ALGOS[0];
