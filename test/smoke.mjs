@@ -9,6 +9,7 @@ import { pathToFileURL } from 'node:url';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const url = pathToFileURL(process.argv[2] || new URL('../index.html', import.meta.url).pathname).href;
 let fails = 0;
+const VP_FILTER = ['FILTER_FREQ_1', 'RESO_1', 'FILTER_TYPE_1', 'FILTER_DRIVE_1', 'VOL1', 'PAN1', 'VOICE_DECIMATION1', 'DRIVE1'];
 const check = (ok, what) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`); if (!ok) fails++; };
 const b = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
 for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
@@ -58,6 +59,19 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(await pg.evaluate(() => document.querySelectorAll('#m-vsec .m-btn').length === 2 && [...document.querySelectorAll('.m-vtab')].every((t) => {
     const [a, b] = [...t.querySelectorAll('.m-vpart')].map((e) => e.getBoundingClientRect()); return !b || (Math.abs(a.top - b.top) < 1 && a.right <= b.left + 1); })
     && [...document.querySelectorAll('.m-vset')].length === 4), 'voice: two tabs of two sections side by side');
+  // the voice's randomisers, down the right of the voice page: a section's button changes only that section and shows its tab
+  check(await pg.evaluate(() => { const v = document.querySelector('.m-vbtns').getBoundingClientRect(), s = $('m-vsets').getBoundingClientRect(); return v.left >= s.right; }), 'voice: the randomisers sit on the right');
+  {
+    const snap = () => pg.evaluate(() => Object.fromEntries(DR1.map((n) => [n, values[PAR[n]]])));
+    const was = await snap();
+    await pg.click('[data-vrand="filter"]');
+    const now = await snap(), filt = VP_FILTER;
+    check(Object.keys(now).every((n) => filt.includes(n) || now[n] === was[n]) && filt.some((n) => now[n] !== was[n])
+      && await pg.evaluate(() => mVSec === 1 && !$('m-vsets').children[1].hidden), 'voice: random filter changes the filter section only, and shows it');
+    await pg.click('.m-vbtns [data-undo]');
+    check(JSON.stringify(await snap()) === JSON.stringify(was), 'voice: undo puts it back');
+    await pg.click('#m-vsec .m-btn >> nth=0');
+  }
   // targets: every button at least 36 px high in the 1000 x 600 layout
   const small = await pg.evaluate(() => [...document.querySelectorAll('.m button, .m .m-btn')].filter((e) => { const r = e.getBoundingClientRect(); return r.width && r.height / mK < 36; }).map((e) => e.textContent.trim()));
   check(!small.length, `buttons at least 36 px high ${small.length ? small.join(', ') : ''}`);
