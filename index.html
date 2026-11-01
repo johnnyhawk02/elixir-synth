@@ -390,7 +390,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v48</small></button>
+    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v49</small></button>
     <div class="m-tport">
       <button class="m-btn m-play" id="m-play" type="button" aria-pressed="false" aria-label="play (space)" title="play (space)"><i aria-hidden="true"></i></button>
       <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
@@ -501,7 +501,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
       <div class="m-prefs-body">
         <div class="m-lcd" id="m-lcd" role="group" aria-label="screen colours"><span>screen</span></div>
         <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
-        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v48, 1 Nov, 14:45</footer>
+        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v49, 1 Nov, 14:53</footer>
       </div>
     </section>
   </div>
@@ -4644,18 +4644,13 @@ const seq = structuredClone(SEQ0);
 const degSemis = (d, sc = seq.scale, root = seq.root, oct = seq.oct) => { const s = SCALES[sc][1]; return root + 12 * oct + s[d % s.length] + 12 * Math.floor(d / s.length); };
 const stepNote = (st) => values[PAR.COARSE1] + degSemis(st.d);
 let playing = false, tempo = 120;
-// density: the share of each page's playing steps (those within the length) that sound; the rest are thinned out, the off-beat 16ths first and
-// the downbeats last, so the line thins to its bones (and comes back the same way) as the fader comes down
+// density: each step has a weight, w, 0 to 99 (the randomisers deal them out at random); as the density comes down
+// from 100, the steps weighted under 100 - density drop out, the lowest first, until at 0 even a 99 is gone. A step
+// with no weight (from before there were weights) takes one from where it sits in the bar: the downbeats high,
+// the off-beat 16ths low
 const DENSITY_ORDER = [0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15];
-function thinned() {
-  const out = new Array(NSTEPS).fill(false);
-  for (let pg = 0; pg < PAGES; pg++) {
-    const on = DENSITY_ORDER.map((i) => pg * 16 + i).filter((s) => s < seq.len && seq.steps[s].gate);
-    const keep = Math.round(on.length * seq.density / 100);
-    on.slice(keep).forEach((s) => { out[s] = true; });
-  }
-  return out;
-}
+const stepWeight = (st, s) => (Number.isFinite(st.w) ? st.w : Math.round(99 - DENSITY_ORDER.indexOf(s % 16) * 99 / 15));
+const thinned = () => seq.steps.map((st, s) => s < seq.len && st.gate > 0 && stepWeight(st, s) < 100 - seq.density);
 function sendSeq() {
   const thin = thinned();
   const md = MORPH_DESTS[seq.morph - 1];
@@ -5196,7 +5191,7 @@ nsFader('morph', 'morph', { min: 0, max: MORPH_DESTS.length, show: (v) => (v ? M
 
 // random: a new line for a page, made by the algorithm picked on the algo fader (kept in the preset). Each makes 16
 // steps of { d: degree of the scale, gate, acc, slide }, so whatever it makes stays in the key
-const st = (d, gate, acc = false, slide = false) => ({ d: Math.max(0, Math.min(degMax(), d)), gate, acc, slide });
+const st = (d, gate, acc = false, slide = false) => ({ d: Math.max(0, Math.min(degMax(), d)), gate, acc, slide, w: rIn(0, 99) });
 const euclid = (k, rot) => Array.from({ length: 16 }, (_, i) => ((i + rot) * k) % 16 < k);
 const SEQ_ALGOS = [
   // 1 dice: each step on its own: mostly the root and the notes near it, now and then an octave up; about one step in

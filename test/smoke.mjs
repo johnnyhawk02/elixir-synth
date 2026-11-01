@@ -173,10 +173,12 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   r = await box('.m-step >> nth=9 >> .m-sm .s');
   await pg.mouse.click(r.x + r.width / 2, r.y - r.height * 0.3);
   check(await pg.evaluate((sl) => seq.steps[16 + 9].slide === !sl, sl), 'a tap just above the S still switches slide');
-  // density: at 50% half of each page's playing steps sound, the downbeat kept; back at 100% all of them
-  check(await pg.evaluate(() => { seq.density = 50; const t = thinned(), on = seq.steps.slice(0, 16).filter((x) => x.gate).length;
-    const kept = seq.steps.slice(0, 16).filter((x, i) => x.gate && !t[i]).length; const ok = kept === Math.round(on / 2) && (!seq.steps[0].gate || !t[0]);
-    seq.density = 100; return ok && !thinned().some(Boolean); }), 'density thins the playing steps, off-beats first');
+  // density: each step's weight (0-99) against it: at 50 the steps weighted under 50 drop out, at 0 every one, at 100 none
+  check(await pg.evaluate(() => { const was = seq.density, ws = seq.steps.map((x, s) => stepWeight(x, s)), on = (s) => s < seq.len && seq.steps[s].gate;
+    const at = (d) => { seq.density = d; return thinned(); };
+    const half = at(50).every((t, s) => t === !!(on(s) && ws[s] < 50)), none = at(0).every((t, s) => t === !!on(s)), all = !at(100).some(Boolean);
+    seq.density = was; return half && none && all; }), 'density drops the steps weighted under 100 - density');
+  check(await pg.evaluate(() => { randomPage(1); return seq.steps.slice(16, 32).every((x) => Number.isInteger(x.w) && x.w >= 0 && x.w <= 99); }), 'random gives every step a weight 0 to 99');
   // morph: the morph button swaps the gate lane for the morph lane; the top of a step there sets 100, and the morph
   // fader (off by default) names the parameter it moves
   await pg.click('#m-nlane');

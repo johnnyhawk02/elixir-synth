@@ -145,7 +145,7 @@ nsFader('morph', 'morph', { min: 0, max: MORPH_DESTS.length, show: (v) => (v ? M
 
 // random: a new line for a page, made by the algorithm picked on the algo fader (kept in the preset). Each makes 16
 // steps of { d: degree of the scale, gate, acc, slide }, so whatever it makes stays in the key
-const st = (d, gate, acc = false, slide = false) => ({ d: Math.max(0, Math.min(degMax(), d)), gate, acc, slide });
+const st = (d, gate, acc = false, slide = false) => ({ d: Math.max(0, Math.min(degMax(), d)), gate, acc, slide, w: rIn(0, 99) });
 const euclid = (k, rot) => Array.from({ length: 16 }, (_, i) => ((i + rot) * k) % 16 < k);
 const SEQ_ALGOS = [
   // 1 dice: each step on its own: mostly the root and the notes near it, now and then an octave up; about one step in
