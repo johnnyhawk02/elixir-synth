@@ -213,6 +213,7 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   await pg.click('#m-nrand');
   check(await pg.isEnabled('#m-nalter ~ [data-undo]'), 'random notes can be undone');
   check(await pg.evaluate((b) => { const was = JSON.parse(b); return [0, 1, 2, 3].every((pg) => JSON.stringify(seq.steps.slice(pg * 16, pg * 16 + 16)) !== JSON.stringify(was.slice(pg * 16, pg * 16 + 16))); }, seqBefore), 'random renews every page');
+  check(await pg.evaluate(() => { const p = (k) => JSON.stringify(seq.steps.slice(k * 16, k * 16 + 16).map((x) => [x.d, x.gate])); return new Set([0, 1, 2, 3].map(p)).size === 4; }), 'each page gets its own pattern');
   // play runs the steps
   await pg.keyboard.press('Space'); await pg.waitForTimeout(1200);
   check(await pg.evaluate(() => document.querySelectorAll('.m-step.now').length === 1), 'playing lights the step');

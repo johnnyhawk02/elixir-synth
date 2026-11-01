@@ -244,8 +244,8 @@ function copyVary() {
 }
 // the whole sequence, for the perf page's randomisers: a new page 1 and its variations
 function randomNotes() { randomPage(0); copyVary(); sendSeq(); }
-// random: the whole sequence, every page (a new line on page 1, pages 2 to 4 variations of it), whichever page is shown
-$('m-nrand').addEventListener('click', (e) => mRandomise(e.currentTarget, randomNotes));
+// random: all 64 steps, each page a new line of its own (not a variation of page 1), whichever page is shown
+$('m-nrand').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { for (let pg = 0; pg < PAGES; pg++) randomPage(pg); sendSeq(); }));
 $('m-nalter').addEventListener('click', (e) => mRandomise(e.currentTarget, () => { alterPage(nsPage); sendSeq(); }));
 // copy to the next page: the page shown, exactly, onto the one after it, which is then shown (so pressing it again
 // carries on to the next); off on page 4. Undo puts the page back as it was
