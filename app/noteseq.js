@@ -1,6 +1,6 @@
 // ---- the seq page: the note sequencer. Four pages of sixteen steps, played in turn a bar each; the page tabs pick
 // the page shown (the one playing is underlined), and copy makes pages 2 to 4 slight variations of page 1. A page's
-// steps sit in one line of sixteen; the strip over them picks what a touch sets: note (the step's height is its note in the scale; a resting step comes on), gate (bottom rests, top rings),
+// steps sit in one line of sixteen, each covering two octaves of the scale, and oct - / oct + move the whole sequence an octave; the strip over them picks what a touch sets: note (the step's height is its note in the scale; a resting step comes on), gate (bottom rests, top rings),
 // accent or slide (tap, or drag across, to switch). Under them: root, scale, accent and glide, and random, alter, undo ----
 let nsMode = 'note', nsPage = 0;
 const nsStep = (i) => seq.steps[nsPage * 16 + i];
@@ -13,7 +13,7 @@ function nsDraw() {
   nsCells.forEach((c, i) => {
     const st = nsStep(i);
     c.querySelector('.m-sn').textContent = st.gate ? noteName(stepNote(st)) : '—';
-    const f = nsMode === 'gate' ? st.gate / 5 : nsMode === 'note' ? (st.d + 1) / (DEG_MAX + 1) : 0;
+    const f = nsMode === 'gate' ? st.gate / 5 : nsMode === 'note' ? (Math.min(st.d, degMax()) + 1) / (degMax() + 1) : 0;
     c.style.setProperty('--f', f);
     c.classList.toggle('rest', !st.gate); c.classList.toggle('acc', st.acc); c.classList.toggle('slide', st.slide);
     c.setAttribute('aria-label', `step ${i + 1}: ${st.gate ? noteName(stepNote(st)) : 'rest'}${st.acc ? ', accent' : ''}${st.slide ? ', slide' : ''}`);
@@ -21,10 +21,16 @@ function nsDraw() {
   $('m-steps').dataset.mode = nsMode;
   [...$('m-modes').children].forEach((b) => b.setAttribute('aria-selected', b.dataset.mode === nsMode));
   document.querySelectorAll('#m-npages [data-page]').forEach((b) => b.setAttribute('aria-selected', +b.dataset.page === nsPage));
+  $('m-noct-out').textContent = seq.oct > 0 ? `+${seq.oct}` : String(seq.oct);
+  $('m-noct-dn').disabled = seq.oct <= OCT_MIN; $('m-noct-up').disabled = seq.oct >= OCT_MAX;
 }
 drawHooks.push(nsDraw);
 $('m-modes').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (b) { nsMode = b.dataset.mode; nsDraw(); } });
 $('m-npages').addEventListener('click', (e) => { const b = e.target.closest('[data-page]'); if (b) { nsPage = +b.dataset.page; nsDraw(); nsNow(); } });
+// octave down and up: the whole sequence, every page
+const nsOct = (k) => { seq.oct = Math.max(OCT_MIN, Math.min(OCT_MAX, seq.oct + k)); sendSeq(); nsDraw(); };
+$('m-noct-dn').addEventListener('click', () => nsOct(-1));
+$('m-noct-up').addEventListener('click', () => nsOct(1));
 // hear a note as it's set, while stopped
 function nsHear(st) { if (!playing && st.gate) { startAudio(); send({ type: 'note', n: degSemis(st.d), acc: st.acc, gate: st.gate }); } }
 {
@@ -40,7 +46,7 @@ function nsHear(st) { if (!playing && st.gate) { startAudio(); send({ type: 'not
     const y = Math.max(0, Math.min(1, (cr.bottom - e.clientY) / cr.height));
     let hear = false;
     if (nsMode === 'note') {
-      const d = Math.min(DEG_MAX, Math.floor(y * (DEG_MAX + 1)));
+      const d = Math.min(degMax(), Math.floor(y * (degMax() + 1)));
       if (d !== st.d || !st.gate) { st.d = d; if (!st.gate) st.gate = 4; hear = true; }
     } else if (nsMode === 'gate') {
       const g = Math.min(5, Math.floor(y * 6));
@@ -80,7 +86,7 @@ mFader($('m-seqf'), 'glide', { min: 0, max: 100, step: 5, get: () => seq.glide, 
 
 // random: a new line for a page, made by the algorithm picked on the algo fader (kept in the preset). Each makes 16
 // steps of { d: degree of the scale, gate, acc, slide }, so whatever it makes stays in the key
-const st = (d, gate, acc = false, slide = false) => ({ d: Math.max(0, Math.min(DEG_MAX, d)), gate, acc, slide });
+const st = (d, gate, acc = false, slide = false) => ({ d: Math.max(0, Math.min(degMax(), d)), gate, acc, slide });
 const euclid = (k, rot) => Array.from({ length: 16 }, (_, i) => ((i + rot) * k) % 16 < k);
 const SEQ_ALGOS = [
   // 1 dice: each step on its own: mostly the root and the notes near it, now and then an octave up; about one step in
@@ -164,7 +170,7 @@ function randomPage(pg) {
 function alterPage(pg, k = rIn(2, 4)) {
   for (let j = 0; j < k; j++) {
     const st = seq.steps[pg * 16 + rIn(0, 15)], what = rIn(0, 3);
-    if (what === 0 || (what === 1 && !st.gate)) { st.d = Math.max(0, Math.min(DEG_MAX, st.d + pick([-2, -1, 1, 2]))); if (!st.gate) st.gate = 4; }
+    if (what === 0 || (what === 1 && !st.gate)) { st.d = Math.max(0, Math.min(degMax(), st.d + pick([-2, -1, 1, 2]))); if (!st.gate) st.gate = 4; }
     else if (what === 1) st.gate = chance(0.4) ? 0 : rIn(1, 5);
     else if (what === 2) st.acc = !st.acc;
     else st.slide = !st.slide;

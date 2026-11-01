@@ -205,7 +205,10 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m .m-modes .m-btn { min-height: 44px; padding: 0 2px; font-size: min(var(--fs-xs), 16px) !important; letter-spacing: .02em; }
 .m .m-modes .m-btn[aria-selected="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
 /* the pages: four tabs (the one playing underlined) and the copy button */
-.m-npages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.4fr); gap: 4px; }
+.m-npages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.4fr) minmax(0, 2.6fr); gap: 4px; }
+.m-noct { display: grid; grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr); gap: 4px; align-items: center; }
+.m-noct output { text-align: center; font-size: min(var(--fs-xs), 16px); }
+.m .m-npages .m-btn:disabled { opacity: .35; }
 .m .m-npages .m-btn { min-height: 40px; padding: 0 2px; font-size: min(var(--fs-xs), 16px) !important; letter-spacing: .02em; white-space: nowrap; overflow: hidden; }
 .m .m-npages .m-btn[aria-selected="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
 .m .m-npages .m-btn.now { box-shadow: inset 0 -5px 0 var(--ink); }

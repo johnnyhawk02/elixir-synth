@@ -105,11 +105,19 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   r = await box('.m-step >> nth=5');
   await pg.mouse.click(r.x + r.width / 2, r.y + r.height - 3);
   check(await pg.evaluate(() => seq.steps.length === 64 && seq.steps[21].gate === 0), 'page 2 edits its own steps');
+  // octave buttons: the whole sequence moves an octave, held to -2 .. +2; the top of a step is two octaves up
+  const n0 = await pg.evaluate(() => degSemis(seq.steps[0].d));
+  await pg.click('#m-noct-up');
+  check(await pg.evaluate((n0) => seq.oct === 1 && degSemis(seq.steps[0].d) === n0 + 12 && $('m-noct-out').textContent === '+1', n0), 'oct + moves the sequence up an octave');
+  for (let k = 0; k < 4; k++) await pg.click('#m-noct-dn', { force: true });
+  check(await pg.evaluate(() => seq.oct === -2 && $('m-noct-dn').disabled), 'oct - stops at two down');
+  await pg.evaluate(() => { seq.oct = 0; sendSeq(); nsDraw(); });
+  check(await pg.evaluate(() => degSemis(degMax()) - degSemis(0) === 24), 'a step covers two octaves');
   await pg.click('#m-ncopy');
   check(await pg.evaluate(() => { const k = [1, 2, 3].map((p) => seq.steps.slice(p * 16, p * 16 + 16).filter((st, i) => JSON.stringify(st) !== JSON.stringify(seq.steps[i])).length); return k.every((n) => n <= 5) && k.some((n) => n > 0); }), 'copy: pages 2 to 4 are page 1, slightly varied');
   // every algorithm makes a valid page
   check(await pg.evaluate(() => SEQ_ALGOS.every((_, a) => { seq.algo = a; for (let k = 0; k < 100; k++) { randomPage(1); const p = seq.steps.slice(16, 32);
-    if (p.some((x) => !(x.d >= 0 && x.d <= DEG_MAX && x.gate >= 0 && x.gate <= 5)) || !p.some((x) => x.gate)) return false; } return true; })), 'all eight algorithms make valid pages');
+    if (p.some((x) => !(x.d >= 0 && x.d <= degMax() && x.gate >= 0 && x.gate <= 5)) || !p.some((x) => x.gate)) return false; } return true; })), 'all eight algorithms make valid pages');
   await pg.evaluate(() => { seq.algo = 0; });
   await pg.click('#m-npages [data-page="0"]');
   // the space bar starts and stops
