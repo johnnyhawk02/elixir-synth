@@ -37,14 +37,8 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(await pg.evaluate(() => { const r = [...document.querySelectorAll('#m-perf .m-dial')].map((e) => e.getBoundingClientRect()), t = document.querySelector('.m-tabs').getBoundingClientRect();
     const s = [...document.querySelectorAll('#m-steps .m-step')].map((e) => e.getBoundingClientRect());
     return r.length === 8 && r.every((b) => Math.abs(b.top - r[0].top) < 1 && b.bottom <= t.top) && s.length === 16 && s.every((b) => Math.abs(b.top - s[0].top) < 1); }), 'the dials and the steps are one line each');
-  // the randomisers: a popup, opened and closed by its button (and done), each button whole
-  check(await pg.evaluate(() => $('m-rnd').hidden), 'the randomise popup starts closed');
-  await pg.click('#m-rnd-open');
-  check(await pg.evaluate(() => !$('m-rnd').hidden && [...document.querySelectorAll('.m-rand .m-btn')].every((e) => e.getBoundingClientRect().width > 0 && e.scrollWidth <= e.clientWidth)), 'the randomise button opens the popup');
-  await pg.click('#m-sound');
-  check(await pg.evaluate(() => !$('m-rnd').hidden) && await pg.isEnabled('#m-fxa ~ [data-undo]'), 'a randomiser works from the popup, which stays open');
-  await pg.click('#m-rnd-close');
-  check(await pg.evaluate(() => $('m-rnd').hidden), 'done closes the popup');
+  // no randomise button or popup: the main page has the randomisers
+  check(await pg.evaluate(() => !$('m-rnd') && !$('m-rnd-open')), 'no randomise popup');
   // the page buttons sit along the bottom, under the pages, and there's no x/y page
   check(await pg.evaluate(() => { const t = document.querySelector('.m > .m-tabs').getBoundingClientRect(), p = $('m-pages').getBoundingClientRect(), m = $('m').getBoundingClientRect();
     return t.top >= p.bottom - 1 && m.bottom - t.bottom < 20 * mK && document.querySelectorAll('[data-m-tab]').length === 6 && !document.querySelector('[data-m-tab="xy"], [data-m-panel="xy"]'); }), 'the page buttons are along the bottom; no x/y page');
@@ -64,7 +58,7 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   await pg.click('.m-main-card [data-undo]');
   check(await pg.evaluate((b) => JSON.stringify([values[PAR.FILTER_FREQ_1], values[PAR.RESO_1], values[PAR.FILTER_DRIVE_1], values[PAR.DRIVE1]]) === b, mainBefore), 'main: undo puts it back');
   await pg.click('.m-main-card .m-nextbar');
-  check(await pg.evaluate(() => $('m-nextbar').checked && localStorage.getItem('elixir-synth-nextbar') === '1'), 'main: next bar is the popup\'s setting too');
+  check(await pg.evaluate(() => $('m-nextbar').checked && localStorage.getItem('elixir-synth-nextbar') === '1'), 'main: next bar is kept');
   await pg.click('.m-main-card .m-nextbar');
   // shift on the main page moves the pattern as the seq page's does
   const shBefore = await pg.evaluate(() => JSON.stringify(seq.steps.slice(0, seq.len)));

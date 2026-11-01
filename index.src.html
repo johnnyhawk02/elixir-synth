@@ -35,7 +35,7 @@
       <div class="m-mcol" role="group" aria-label="randomise everything">
         <div class="m-fxhead"><b>all</b></div>
         <button class="m-btn m-big" id="m-mall" type="button">everything</button>
-        <label class="m-chk m-nextbar"><input id="m-mnextbar" type="checkbox"><i aria-hidden="true"></i>next bar</label>
+        <label class="m-chk m-nextbar"><input id="m-nextbar" type="checkbox"><i aria-hidden="true"></i>next bar</label>
         <button class="m-btn" data-undo type="button" disabled>undo</button>
         <button class="m-toggle" id="m-metro" type="button" aria-pressed="false">metronome</button>
       </div>
@@ -156,7 +156,6 @@
   </div>
   </div>
 
-  <button class="m-btn m-rnd-open" id="m-rnd-open" type="button" aria-haspopup="dialog" aria-expanded="false">randomise</button>
   <nav class="m-tabs" role="tablist" aria-label="pages">
     <button type="button" role="tab" data-m-tab="main" aria-selected="true">main</button>
     <button type="button" role="tab" data-m-tab="seq" aria-selected="false">seq</button>
@@ -174,22 +173,6 @@
         <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
         <label class="m-chk"><input id="m-lowlat" type="checkbox"><i aria-hidden="true"></i>low latency (can break up when the phone is busy)</label>
         <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v@VER@, @BUILT@</footer>
-      </div>
-    </section>
-  </div>
-
-  <div class="m-seq m-rnd" id="m-rnd" hidden>
-    <section class="m-card m-rand-card" role="dialog" aria-label="randomise">
-      <div class="m-chead"><b>randomise</b><label class="m-chk m-nextbar"><input id="m-nextbar" type="checkbox"><i aria-hidden="true"></i>next bar</label></div>
-      <div class="m-rand">
-        <button class="m-btn m-big" id="m-everything" type="button">everything</button>
-        <button class="m-btn" id="m-sound" type="button">sound</button>
-        <button class="m-btn" id="m-alter" type="button">alter</button>
-        <button class="m-btn" id="m-pattern" type="button">notes</button>
-        <button class="m-btn" id="m-fxr" type="button">random fx</button>
-        <button class="m-btn" id="m-fxa" type="button">alter fx</button>
-        <button class="m-btn" data-undo type="button" disabled>undo</button>
-        <button class="m-btn" id="m-rnd-close" type="button">done</button>
       </div>
     </section>
   </div>

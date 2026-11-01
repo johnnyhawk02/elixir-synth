@@ -38,7 +38,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
   --rule: 1px solid rgb(var(--ink-rgb) / .38);
   position: absolute; left: 50%; top: 50%; width: 1000px; height: 600px; transform: translate(-50%, -50%) scale(var(--k, 1));
   display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: 124px minmax(0, 1fr) auto;
-  grid-template-areas: "top dials" "pages pages" "rnd tabs"; column-gap: 16px; padding: 8px 12px 10px;
+  grid-template-areas: "top dials" "pages pages" "tabs tabs"; column-gap: 16px; padding: 8px 12px 10px;
   font-family: var(--body); color: var(--ink);
   touch-action: manipulation; -webkit-user-select: none; user-select: none;
   -webkit-touch-callout: none; /* a long hold mustn't bring up the phone's own menus */
@@ -89,7 +89,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-toggle { min-width: 64px; min-height: 36px; font-size: var(--fs-s) !important; }
 .m .m-btn, .m .m-toggle, .m .m-pload, .m-tabs button {
   background: transparent !important; border: 2px solid var(--ink); border-radius: 3px; font-weight: 400; text-transform: uppercase; letter-spacing: .06em; }
-.m .m-btn:active, .m .m-big, .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"], .m .m-plist li.cur .m-pload, .m .m-rnd-open[aria-expanded="true"] {
+.m .m-btn:active, .m .m-big, .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"], .m .m-plist li.cur .m-pload {
   background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
 .m .m-big:active { transform: none; background: transparent !important; color: var(--ink) !important; }
 .m .m-btn:disabled { opacity: .3; }
@@ -198,21 +198,16 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-side { grid-area: dials; display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; overflow: hidden; }
 .m-play-card { display: grid; min-height: 0; padding: 6px 0 4px; }
 #m-perf { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 2px; min-height: 0; }
-/* the randomise button, left of the page buttons along the bottom, and its popup: next bar, then the seven buttons and done, four across */
-.m .m-rnd-open { grid-area: rnd; align-self: center; min-height: 40px; margin: 6px 0 0; font-size: var(--fs-s) !important; letter-spacing: .06em; }
-.m-seq.m-rnd { top: auto; bottom: 64px; height: 250px; }
+/* the prefs sheet (a tap on the title opens it) */
 .m-rnd .m-rand-card { width: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; pointer-events: auto;
   box-shadow: 0 -8px 30px rgba(0, 0, 0, .5), inset 0 3px 10px rgba(0, 0, 0, .28); }
 .m-rnd .m-chead { gap: 16px; text-transform: uppercase; }
-/* prefs: under the dials, the same sheet as the randomisers */
+/* prefs: under the dials */
 .m-seq.m-prefs { top: 136px; bottom: auto; height: auto; }
 .m-prefs .m-rand-card { grid-template-rows: auto auto; }
 .m-prefs .m-chead .m-btn { min-height: 40px; min-width: 120px; font-size: var(--fs-s) !important; }
 .m-prefs-body { display: grid; gap: 16px; align-content: start; }
 .m-prefs .m-foot { text-align: left; }
-.m-rand { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 10px; min-width: 0; min-height: 0; }
-.m-rand .m-btn { min-height: 0; min-width: 0; padding: 0 2px; letter-spacing: .04em; overflow: hidden; }
-.m .m-rand .m-btn { font-size: var(--fs-m) !important; white-space: nowrap; }
 .m-nextbar { gap: 8px; font-size: var(--fs-s); white-space: nowrap; justify-content: flex-start; min-height: 30px; min-width: 0; }
 .m-nextbar i { width: 18px; height: 18px; }
 /* next bar: a button waiting for the bar flashes */
@@ -429,7 +424,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v86</small></button>
+    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v87</small></button>
     <div class="m-tport">
       <button class="m-btn m-play" id="m-play" type="button" aria-pressed="false" aria-label="play (space)" title="play (space)"><i aria-hidden="true"></i></button>
       <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
@@ -446,7 +441,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
       <div class="m-mcol" role="group" aria-label="randomise everything">
         <div class="m-fxhead"><b>all</b></div>
         <button class="m-btn m-big" id="m-mall" type="button">everything</button>
-        <label class="m-chk m-nextbar"><input id="m-mnextbar" type="checkbox"><i aria-hidden="true"></i>next bar</label>
+        <label class="m-chk m-nextbar"><input id="m-nextbar" type="checkbox"><i aria-hidden="true"></i>next bar</label>
         <button class="m-btn" data-undo type="button" disabled>undo</button>
         <button class="m-toggle" id="m-metro" type="button" aria-pressed="false">metronome</button>
       </div>
@@ -567,7 +562,6 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
   </div>
   </div>
 
-  <button class="m-btn m-rnd-open" id="m-rnd-open" type="button" aria-haspopup="dialog" aria-expanded="false">randomise</button>
   <nav class="m-tabs" role="tablist" aria-label="pages">
     <button type="button" role="tab" data-m-tab="main" aria-selected="true">main</button>
     <button type="button" role="tab" data-m-tab="seq" aria-selected="false">seq</button>
@@ -584,23 +578,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <div class="m-lcd" id="m-lcd" role="group" aria-label="screen colours"><span>screen</span></div>
         <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
         <label class="m-chk"><input id="m-lowlat" type="checkbox"><i aria-hidden="true"></i>low latency (can break up when the phone is busy)</label>
-        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v86, 1 Nov, 16:17</footer>
-      </div>
-    </section>
-  </div>
-
-  <div class="m-seq m-rnd" id="m-rnd" hidden>
-    <section class="m-card m-rand-card" role="dialog" aria-label="randomise">
-      <div class="m-chead"><b>randomise</b><label class="m-chk m-nextbar"><input id="m-nextbar" type="checkbox"><i aria-hidden="true"></i>next bar</label></div>
-      <div class="m-rand">
-        <button class="m-btn m-big" id="m-everything" type="button">everything</button>
-        <button class="m-btn" id="m-sound" type="button">sound</button>
-        <button class="m-btn" id="m-alter" type="button">alter</button>
-        <button class="m-btn" id="m-pattern" type="button">notes</button>
-        <button class="m-btn" id="m-fxr" type="button">random fx</button>
-        <button class="m-btn" id="m-fxa" type="button">alter fx</button>
-        <button class="m-btn" data-undo type="button" disabled>undo</button>
-        <button class="m-btn" id="m-rnd-close" type="button">done</button>
+        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v87, 1 Nov, 16:22</footer>
       </div>
     </section>
   </div>
@@ -5649,10 +5627,6 @@ eventHandlers.push((ev) => {
 });
 stopHooks.push(() => { mBarBtns.forEach((b) => b.classList.remove('pending')); mBarBtns.clear(); });
 storedCheck('m-nextbar', 'elixir-synth-nextbar', false);
-// (the main page has its own next bar box: the two are one setting)
-$('m-mnextbar').checked = $('m-nextbar').checked;
-$('m-mnextbar').addEventListener('change', () => { $('m-nextbar').checked = $('m-mnextbar').checked; $('m-nextbar').dispatchEvent(new Event('change')); });
-$('m-nextbar').addEventListener('change', () => { $('m-mnextbar').checked = $('m-nextbar').checked; });
 
 // sound: a new patch for the voice, in ranges that still play notes: the note (coarse) and the level and pan stay;
 // mostly saw, square or pwm through a low-pass, now and then fm, a pitch blip, a click or the lfo on a parameter. One
@@ -5717,9 +5691,8 @@ function alterFx(a = 0.1) {
   fx.width = nudge(fx.width, 0, 200); fx.ringFreq = nudge(fx.ringFreq, 0, 127);
   sendMix();
 }
-for (const id of ['m-everything', 'm-mall']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => { randomSound(); randomNotes(); randomFx(); }));
-$('m-sound').addEventListener('click', (e) => mRandomise(e.currentTarget, randomSound));
-for (const id of ['m-alter', 'm-valter', 'm-mvalter']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterSound()));
+for (const id of ['m-mall']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => { randomSound(); randomNotes(); randomFx(); }));
+for (const id of ['m-valter', 'm-mvalter']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterSound()));
 for (const id of ['m-vrand', 'm-mvrand']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomSound));
 // the voice page's section randomisers: one section new, and its tab shown so the change can be seen
 for (const b of document.querySelectorAll('[data-vrand]')) b.addEventListener('click', (e) => {
@@ -5727,26 +5700,20 @@ for (const b of document.querySelectorAll('[data-vrand]')) b.addEventListener('c
   mVSec = VP_TABS.findIndex(([, secs]) => secs.includes(sec)); mVoiceShow();
   mRandomise(e.currentTarget, RANDOM_VOICE[sec]);
 });
-$('m-pattern').addEventListener('click', (e) => mRandomise(e.currentTarget, randomNotes));
 for (const b of document.querySelectorAll('[data-fxrand]')) b.addEventListener('click', (e) => mRandomise(e.currentTarget, () => { RANDOM_FX[b.dataset.fxrand](); sendMix(); }));
-for (const id of ['m-fxr', 'm-fxr2', 'm-fxr3']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomFx));
-for (const id of ['m-fxa', 'm-fxa2', 'm-fxa3']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterFx()));
+for (const id of ['m-fxr2', 'm-fxr3']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, randomFx));
+for (const id of ['m-fxa2', 'm-fxa3']) $(id).addEventListener('click', (e) => mRandomise(e.currentTarget, () => alterFx()));
 
 // the metronome
 const metroDraw = () => $('m-metro').setAttribute('aria-pressed', metroOn);
 $('m-metro').addEventListener('click', () => { metroOn = !metroOn; store.set(METRO_KEY, metroOn ? '1' : '0'); metroDraw(); sendSeq(); });
 metroDraw();
 
-// the randomise popup: opens over the pages and stays open while its buttons are used (next bar's pending flash shows
-// there); done, the opener again, or Escape closes it
-function mRnd(on) { if (on && $('m-prefs')) mPrefs(false); $('m-rnd').hidden = !on; $('m-rnd-open').setAttribute('aria-expanded', on); $('m-rnd-open').classList.toggle('on', on); if (on) mDepth(); }
-$('m-rnd-open').addEventListener('click', () => mRnd($('m-rnd').hidden));
-$('m-rnd-close').addEventListener('click', () => mRnd(false));
 // prefs: a tap on the title opens them (screen colours, preset tempo, version); done, the title again or Escape closes
-function mPrefs(on) { $('m-prefs').hidden = !on; $('m-title').setAttribute('aria-expanded', on); if (on) { mRnd(false); mDepth(); } }
+function mPrefs(on) { $('m-prefs').hidden = !on; $('m-title').setAttribute('aria-expanded', on); if (on) mDepth(); }
 $('m-title').addEventListener('click', () => mPrefs($('m-prefs').hidden));
 $('m-prefs-close').addEventListener('click', () => mPrefs(false));
-addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!$('m-rnd').hidden) mRnd(false); if (!$('m-prefs').hidden) mPrefs(false); } });
+addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!$('m-prefs').hidden) mPrefs(false); } });
 
 // ---- presets: everything (the sound, perf macros, notes, tempo, effects, master and the fader sequencers) under a
 // two-word name, kept in this browser under elixir-synth's own key. Save new, save over the loaded one, load, delete,
