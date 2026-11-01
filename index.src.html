@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<meta name="description" content="Elixir Synth: a phone-first mono synth in the browser, playing the drum 1 voice of a JavaScript port of the Erica Synths LXR-02 engine.">
+<meta name="description" content="Elixir Synth: a landscape mono synth in the browser, playing the drum 1 voice of a JavaScript port of the Erica Synths LXR-02 engine.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
 <style>
@@ -27,8 +27,7 @@
     <output class="m-steps-led" id="m-led" aria-hidden="true"></output>
   </section>
 
-  <div class="m-pages" id="m-pages">
-  <div class="m-panel" data-m-panel="play">
+  <div class="m-side" id="m-side" aria-label="perform">
     <section class="m-card m-play-card"><div class="m-faders m-dials" id="m-perf"></div></section>
     <section class="m-card m-rand-card" aria-label="randomise">
       <div class="m-rand">
@@ -44,6 +43,15 @@
     </section>
   </div>
 
+  <nav class="m-tabs" role="tablist" aria-label="pages">
+    <button type="button" role="tab" data-m-tab="seq" aria-selected="true">seq</button>
+    <button type="button" role="tab" data-m-tab="voice" aria-selected="false">voice</button>
+    <button type="button" role="tab" data-m-tab="xy" aria-selected="false">x/y</button>
+    <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
+    <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>
+    <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
+  </nav>
+  <div class="m-pages" id="m-pages">
   <div class="m-panel" data-m-panel="seq">
     <section class="m-card m-seqpage">
       <div class="m-modes" id="m-modes" role="tablist" aria-label="what a step edit sets">
@@ -132,15 +140,6 @@
     </section>
   </div>
 
-  <nav class="m-tabs" role="tablist" aria-label="pages">
-    <button type="button" role="tab" data-m-tab="play" aria-selected="true">perf</button>
-    <button type="button" role="tab" data-m-tab="seq" aria-selected="false">seq</button>
-    <button type="button" role="tab" data-m-tab="voice" aria-selected="false">voice</button>
-    <button type="button" role="tab" data-m-tab="xy" aria-selected="false">x/y</button>
-    <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
-    <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>
-    <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
-  </nav>
 </main>
 
 <script id="engine">

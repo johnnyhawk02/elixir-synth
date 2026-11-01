@@ -1,5 +1,6 @@
-// Drives the built page in Chromium's phone emulation (Pixel 9a's 412 x 915 and a small 360 x 640): no errors, no page
-// scrolls but the presets list, swipes and page buttons turn the page, fader and pad drags don't, holding a fader opens
+// Drives the built page in Chromium at three window sizes (the 1000 x 600 layout itself, a wide window and a small one, where
+// it scales to fit): no errors, the screen keeps its 5:3 shape inside the window, no page scrolls but the presets list,
+// swipes and page buttons turn the page, fader and pad drags don't, holding a fader opens
 // its sequencer, MIDI CC 1-12 turn the perf dials, the reverb sends, the note grid edits steps on four pages and copies
 // page 1 to the others, space plays and stops, play runs the steps, presets save and load, and record downloads a WAV.
 //   node test/smoke.mjs [index.html]   (needs Playwright)
@@ -10,9 +11,9 @@ const url = pathToFileURL(process.argv[2] || new URL('../index.html', import.met
 let fails = 0;
 const check = (ok, what) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`); if (!ok) fails++; };
 const b = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
-for (const [w, h] of [[412, 915], [360, 640]]) {
+for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   console.log(`-- ${w} x ${h}`);
-  const c = await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2.6, isMobile: true, hasTouch: true, acceptDownloads: true });
+  const c = await b.newContext({ viewport: { width: w, height: h }, acceptDownloads: true });
   // a stand-in MIDI controller: one input, its handler kept where the test can call it
   await c.addInitScript(() => {
     const input = { onmidimessage: null };
@@ -26,28 +27,33 @@ for (const [w, h] of [[412, 915], [360, 640]]) {
   const box = async (sel) => pg.locator(sel).first().boundingBox();
   // drag with the mouse (pointer events), from one point to another
   const drag = async (x0, y0, x1, y1, steps = 12) => { await pg.mouse.move(x0, y0); await pg.mouse.down(); await pg.mouse.move(x1, y1, { steps }); await pg.mouse.up(); await pg.waitForTimeout(450); };
+  // the screen: 5:3, as big as the window lets it be, inside it
+  const sr = await box('#m');
+  check(Math.abs(sr.width / sr.height - 5 / 3) < 0.01 && sr.x >= -0.5 && sr.y >= -0.5 && sr.x + sr.width <= w + 0.5 && sr.y + sr.height <= h + 0.5
+    && (Math.abs(sr.width - w) < 1 || Math.abs(sr.height - h) < 1), `the screen is 5:3 and fits the window (${Math.round(sr.width)} x ${Math.round(sr.height)})`);
+  check(await pg.evaluate(() => { const p = $('m-side'); return p.scrollHeight <= p.clientHeight && p.scrollWidth <= p.clientWidth; }), 'perf fits beside the pages');
   // no page scrolls; every panel fits
-  for (const t of ['play', 'seq', 'voice', 'xy', 'fx', 'comp', 'presets']) {
+  for (const t of ['seq', 'voice', 'xy', 'fx', 'comp', 'presets']) {
     await pg.click(`[data-m-tab="${t}"]`);
     const o = await pg.evaluate((t) => { const p = document.querySelector(`[data-m-panel="${t}"]`); return [p.scrollHeight - p.clientHeight, document.documentElement.scrollHeight - innerHeight, document.documentElement.scrollWidth - innerWidth]; }, t);
     check(o.every((v) => v <= 0), `${t}: fits the screen (${o})`);
   }
-  // touch targets: every button at least 36 px high
-  const small = await pg.evaluate(() => [...document.querySelectorAll('.m button, .m .m-btn')].filter((e) => { const r = e.getBoundingClientRect(); return r.width && r.height < 36; }).map((e) => e.textContent.trim()));
+  // targets: every button at least 36 px high in the 1000 x 600 layout
+  const small = await pg.evaluate(() => [...document.querySelectorAll('.m button, .m .m-btn')].filter((e) => { const r = e.getBoundingClientRect(); return r.width && r.height / mK < 36; }).map((e) => e.textContent.trim()));
   check(!small.length, `buttons at least 36 px high ${small.length ? small.join(', ') : ''}`);
-  // swipes
-  await pg.click('[data-m-tab="play"]');
-  let r = await box('#m-sound');
-  await drag(r.x + r.width / 2, r.y + 10, r.x + r.width / 2 - w * 0.6, r.y + 14);
-  check(await page() === 'seq', 'swipe left turns to seq');
-  r = await box('.m-modes');
-  await drag(r.x + 20, r.y + 10, r.x + 20 + w * 0.6, r.y + 10);
-  check(await page() === 'play', 'swipe right turns back to perf');
-  // a fader dragged sideways and up moves it, and doesn't turn the page
+  // swipes, across the pages on the right
+  await pg.click('[data-m-tab="seq"]');
+  let r = await box('.m-modes');
+  await drag(r.x + r.width - 20, r.y + 10, r.x + r.width - 20 - sr.width * 0.4, r.y + 14);
+  check(await page() === 'voice', 'swipe left turns to voice');
+  r = await box('.m-vsec');
+  await drag(r.x + 20, r.y + 10, r.x + 20 + sr.width * 0.4, r.y + 10);
+  check(await page() === 'seq', 'swipe right turns back to seq');
+  // a perf dial dragged sideways and up moves it, and doesn't turn the page
   r = await box('#m-perf .m-vtrack >> nth=3');
   const before = await pg.evaluate(() => macro.filter);
-  await drag(r.x + r.width / 2, r.y + r.height / 2, r.x + r.width / 2 - w * 0.5, r.y + r.height / 4);
-  check(await page() === 'play' && await pg.evaluate(() => macro.filter) > before, 'a fader drag moves the fader, not the page');
+  await drag(r.x + r.width / 2, r.y + r.height / 2, r.x + r.width / 2 + sr.width * 0.3, r.y - r.height);
+  check(await page() === 'seq' && await pg.evaluate(() => macro.filter) > before, 'a dial drag moves the dial, not the page');
   // MIDI: CC 4 sends the filter dial to the top, CC 10 the reverb send to 50%, on any channel
   await pg.evaluate(() => { window.__midiIn.onmidimessage({ data: [0xb0, 4, 127] }); window.__midiIn.onmidimessage({ data: [0xb3, 10, 64] }); });
   check(await pg.evaluate(() => macro.filter === 200 && fx.verb === 50 && document.querySelectorAll('#m-perf .m-dial').length === 12), 'MIDI CC 4 and 10 turn the filter and reverb dials');
@@ -55,7 +61,6 @@ for (const [w, h] of [[412, 915], [360, 640]]) {
   await pg.click('[data-m-tab="fx"]');
   check(await pg.evaluate(() => document.querySelector('#m-verb .m-vtrack').getAttribute('aria-valuenow') === '50'), 'the fx page shows the reverb send');
   await pg.evaluate(() => window.__midiIn.onmidimessage({ data: [0xb0, 10, 0] }));
-  await pg.click('[data-m-tab="play"]');
   // the x/y pad
   await pg.click('[data-m-tab="xy"]');
   r = await box('.m-xy');

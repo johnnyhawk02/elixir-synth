@@ -1,6 +1,6 @@
 # Elixir Synth
 
-A phone-first mono synth in the browser. **Play it: https://johnnyhawk02.github.io/elixir-synth/**
+A mono synth in the browser, laid out landscape as the prototype of a VST3 plugin. **Play it: https://johnnyhawk02.github.io/elixir-synth/**
 
 Elixir Synth is built from [Elixir Mobile](https://github.com/johnnyhawk02/elixir-mobile). It keeps one voice of its
 engine, the LXR drum 1 voice (DR1), and plays it as a synth: a note sequencer instead of the drum patterns, and
@@ -10,12 +10,16 @@ The engine is a JavaScript port of the drum voices and FX bus in the Erica Synth
 ([erica-synths/lxr-desktop-app](https://github.com/erica-synths/lxr-desktop-app), GPL-3.0, commit a43cd4f).
 Elixir Synth is unofficial: it is not made, approved or endorsed by Erica Synths.
 
-## Pages
+## The screen
 
-Swipe across the screen, or tap the page buttons along the bottom. The space bar starts and stops. Dragging a fader, the x/y pad or the steps never
-turns the page. Play, record and the step light sit at the top.
+The screen is landscape, 5:3, laid out once at 1000 x 600 and scaled as a whole to fit the window, with the case
+showing round it where the window is a different shape. That is how the plugin's window will resize.
 
-- **PERF**: twelve dials, and the randomise column: everything, sound, alter, notes, random fx, alter fx, undo, and
+Perf sits down the left all the time. The other pages share the right: tap the page buttons over them, or swipe across
+them. The space bar starts and stops. Dragging a fader, a dial, the x/y pad or the steps never turns the page. Play,
+record and the step light sit at the top right.
+
+- **PERF** (always on show): twelve dials, and the randomise column: everything, sound, alter, notes, random fx, alter fx, undo, and
   *next bar* (while playing, a randomise waits for the next bar). Drag a dial up or down to turn it. A MIDI controller
   turns them too: CC 1 to 12, on any channel, in reading order:
 
@@ -72,7 +76,7 @@ sample with the firmware, since the firmware never builds it.
 | `lxr.js`, `lxr-tables.js`, `lxr-ui-data.js`, `lxr-clicks.js` | the engine |
 | `presets/` | the built-in presets, in the format the presets page exports |
 | `sw.js`, `manifest.webmanifest`, `icons/` | the offline app |
-| `test/` | `engine.mjs` (sound, in Node) and `smoke.mjs` (the page, in Chromium's phone emulation) |
+| `test/` | `engine.mjs` (sound, in Node) and `smoke.mjs` (the page, in Chromium at three window sizes) |
 | `verify.mjs`, `ref/` | the sample-for-sample comparison with the firmware |
 
 ## Build and test
@@ -80,7 +84,7 @@ sample with the firmware, since the firmware never builds it.
 ```sh
 node build.mjs               # rebuild index.html
 node test/engine.mjs         # bit-exact semitones, cents, the sequencer, the presets' levels
-node test/smoke.mjs          # the page at 412 x 915 and 360 x 640 (needs Playwright)
+node test/smoke.mjs          # the page at 1000 x 600, 1600 x 900 and 700 x 520 (needs Playwright)
 ```
 
 ## Licence

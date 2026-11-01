@@ -9,33 +9,34 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<meta name="description" content="Elixir Synth: a phone-first mono synth in the browser, playing the drum 1 voice of a JavaScript port of the Erica Synths LXR-02 engine.">
+<meta name="description" content="Elixir Synth: a landscape mono synth in the browser, playing the drum 1 voice of a JavaScript port of the Erica Synths LXR-02 engine.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
 <style>
 
-/* ==== Elixir Synth: the phone screen ====
+/* ==== Elixir Synth: the screen ====
    One pane of blue backlit LCD in a black bezel on a dark case, like a character module: the pixels lit near-white on
    the blue, a faint ghost of the unlit ones, a soft glow round the lit ones, and a pixel font throughout. Buttons are outlined
    boxes that invert when pressed or chosen; faders and meters are segmented bar graphs. Sections inside the screen
    are parted by thin ink lines; the sheets that open over it (sequencer, settings, chooser, loop length) are panes of
-   their own. Nothing scrolls but the presets list and the pop-ups' lists. Sizes that follow the screen's width (Nvw) stop
-   growing past a 412 px screen (a Pixel 9a), so on a wider screen or a desktop browser the text still fits. */
+   their own. Nothing scrolls but the presets list and the pop-ups' lists.
+   The screen is landscape, 5:3, laid out once at 1000 x 600 and scaled to fit the window (--k, set by mFit in ui.js),
+   with the dark case showing round it; so it reads the same at any size, as a plugin window that resizes does. */
 
 /* ---- the page and the screen ---- */
 * { box-sizing: border-box; }
 html, body { margin: 0; overscroll-behavior: none; }
 [hidden] { display: none !important; }
-body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-inset-right, 0px)) max(6px, env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px));
-  min-height: 100dvh; -webkit-tap-highlight-color: transparent; background: radial-gradient(120% 80% at 50% 0%, #2a2d28, #161815) fixed; }
+body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlight-color: transparent; background: radial-gradient(120% 80% at 50% 0%, #2a2d28, #161815) fixed; }
 .m {
   --panel: #2238e6; --ink: #eef3ff; --muted: rgba(225, 233, 255, .7);
   --tint: rgba(225, 235, 255, .08); --tint-2: rgba(225, 235, 255, .15); --ghost: rgba(160, 185, 255, .17); --led: #eef3ff;
   --display: "VT323", ui-monospace, monospace; --body: "VT323", ui-monospace, monospace; --mono: "VT323", ui-monospace, monospace;
   --fs-xs: 1.12rem; --fs-s: 1.25rem; --fs-m: 1.3rem; --fs-l: 1.6rem;
   --rule: 1px solid rgba(225, 235, 255, .38);
-  position: relative; max-width: 480px; margin: 0 auto; display: grid; grid-template-rows: auto auto 1fr auto; gap: 0;
-  height: calc(100dvh - max(6px, env(safe-area-inset-top, 0px)) - max(6px, env(safe-area-inset-bottom, 0px))); padding: 8px 8px 10px;
+  position: absolute; left: 50%; top: 50%; width: 1000px; height: 600px; transform: translate(-50%, -50%) scale(var(--k, 1));
+  display: grid; grid-template-columns: 400px minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas: "top trans" "side tabs" "side pages"; column-gap: 16px; padding: 8px 12px 10px;
   font-family: var(--body); color: var(--ink);
   touch-action: manipulation; -webkit-user-select: none; user-select: none;
   -webkit-touch-callout: none; /* a long hold mustn't bring up the phone's own menus */
@@ -76,7 +77,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
   background-image: linear-gradient(170deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0) 40%, rgba(0, 0, 0, .06)),
     repeating-linear-gradient(0deg, rgba(0, 0, 0, .03) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(0, 0, 0, .03) 0 1px, transparent 1px 3px);
   box-shadow: inset 0 3px 10px rgba(0, 0, 0, .28), inset 0 0 0 1px rgba(255, 255, 255, .1), 0 1px 0 rgba(255, 255, 255, .07); }
-.m > .m-card, .m-pages .m-card { background: none; border: 0; border-radius: 0; box-shadow: none; }
+.m > .m-card, .m-pages .m-card, .m-side .m-card { background: none; border: 0; border-radius: 0; box-shadow: none; }
 
 /* ---- controls ---- */
 .m button { font: inherit; color: var(--ink); border: 0; cursor: pointer; touch-action: manipulation; }
@@ -129,15 +130,15 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 
 /* the big faders (perf): a two-line readout, tracks as tall as the page */
 #m-perf .m-vf { display: flex; flex-direction: column; align-items: center; min-height: 0; gap: 3px; }
-#m-perf .m-vf output { font-size: min(var(--fs-xs), 3.9vw, 16px); line-height: 1; color: var(--ink); height: 2.5em; display: flex; align-items: flex-end; justify-content: center; flex: none; align-self: stretch; }
-.m #m-perf .m-flab { font-size: min(var(--fs-xs), 3.9vw, 16px); letter-spacing: -.02em; white-space: nowrap; line-height: 1.2; }
+#m-perf .m-vf output { font-size: min(var(--fs-xs), 16px); line-height: 1; color: var(--ink); height: 2.5em; display: flex; align-items: flex-end; justify-content: center; flex: none; align-self: stretch; }
+.m #m-perf .m-flab { font-size: min(var(--fs-xs), 16px); letter-spacing: -.02em; white-space: nowrap; line-height: 1.2; }
 #m-perf .m-vtrack { width: min(56px, 100%); flex: 1; height: auto; min-height: 48px; }
 
 /* the dials (perf): a ring of segments over three quarters of a turn, lit up to the value, the CC number in the middle;
    as big as the cell lets them be, the readout over and the label under */
 .m .m-dial { container-type: size; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 0; }
-.m #m-perf .m-dial output { height: auto; font-size: min(var(--fs-xs), 3.7vw, 15.2px); white-space: nowrap; align-items: center; }
-.m #m-perf .m-dial .m-flab { font-size: min(var(--fs-xs), 3.7vw, 15.2px); max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.m #m-perf .m-dial output { height: auto; font-size: min(var(--fs-xs), 15.2px); white-space: nowrap; align-items: center; }
+.m #m-perf .m-dial .m-flab { font-size: min(var(--fs-xs), 15.2px); max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .m #m-perf .m-dial .m-vtrack { --s: min(100cqw - 6px, 100cqh - 44px, 96px); flex: none; width: var(--s); height: var(--s); min-height: 0; border-radius: 50%;
   overflow: visible; cursor: ns-resize; background: none; }
 .m .m-dial .m-vtrack::before, .m .m-dial .m-vtrack i { content: ''; position: absolute; inset: 0; height: auto; border-radius: 50%;
@@ -146,7 +147,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m .m-dial .m-vtrack::before { background: conic-gradient(from 225deg, var(--ghost) 0 270deg, transparent 270deg); }
 .m .m-dial .m-vtrack i { background: conic-gradient(from 225deg, var(--ink) 0 calc(var(--f) * 270deg), transparent calc(var(--f) * 270deg)); transition: none; }
 .m .m-dial .m-vtrack em { position: absolute; inset: 0; display: grid; place-items: center; font-style: normal; font-family: var(--mono);
-  font-size: min(var(--fs-xs), 3.4vw, 14px); color: var(--muted); }
+  font-size: min(var(--fs-xs), 14px); color: var(--muted); }
 /* a dial's own setting under its sequencer: a needle at that angle */
 .m .m-dial .m-vtrack.mod b { display: block; left: calc(50% - 2px); right: auto; top: 0; bottom: auto; width: 4px; height: 50%; box-shadow: none;
   -webkit-mask: linear-gradient(#000 0 30%, transparent 30%); mask: linear-gradient(#000 0 30%, transparent 30%);
@@ -156,20 +157,19 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 /* the small faders (seq, voice, fx, master): a one-line readout, a narrow label */
 .m-row .m-vf, .m-vset .m-vf, .m-seqf .m-vf { display: flex; flex-direction: column; align-items: center; min-height: 0; gap: 2px; }
 .m .m-row .m-vf output, .m .m-vset .m-vf output, .m .m-seqf .m-vf output {
-  font-size: min(var(--fs-xs), 3.9vw, 16.1px); line-height: 1; height: 1.1em; flex: none; align-self: stretch; text-align: center; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.m .m-row .m-flab, .m .m-vset .m-flab, .m .m-seqf .m-flab { font-size: min(1.05rem, 3.7vw, 15.2px); letter-spacing: 0; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  font-size: min(var(--fs-xs), 16.1px); line-height: 1; height: 1.1em; flex: none; align-self: stretch; text-align: center; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.m .m-row .m-flab, .m .m-vset .m-flab, .m .m-seqf .m-flab { font-size: min(1.05rem, 15.2px); letter-spacing: 0; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .m .m-row .m-vtrack, .m .m-vset .m-vtrack, .m .m-seqf .m-vtrack { width: min(52px, 100%); flex: 1; height: auto; min-height: 12px; }
 
 /* ---- the frame: title line, transport, pages, page buttons ---- */
-.m-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 4px 6px; border-bottom: var(--rule); }
+.m-top { grid-area: top; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 4px; border-bottom: var(--rule); }
 .m-title { font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 .m-ver { margin-left: .5em; font-size: .7em; letter-spacing: .06em; text-transform: none; opacity: .7; }
-/* (on a narrow phone the title line's spacing tightens) */
-@media (max-width: 430px) { .m-title, .m-pagename { letter-spacing: .08em; } .m-top { gap: 6px; } }
-.m-pagename { white-space: nowrap; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
+/* (the page buttons show which page is open, so its name isn't needed on the title line) */
+.m-pagename { display: none; white-space: nowrap; font-family: var(--display); font-size: 1.5rem; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 
 /* play, rec, and the step light */
-.m-trans { padding: 8px 0; display: grid; grid-template-columns: 1.3fr 1fr 1.1fr; gap: 8px; align-items: stretch; }
+.m-trans { grid-area: trans; padding: 8px 0; display: grid; grid-template-columns: 130px 110px minmax(0, 1fr); gap: 8px; align-items: stretch; }
 .m > .m-card.m-trans { border-bottom: var(--rule); }
 .m-play { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; background: var(--ink) !important;
   color: var(--panel) !important; font-weight: 400; text-transform: uppercase; }
@@ -177,40 +177,40 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-play svg { width: 20px; height: 20px; fill: currentColor; }
 .m-play .i-stop, .m-play[aria-pressed="true"] .i-play { display: none; }
 .m-play[aria-pressed="true"] .i-stop { display: inline; }
-.m .m-rec { display: grid; grid-auto-flow: column; justify-content: center; place-items: center; align-content: center; gap: min(10px, 2vw, 8.2px) !important; min-height: 46px; }
+.m .m-rec { display: grid; grid-auto-flow: column; justify-content: center; place-items: center; align-content: center; gap: min(10px, 8.2px) !important; min-height: 46px; }
 .m-rec i { width: 16px; height: 16px; border-radius: 2px; background: var(--ink); }
 .m-rec span { font-family: var(--mono); font-size: var(--fs-s); font-variant-numeric: tabular-nums; }
 .m-rec.on i { width: 16px; height: 16px; border-radius: 4px; background: var(--panel); animation: m-blink 1s steps(1) infinite; }
 @keyframes m-blink { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .m-rec.on i { animation: none; } }
 .m .m-rec:disabled { opacity: .35; }
-/* the step light: sixteen segments in two rows of eight, the step playing lit */
-.m-steps-led { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: 1fr 1fr; gap: 3px; padding: 4px 0; }
+/* the step light: sixteen segments in a row, the step playing lit */
+.m-steps-led { display: grid; grid-template-columns: repeat(16, 1fr); gap: 3px; padding: 10px 0 10px 8px; }
 .m-steps-led i { background: var(--ghost); border-radius: 1px; }
 .m-steps-led i:nth-child(4n+1) { box-shadow: inset 0 -3px 0 var(--tint-2); }
 .m-steps-led i.on { background: var(--ink); }
 
-/* the pages sit side by side; swipe across them or tap a page button. Each page is one screen, no scrolling */
-.m-pages { display: grid; grid-auto-flow: column; grid-auto-columns: 100%; column-gap: 16px; min-height: 0; padding-top: 6px; overflow: hidden;
+/* the pages sit side by side on the right; swipe across them or tap a page button. Each page is one screen, no scrolling */
+.m-pages { grid-area: pages; display: grid; grid-auto-flow: column; grid-auto-columns: 100%; column-gap: 16px; min-height: 0; padding-top: 6px; overflow: hidden;
   overscroll-behavior-x: contain; scrollbar-width: none; touch-action: none; }
 .m-pages::-webkit-scrollbar { display: none; }
 .m-panel { display: grid; grid-template-rows: 1fr; gap: 12px; align-content: stretch; min-height: 0; overflow: hidden; }
 
-/* the page buttons, one line of seven along the bottom where a thumb reaches them (each page's full name is on the title line) */
-.m > .m-tabs { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-top: 6px; padding: 8px 0 0; border-top: var(--rule); }
+/* the page buttons, one line of six over the pages */
+.m > .m-tabs { grid-area: tabs; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; padding: 8px 0 6px; border-bottom: var(--rule); }
 .m-tabs button { border-color: transparent; min-width: 0; }
 .m-tabs button[aria-selected="true"] { border-color: var(--ink); }
-.m .m-tabs button { min-height: 56px; padding: 0; font-size: min(1.4rem, 5.2vw, 21.4px) !important; letter-spacing: 0; }
+.m .m-tabs button { min-height: 40px; padding: 0; font-size: 1.3rem !important; letter-spacing: .04em; }
 
-/* ---- perf: twelve dials, three across, and the randomise column beside them ---- */
-[data-m-panel="play"] { grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; }
+/* ---- perf, always on show down the left: twelve dials, four across, and the randomise column beside them ---- */
+.m-side { grid-area: side; display: grid; grid-template-columns: minmax(0, 1fr) 104px; gap: 8px; min-height: 0; overflow: hidden; padding-top: 6px; }
 .m-play-card { display: grid; min-height: 0; padding: 6px 2px; }
-#m-perf { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 4px 2px; min-height: 0; }
-.m-pages .m-rand-card { display: grid; min-height: 0; padding: 6px 2px 6px 8px; border-left: var(--rule); }
+#m-perf { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 4px 2px; min-height: 0; }
+.m-side .m-rand-card { display: grid; min-height: 0; padding: 6px 2px 6px 8px; border-left: var(--rule); }
 .m-rand { display: grid; grid-template-columns: 1fr; grid-template-rows: auto repeat(7, minmax(0, 1fr)); gap: 6px; min-width: 0; height: 100%; }
 .m-rand .m-btn { min-height: 0; min-width: 0; padding: 0 2px; letter-spacing: .02em; overflow: hidden; }
-.m .m-rand .m-btn { font-size: min(var(--fs-xs), 3.7vw, 15.2px) !important; white-space: nowrap; }
-.m-nextbar { gap: 6px; font-size: min(var(--fs-xs), 3.6vw, 14.8px); white-space: nowrap; justify-content: flex-start; padding-left: 4px; min-height: 36px; }
+.m .m-rand .m-btn { font-size: min(var(--fs-xs), 15.2px) !important; white-space: nowrap; }
+.m-nextbar { gap: 6px; font-size: min(var(--fs-xs), 14.8px); white-space: nowrap; justify-content: flex-start; padding-left: 4px; min-height: 36px; }
 .m-nextbar i { width: 18px; height: 18px; }
 /* next bar: a button waiting for the bar flashes */
 .m .m-btn.pending { animation: m-flash .5s steps(1) infinite; }
@@ -219,11 +219,11 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 /* ---- seq: what a touch sets, the sixteen steps in two rows, then root, scale, accent, glide and the buttons ---- */
 .m-seqpage { display: grid; grid-template-rows: auto auto minmax(0, 1fr) minmax(120px, 34%); gap: 8px; min-height: 0; padding: 6px 2px; }
 .m-modes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
-.m .m-modes .m-btn { min-height: 44px; padding: 0 2px; font-size: min(var(--fs-xs), 3.9vw, 16px) !important; letter-spacing: .02em; }
+.m .m-modes .m-btn { min-height: 44px; padding: 0 2px; font-size: min(var(--fs-xs), 16px) !important; letter-spacing: .02em; }
 .m .m-modes .m-btn[aria-selected="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
 /* the pages: four tabs (the one playing underlined) and the copy button */
 .m-npages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.4fr); gap: 4px; }
-.m .m-npages .m-btn { min-height: 40px; padding: 0 2px; font-size: min(var(--fs-xs), 3.9vw, 16px) !important; letter-spacing: .02em; white-space: nowrap; overflow: hidden; }
+.m .m-npages .m-btn { min-height: 40px; padding: 0 2px; font-size: min(var(--fs-xs), 16px) !important; letter-spacing: .02em; white-space: nowrap; overflow: hidden; }
 .m .m-npages .m-btn[aria-selected="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
 .m .m-npages .m-btn.now { box-shadow: inset 0 -5px 0 var(--ink); }
 .m .m-npages .m-btn.now[aria-selected="true"] { box-shadow: inset 0 -5px 0 var(--panel); }
@@ -231,11 +231,11 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 /* a step: its note on top, a bar for its note (or gate) filling from the bottom, A and S lit when accented or sliding */
 .m-step { --f: 0; position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 2px; min-height: 0; padding: 3px 2px; border: 2px solid var(--ink); border-radius: 2px; }
 .m-step:nth-child(4n+1) { box-shadow: inset 3px 0 0 var(--tint-2); }
-.m-sn { font-size: min(var(--fs-xs), 3.8vw, 15.6px); line-height: 1; text-align: center; white-space: nowrap; overflow: hidden; }
+.m-sn { font-size: min(var(--fs-xs), 15.6px); line-height: 1; text-align: center; white-space: nowrap; overflow: hidden; }
 .m-sbar { display: block; min-height: 0; background: repeating-linear-gradient(to top, var(--ghost) 0 4px, transparent 4px 6px); position: relative; }
 .m-sbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: round(down, calc(var(--f) * 100%), 6px);
   background: repeating-linear-gradient(to top, var(--ink) 0 4px, transparent 4px 6px); background-position: bottom; transition: height .09s cubic-bezier(.2, .7, .3, 1); }
-.m-sm { display: flex; justify-content: space-between; font-size: min(.95rem, 3.4vw, 14px); line-height: 1; }
+.m-sm { display: flex; justify-content: space-between; font-size: min(.95rem, 14px); line-height: 1; }
 .m-sm b { font-weight: 400; padding: 0 2px; opacity: .22; }
 .m-step.acc .m-sm .a, .m-step.slide .m-sm .s { opacity: 1; background: var(--ink); color: var(--panel); text-shadow: none; }
 .m-step.rest .m-sn, .m-step.rest .m-sbar { opacity: .3; }
@@ -246,7 +246,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-seqf { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 4px; min-height: 0; }
 .m-seqbtns, .m-fxbtns { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 6px; min-height: 0; }
 .m-nalgo { display: block; margin-top: 4px; font-size: .85em; letter-spacing: 0; opacity: .8; }
-.m .m-seqbtns .m-btn, .m .m-fxbtns .m-btn { flex-direction: column; min-height: 0; font-size: min(var(--fs-xs), 3.8vw, 15.6px) !important; padding: 0 2px; }
+.m .m-seqbtns .m-btn, .m .m-fxbtns .m-btn { flex-direction: column; min-height: 0; font-size: min(var(--fs-xs), 15.6px) !important; padding: 0 2px; }
 
 /* ---- voice: the section tabs (tone, shape, filter, mod), then that section's faders four by three ---- */
 .m-voice-card { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; min-height: 0; padding: 10px 2px; }
@@ -327,13 +327,12 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-foot { color: var(--muted); text-align: center; padding: 0; font-size: .95rem; line-height: 1.2; }
 .m-foot a { color: inherit; }
 
-/* ---- the fader step sequencer: a sheet over the bottom of the screen, leaving play and record above it free; sixteen
+/* ---- the fader step sequencer: a sheet over the pages, leaving perf, play and record beside it free; sixteen
    step bars in two rows (the ones past the length faint), length, slew, speed and depth as horizontal segmented bars,
    then randomise and done ---- */
-.m-seq { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; pointer-events: none; display: flex; align-items: flex-end; justify-content: center;
-  padding: 16px max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.m-seq { position: absolute; left: 424px; right: 8px; top: 60px; bottom: 8px; z-index: 10; pointer-events: none; display: flex; align-items: stretch; justify-content: center; }
 .m-seq[hidden] { display: none; }
-.m-seq-card { width: 100%; max-width: 480px; height: min(calc(100dvh - 150px), 640px); display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto auto auto auto; gap: 12px;
+.m-seq-card { width: 100%; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto auto auto auto; gap: 12px;
   pointer-events: auto; box-shadow: 0 -8px 30px rgba(0, 0, 0, .5), inset 0 3px 10px rgba(0, 0, 0, .28); }
 .m-seq .m-chead { gap: 10px; }
 .m-seq .m-chead output { flex: 1; text-align: right; color: var(--muted); font-size: var(--fs-s); }
@@ -354,7 +353,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-seq-len i { position: absolute; left: 4px; top: 4px; bottom: 4px; width: calc((100% - 8px) * var(--w, 1));
   background: repeating-linear-gradient(to right, var(--ink) 0 5px, transparent 5px 8px); }
 .m-seq-btns { display: grid; grid-template-columns: 1.3fr 1fr 0.9fr; gap: 8px; }
-.m .m-seq-type { font-size: min(var(--fs-xs), 3.8vw, 15.7px) !important; padding: 0 2px; letter-spacing: 0; }
+.m .m-seq-type { font-size: min(var(--fs-xs), 15.7px) !important; padding: 0 2px; letter-spacing: 0; }
 .m-seq-btns .m-btn { min-height: 52px; }
 
 /* ---- LCD fade: liquid crystal is slow, so segments come on quickly and linger a moment going off. The faders' and
@@ -373,7 +372,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v5</small></b>
+    <b class="m-title">elixir<small class="m-ver">synth v48</small></b>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
   </header>
   <section class="m-card m-trans">
@@ -382,8 +381,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
     <output class="m-steps-led" id="m-led" aria-hidden="true"></output>
   </section>
 
-  <div class="m-pages" id="m-pages">
-  <div class="m-panel" data-m-panel="play">
+  <div class="m-side" id="m-side" aria-label="perform">
     <section class="m-card m-play-card"><div class="m-faders m-dials" id="m-perf"></div></section>
     <section class="m-card m-rand-card" aria-label="randomise">
       <div class="m-rand">
@@ -399,6 +397,15 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
     </section>
   </div>
 
+  <nav class="m-tabs" role="tablist" aria-label="pages">
+    <button type="button" role="tab" data-m-tab="seq" aria-selected="true">seq</button>
+    <button type="button" role="tab" data-m-tab="voice" aria-selected="false">voice</button>
+    <button type="button" role="tab" data-m-tab="xy" aria-selected="false">x/y</button>
+    <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
+    <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>
+    <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
+  </nav>
+  <div class="m-pages" id="m-pages">
   <div class="m-panel" data-m-panel="seq">
     <section class="m-card m-seqpage">
       <div class="m-modes" id="m-modes" role="tablist" aria-label="what a step edit sets">
@@ -470,7 +477,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v5, 31 Oct, 06:46</footer>
+      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v48, 1 Nov, 06:50</footer>
     </section>
   </div>
   </div>
@@ -487,15 +494,6 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
     </section>
   </div>
 
-  <nav class="m-tabs" role="tablist" aria-label="pages">
-    <button type="button" role="tab" data-m-tab="play" aria-selected="true">perf</button>
-    <button type="button" role="tab" data-m-tab="seq" aria-selected="false">seq</button>
-    <button type="button" role="tab" data-m-tab="voice" aria-selected="false">voice</button>
-    <button type="button" role="tab" data-m-tab="xy" aria-selected="false">x/y</button>
-    <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
-    <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>
-    <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
-  </nav>
 </main>
 
 <script id="engine">
@@ -4617,13 +4615,18 @@ function useSnapshot(p, keepTempo) {
   sendAll(); drawAll();
 }
 
-// ---- the phone screen: pages, transport and the faders every page uses; then the perf, voice, x/y, fx and master
+// ---- the screen: pages, transport and the faders every page uses; then the perf, voice, x/y, fx and master
 // pages and the randomisers ----
 
-// ---- pages: swipe across the screen, or tap a page button. A swipe starts anywhere but on a fader, the x/y pad, the
+// ---- pages: perf stays on the left; the others sit on the right, one at a time: swipe across them, or tap a page button. A swipe starts anywhere but on a fader, the x/y pad, the
 // steps or a list, so dragging those never turns the page ----
 const mPages = $('m-pages'), PANELS = [...mPages.querySelectorAll('[data-m-panel]')];
 const PAGE_NAMES = { play: 'perform', seq: 'notes', voice: 'voice', xy: 'x/y', fx: 'effects', comp: 'master', presets: 'presets' };
+// the screen is laid out once at 1000 x 600 and scaled as a whole to fit the window, as a plugin window resizes
+const M_W = 1000, M_H = 600;
+let mK = 1;
+function mFit() { mK = Math.min(innerWidth / M_W, innerHeight / M_H); $('m').style.setProperty('--k', mK); }
+mFit(); addEventListener('resize', mFit);
 let mCur = 0;
 const pageHooks = [];
 function mGo(i, smooth) {
@@ -4645,7 +4648,7 @@ addEventListener('resize', () => mGo(mCur));
   });
   mPages.addEventListener('pointermove', (e) => {
     if (!sw || e.pointerId !== sw.id) return;
-    const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+    const dx = (e.clientX - sw.x) / mK, dy = (e.clientY - sw.y) / mK;
     if (!sw.on) {
       if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; }
       if (Math.abs(dx) < 12) return;
@@ -4658,7 +4661,7 @@ addEventListener('resize', () => mGo(mCur));
     const s = sw; sw = null;
     if (!s.on) return;
     mPages.classList.remove('swiping');
-    const dx = e.clientX - s.x, fast = Math.abs(dx) / Math.max(1, e.timeStamp - s.t) > 0.5;
+    const dx = (e.clientX - s.x) / mK, fast = Math.abs(dx) / Math.max(1, e.timeStamp - s.t) > 0.5;
     mGo(mCur + (Math.abs(dx) > mPages.clientWidth * 0.2 || (fast && Math.abs(dx) > 30) ? (dx < 0 ? 1 : -1) : 0), true);
   };
   // (a swipe holds the pointer, so one that ends on a button doesn't press it)
@@ -4855,8 +4858,8 @@ const xyFader = (pn) => mFaders.find((f) => f.key === `m-voice-${VP_PAGES.find((
   const at = (e) => {
     const r = pad.getBoundingClientRect(), X = xyFader(mXY[0]), Y = xyFader(mXY[1]);
     const val = (f, x) => f.min + Math.max(0, Math.min(1, x)) * (f.hiOf() - f.min);
-    X.move(val(X, (e.clientX - r.left - XY_IN) / (r.width - 2 * XY_IN)));
-    Y.move(val(Y, (r.bottom - XY_IN - e.clientY) / (r.height - 2 * XY_IN)));
+    X.move(val(X, (e.clientX - r.left - XY_IN * mK) / (r.width - 2 * XY_IN * mK)));
+    Y.move(val(Y, (r.bottom - XY_IN * mK - e.clientY) / (r.height - 2 * XY_IN * mK)));
     drawAll();
   };
   let held = false;

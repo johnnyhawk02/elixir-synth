@@ -1,10 +1,15 @@
-// ---- the phone screen: pages, transport and the faders every page uses; then the perf, voice, x/y, fx and master
+// ---- the screen: pages, transport and the faders every page uses; then the perf, voice, x/y, fx and master
 // pages and the randomisers ----
 
-// ---- pages: swipe across the screen, or tap a page button. A swipe starts anywhere but on a fader, the x/y pad, the
+// ---- pages: perf stays on the left; the others sit on the right, one at a time: swipe across them, or tap a page button. A swipe starts anywhere but on a fader, the x/y pad, the
 // steps or a list, so dragging those never turns the page ----
 const mPages = $('m-pages'), PANELS = [...mPages.querySelectorAll('[data-m-panel]')];
 const PAGE_NAMES = { play: 'perform', seq: 'notes', voice: 'voice', xy: 'x/y', fx: 'effects', comp: 'master', presets: 'presets' };
+// the screen is laid out once at 1000 x 600 and scaled as a whole to fit the window, as a plugin window resizes
+const M_W = 1000, M_H = 600;
+let mK = 1;
+function mFit() { mK = Math.min(innerWidth / M_W, innerHeight / M_H); $('m').style.setProperty('--k', mK); }
+mFit(); addEventListener('resize', mFit);
 let mCur = 0;
 const pageHooks = [];
 function mGo(i, smooth) {
@@ -26,7 +31,7 @@ addEventListener('resize', () => mGo(mCur));
   });
   mPages.addEventListener('pointermove', (e) => {
     if (!sw || e.pointerId !== sw.id) return;
-    const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+    const dx = (e.clientX - sw.x) / mK, dy = (e.clientY - sw.y) / mK;
     if (!sw.on) {
       if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; }
       if (Math.abs(dx) < 12) return;
@@ -39,7 +44,7 @@ addEventListener('resize', () => mGo(mCur));
     const s = sw; sw = null;
     if (!s.on) return;
     mPages.classList.remove('swiping');
-    const dx = e.clientX - s.x, fast = Math.abs(dx) / Math.max(1, e.timeStamp - s.t) > 0.5;
+    const dx = (e.clientX - s.x) / mK, fast = Math.abs(dx) / Math.max(1, e.timeStamp - s.t) > 0.5;
     mGo(mCur + (Math.abs(dx) > mPages.clientWidth * 0.2 || (fast && Math.abs(dx) > 30) ? (dx < 0 ? 1 : -1) : 0), true);
   };
   // (a swipe holds the pointer, so one that ends on a button doesn't press it)
@@ -236,8 +241,8 @@ const xyFader = (pn) => mFaders.find((f) => f.key === `m-voice-${VP_PAGES.find((
   const at = (e) => {
     const r = pad.getBoundingClientRect(), X = xyFader(mXY[0]), Y = xyFader(mXY[1]);
     const val = (f, x) => f.min + Math.max(0, Math.min(1, x)) * (f.hiOf() - f.min);
-    X.move(val(X, (e.clientX - r.left - XY_IN) / (r.width - 2 * XY_IN)));
-    Y.move(val(Y, (r.bottom - XY_IN - e.clientY) / (r.height - 2 * XY_IN)));
+    X.move(val(X, (e.clientX - r.left - XY_IN * mK) / (r.width - 2 * XY_IN * mK)));
+    Y.move(val(Y, (r.bottom - XY_IN * mK - e.clientY) / (r.height - 2 * XY_IN * mK)));
     drawAll();
   };
   let held = false;
