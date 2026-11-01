@@ -14,6 +14,14 @@ storedCheck('m-pbpm', 'elixir-synth-presetbpm');
 storedCheck('m-lowlat', LOWLAT_KEY, false);
 // (a take being recorded keeps the buffer it has: the new one comes with the next start)
 $('m-lowlat').addEventListener('change', () => { if (recState === 'off') restartAudio(); });
+// the audio readout in the prefs: the output's rate and buffer, and the audio thread's load (the share of the time it
+// has that it spends, and its longest block): what to look at when the sound breaks up
+eventHandlers.push((ev) => {
+  if (ev.type !== 'load' || $('m-prefs').hidden) return;
+  const lat = ((ctx.baseLatency || 0) + (ctx.outputLatency || 0)) * 1000;
+  $('m-aload').textContent = `audio: ${(ctx.sampleRate / 1000).toFixed(1)} kHz, ${lat ? Math.round(lat) + ' ms out' : 'latency unknown'}, `
+    + `load ${Math.round(ev.busy * 100)}%, longest block ${ev.peak.toFixed(1)} of ${ev.quantum.toFixed(1)} ms`;
+});
 // a new name: two made-up words
 const SYL = ['ka', 'zu', 'mo', 'ree', 'vax', 'lo', 'quin', 'tor', 'ba', 'shi', 'nek', 'ul', 'dra', 'po', 'ix', 'fen', 'yo', 'gar', 'mi', 'sol'];
 const word = () => { const w = Array.from({ length: rIn(2, 3) }, () => pick(SYL)).join(''); return w[0].toUpperCase() + w.slice(1); };

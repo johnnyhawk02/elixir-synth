@@ -58,24 +58,16 @@ const qsub16 = (a, b) => ssat16(a - b);
 // (the double sum lands exactly on a float rounding midpoint).
 const fbuf = new Float32Array(1);
 const ibuf = new Int32Array(fbuf.buffer);
-function nextFloat(x, up) {
-  fbuf[0] = x;
-  if (x === 0) { ibuf[0] = up ? 1 : -2147483647; return fbuf[0]; }
-  ibuf[0] += (x > 0) === up ? 1 : -1;
-  return fbuf[0];
-}
 function fmaf(a, b, c) {
   a = f(a); b = f(b); c = f(c);
-  const p = a * b;
-  const s = p + c;
-  const bb = s - p;
-  const e = (p - (s - bb)) + (c - bb);
-  const r = f(s);
-  if (e === 0 || r === s || !isFinite(s)) return r;
-  const other = nextFloat(r, s > r);
-  if ((r + other) / 2 !== s) return r;
-  // s sits exactly between r and other: the exact result is on the side e points to
-  return (e > 0) === (other > r) ? other : r;
+  const p = a * b, s = p + c, r = f(s), o = r + 2 * (s - r);
+  // s rounds to r, unless it sits exactly between r and the float on its other side (o is a float then): there the
+  // exact result is on the side the double sum's error e points to (with no error, s's own rounding). Kept small and
+  // without calls, so that where it's called a sample it's inlined: a call would make a new heap number of each value
+  // passed and returned, and the audio thread would have them to collect
+  if (o === r || f(o) !== o || !isFinite(s)) return r;
+  const bb = s - p, e = (p - (s - bb)) + (c - bb);
+  return e === 0 || (e > 0) !== (o > r) ? r : o;
 }
 
 // Hardware RNG stand-in (HAL_RNG_GetRandomNumber). The LXR uses the STM32's true RNG; this
@@ -1095,7 +1087,22 @@ const VERB_SIZE = 0x800, VERB_MASK = VERB_SIZE - 1;
 const F_SR3 = f(3 * REAL_FS);
 const HALF_F = new Float32Array(1), HALF_U = new Uint32Array(HALF_F.buffer);
 /** float -> __fp16 -> float, by the bits (what toHalf() does, without a log per sample) */
+// (kept small, so it's inlined where it's called a sample, the half subnormals too, which a quiet tail is full of:
+// only an overflow goes to halfEdge())
 function half(x) {
+  HALF_F[0] = x;
+  const u = HALF_U[0], a = u & 0x7fffffff;
+  if (a >= 0x477ff000) return halfEdge(x);
+  if (a < 0x38800000) { // zero, or a half subnormal: a whole number of 2^-24, to the nearest (ties to even)
+    const m = Math.abs(x) * 16777216;
+    let r = Math.round(m);
+    if (r - m === 0.5 && (r & 1)) r--;
+    return (u & 0x80000000 ? -r : r) / 16777216;
+  }
+  HALF_U[0] = (u & 0x80000000) | ((a + 0xfff + ((a >> 13) & 1)) & 0xffffe000);
+  return HALF_F[0];
+}
+function halfEdge(x) {
   HALF_F[0] = x;
   const u = HALF_U[0], s = u & 0x80000000;
   let a = u & 0x7fffffff;
@@ -1189,6 +1196,8 @@ function makeReverb() { // Reverb_init()
     inputAllpass: [makeAllpass(142, 0.75), makeAllpass(107, 0.75), makeAllpass(379, 0.625), makeAllpass(277, 0.625)],
     delay: [makeVerbDelay(2047), makeVerbDelay(1913), makeVerbDelay(1720), makeVerbDelay(1163)],
     early: makeVerbDelay(2000), preDelay: makeVerbDelay(2031) };
+  // the delay lines reverbProcess() rounds to __fp16 once a block (ap1's is written twice a sample)
+  r.rounded = [r.early, ...r.inputAllpass.map((a) => a.delay), r.apDelay[1].delay, ...r.delay];
   return r;
 }
 // FxBus_updateParameter(), FX_REVERB: P1 the predelay (1 to 46 ms), P2 the feedback, P3 the tilt (and the loop's
@@ -1200,44 +1209,134 @@ function reverbSetParameters(r, p) {
   setOnePoleCoef(r.lpFeedback, p[2]);
   r.earlyVolume = p[3];
 }
+// The same as the functions above, written out in three loops over the block with the state in local variables:
+// called once a sample, the small functions weren't all inlined, and each value passed to them or returned was a new
+// heap number for the audio thread to collect (about 25 MB a second), and the garbage collections were heard as
+// clicks on a phone. Three loops so that each is small enough for what it calls to be inlined. Sample for sample what
+// the functions do. The input side first: the predelay, the early reflections, the tilt and the input allpasses
+const V_IN1 = new Float64Array(BLOCK), V_IN2 = new Float64Array(BLOCK), V_EARLY = new Float64Array(BLOCK), V_OUT = new Float64Array(BLOCK);
+const V_POS0 = new Float64Array(BLOCK), V_POS1 = new Float64Array(BLOCK);
+// the modulated allpasses' smoothed lengths (verbModCalcLength's one-pole) for each sample of the block: they don't
+// depend on the sound, so they're worked out first, in a loop of their own
+function reverbModLengths(m, pos, size) {
+  const lp = m.lp, rr = lp.r, x = f(f(m.length * m.roomSz) + f(m.depth * m.modVal));
+  let b = lp.b;
+  for (let i = 0; i < size; i++) { b = fmaf(rr, x - b, b); pos[i] = f(b); }
+  lp.b = b;
+}
+function reverbIn(r, fx, size) {
+  const M = VERB_MASK, pre = r.preDelay, ear = r.early, ia = r.inputAllpass, ia0 = ia[0], ia1 = ia[1], ia2 = ia[2], ia3 = ia[3];
+  const preB = pre.buf, earB = ear.buf, i0B = ia0.delay.buf, i1B = ia1.delay.buf, i2B = ia2.delay.buf, i3B = ia3.delay.buf;
+  let preR = pre.readPtr, preW = pre.writePtr, earR = ear.readPtr, earW = ear.writePtr;
+  let i0R = ia0.delay.readPtr, i0W = ia0.delay.writePtr, i1R = ia1.delay.readPtr, i1W = ia1.delay.writePtr;
+  let i2R = ia2.delay.readPtr, i2W = ia2.delay.writePtr, i3R = ia3.delay.readPtr, i3W = ia3.delay.writePtr;
+  const g0 = ia0.g, g1 = ia1.g, g2 = ia2.g, g3 = ia3.g;
+  // the early taps (verbDelayReadTap): their offsets don't change within a block
+  const t0 = Math.trunc(f(f(EARLY_TAPS[0] / 100) * ear.length)) & 0xffff, t1 = Math.trunc(f(f(EARLY_TAPS[1] / 100) * ear.length)) & 0xffff;
+  const t2 = Math.trunc(f(f(EARLY_TAPS[2] / 100) * ear.length)) & 0xffff, t3 = Math.trunc(f(f(EARLY_TAPS[3] / 100) * ear.length)) & 0xffff;
+  const eq = r.eq, eqA = eq.a0, eqB = eq.b1, eqL = eq.lgain, eqH = eq.hgain;
+  let eqLp = eq.lp, x = 0, o = 0, w = 0;
+  for (let i = 0; i < size; i++) {
+    const mix = qadd16(Math.trunc(fx[2 * i] / 2), Math.trunc(fx[2 * i + 1] / 2));
+    // the predelay (verbDelayProcess: write, then read; it can be shorter than a block, so rounded to __fp16 here)
+    preB[preW] = half(f(mix / 32768)); preW = (preW + 1) & M;
+    let mono = preB[preR]; preR = (preR + 1) & M;
+    // early reflections (this and the delay lines below are rounded to __fp16 at the end of the block, by reverbRound())
+    earB[earW] = mono; earW = (earW + 1) & M; earR = (earR + 1) & M;
+    let early = earB[(earR - t0) & M];
+    early = f(early + f(earB[(earR - t1) & M] * f(0.5)));
+    early = f(early + f(earB[(earR - t2) & M] * f(0.125)));
+    V_EARLY[i] = f(early + f(earB[(earR - t3) & M] * f(0.25)));
+    // the input tilt
+    eqLp = f(f(eqA * mono) + f(eqB * eqLp));
+    mono = f(0.5 * f(f(eqL * eqLp) + f(eqH * f(mono - eqLp))));
+    // the input allpasses (allpassProcess: read, then write): in1 = ia0(ia1(mono)), in2 = ia2(ia3(mono))
+    o = i1B[i1R]; i1R = (i1R + 1) & M; w = f(mono + f(g1 * o)); i1B[i1W] = w; i1W = (i1W + 1) & M; x = f(o + f(f(-g1) * w));
+    o = i0B[i0R]; i0R = (i0R + 1) & M; w = f(x + f(g0 * o)); i0B[i0W] = w; i0W = (i0W + 1) & M; V_IN1[i] = f(o + f(f(-g0) * w));
+    o = i3B[i3R]; i3R = (i3R + 1) & M; w = f(mono + f(g3 * o)); i3B[i3W] = w; i3W = (i3W + 1) & M; x = f(o + f(f(-g3) * w));
+    o = i2B[i2R]; i2R = (i2R + 1) & M; w = f(x + f(g2 * o)); i2B[i2W] = w; i2W = (i2W + 1) & M; V_IN2[i] = f(o + f(f(-g2) * w));
+  }
+  pre.readPtr = preR; pre.writePtr = preW; ear.readPtr = earR; ear.writePtr = earW;
+  ia0.delay.readPtr = i0R; ia0.delay.writePtr = i0W; ia1.delay.readPtr = i1R; ia1.delay.writePtr = i1W;
+  ia2.delay.readPtr = i2R; ia2.delay.writePtr = i2W; ia3.delay.readPtr = i3R; ia3.delay.writePtr = i3W;
+  eq.lp = eqLp;
+}
+// the two cross-fed loops, and the output taps
+function reverbLoops(r, size) {
+  const M = VERB_MASK, fb = r.feedback, ap0 = r.apDelay[0], ap1 = r.apDelay[1], am0 = r.apModDelay[0], am1 = r.apModDelay[1];
+  const d0 = r.delay[0], d1 = r.delay[1], d2 = r.delay[2], d3 = r.delay[3];
+  const a1B = ap1.delay.buf, a0B = ap0.delay.buf, m0 = am0.delay, m1 = am1.delay, m0B = m0.buf, m1B = m1.buf;
+  const d0B = d0.buf, d1B = d1.buf, d2B = d2.buf, d3B = d3.buf;
+  let a1R = ap1.delay.readPtr, a1W = ap1.delay.writePtr, m0R = m0.readPtr, m0W = m0.writePtr, m1R = m1.readPtr, m1W = m1.writePtr;
+  let d0R = d0.readPtr, d0W = d0.writePtr, d1R = d1.readPtr, d1W = d1.writePtr, d2R = d2.readPtr, d2W = d2.writePtr, d3R = d3.readPtr, d3W = d3.writePtr;
+  const ga1 = ap1.g, gm0 = am0.g, gm1 = am1.g, a0R = ap0.delay.readPtr;
+  // the modulated allpasses' read positions (verbModCalcLength), from their smoothed lengths
+  reverbModLengths(m0, V_POS0, size); reverbModLengths(m1, V_POS1, size);
+  let m0frac = m0.frac, m1frac = m1.frac;
+  const lpf = r.lpFeedback, lpR = lpf.r;
+  let lpB = lpf.b, lastOut = r.lastOut, lastOut2 = r.lastOut2, x = 0, o = 0, w = 0, pos = 0, itg = 0;
+  for (let i = 0; i < size; i++) {
+    // loop 1: the modulated allpass (its read position first; it reads close behind its writes for its first couple of
+    // minutes, so it's rounded to __fp16 here), a delay, the feedback, apDelay[1], a delay
+    pos = f(m0W - V_POS0[i]); if (pos < 0) pos = f(pos + VERB_SIZE);
+    itg = Math.trunc(pos) >>> 0; m0frac = f(pos - itg); m0R = itg & M;
+    o = m0B[m0R]; m0R = (m0R + 1) & M; w = f(f(V_IN1[i] + lastOut2) + f(gm0 * o)); m0B[m0W] = half(w); m0W = (m0W + 1) & M;
+    x = f(o + f(f(-gm0) * w));
+    d0B[d0W] = x; d0W = (d0W + 1) & M; x = f(d0B[d0R] * fb); d0R = (d0R + 1) & M;
+    o = a1B[a1R]; a1R = (a1R + 1) & M; w = f(x + f(ga1 * o)); a1B[a1W] = w; a1W = (a1W + 1) & M; x = f(o + f(f(-ga1) * w));
+    d1B[d1W] = x; d1W = (d1W + 1) & M; x = d1B[d1R]; d1R = (d1R + 1) & M;
+    lpB = fmaf(lpR, f(x * fb) - lpB, lpB); lastOut = lpB;
+    // loop 2, the same through the other modulated allpass and delays (and apDelay[1] again)
+    pos = f(m1W - V_POS1[i]); if (pos < 0) pos = f(pos + VERB_SIZE);
+    itg = Math.trunc(pos) >>> 0; m1frac = f(pos - itg); m1R = itg & M;
+    o = m1B[m1R]; m1R = (m1R + 1) & M; w = f(f(V_IN2[i] + lastOut) + f(gm1 * o)); m1B[m1W] = half(w); m1W = (m1W + 1) & M;
+    x = f(o + f(f(-gm1) * w));
+    d2B[d2W] = x; d2W = (d2W + 1) & M; x = f(d2B[d2R] * fb); d2R = (d2R + 1) & M;
+    o = a1B[a1R]; a1R = (a1R + 1) & M; w = f(x + f(ga1 * o)); a1B[a1W] = w; a1W = (a1W + 1) & M; x = f(o + f(f(-ga1) * w));
+    d3B[d3W] = x; d3W = (d3W + 1) & M; x = d3B[d3R]; d3R = (d3R + 1) & M;
+    lastOut2 = f(x * fb);
+    // the output taps
+    let y = f(d2B[(d2R - 266) & M] * 0.6);
+    y = f(y - a1B[(a1R - 1913) & M] * 0.6);
+    y = f(y + d3B[(d3R - 996) & M] * 0.6);
+    y = f(y - a0B[(a0R - 187) & M] * 0.6);
+    V_OUT[i] = f(y - d1B[(d1R - 1066) & M] * 0.6);
+  }
+  ap1.delay.readPtr = a1R; ap1.delay.writePtr = a1W; m0.readPtr = m0R; m0.writePtr = m0W; m1.readPtr = m1R; m1.writePtr = m1W;
+  d0.readPtr = d0R; d0.writePtr = d0W; d1.readPtr = d1R; d1.writePtr = d1W; d2.readPtr = d2R; d2.writePtr = d2W; d3.readPtr = d3R; d3.writePtr = d3W;
+  m0.frac = m0frac; m1.frac = m1frac; lpf.b = lpB; r.lastOut = lastOut; r.lastOut2 = lastOut2;
+}
+// the n values before position w in a delay line, written as floats, rounded to __fp16: the delay lines that are read
+// at least a block after they're written are rounded once a block like this, the same values a rounding at each write
+// gives
+function halfBack(buf, w, n) { for (let k = 1; k <= n; k++) { const j = (w - k) & VERB_MASK; buf[j] = half(buf[j]); } }
+// (all of them from one call site, so that halfBack() is compiled once with half() inlined, not inlined itself here
+// and there with half() then called a value)
+function reverbRound(r, size) {
+  const L = r.rounded, ap1 = r.apDelay[1].delay;
+  for (let k = 0; k < L.length; k++) { const d = L[k]; halfBack(d.buf, d.writePtr, d === ap1 ? 2 * size : size); }
+}
 function reverbProcess(r, fx, out, size, dryWet) {
   // SineCosine_calc() once a block, into the modulated allpasses (whose depth is 0)
   const sc = r.lfo;
   sc.s[0] = f(sc.s[0] - f(sc.a * sc.s[1])); sc.s[1] = f(sc.s[1] + f(sc.a * sc.s[0]));
   r.apModDelay[1].delay.modVal = sc.s[0]; verbModCalcLength(r.apModDelay[1].delay);
   r.apModDelay[0].delay.modVal = sc.s[1]; verbModCalcLength(r.apModDelay[0].delay);
-  const [ap0, ap1] = r.apDelay, [am0, am1] = r.apModDelay, [d0, d1, d2, d3] = r.delay, ia = r.inputAllpass, fb = r.feedback;
+  reverbIn(r, fx, size);
+  reverbLoops(r, size);
+  reverbRound(r, size);
+  // the early reflections in, the output tilt, and out
+  const eqF = r.eqFb, efA = eqF.a0, efB = eqF.b1, efL = eqF.lgain, efH = eqF.hgain, ev = r.earlyVolume;
+  let efLp = eqF.lp;
   for (let i = 0; i < size; i++) {
-    const mix = qadd16(Math.trunc(fx[2 * i] / 2), Math.trunc(fx[2 * i + 1] / 2));
-    let mono = verbDelayProcess(r.preDelay, f(mix / 32768));
-    // early reflections
-    verbDelayProcess(r.early, mono);
-    let early = verbDelayReadTap(r.early, EARLY_TAPS[0]);
-    early = f(early + f(verbDelayReadTap(r.early, EARLY_TAPS[1]) * f(0.5)));
-    early = f(early + f(verbDelayReadTap(r.early, EARLY_TAPS[2]) * f(0.125)));
-    early = f(early + f(verbDelayReadTap(r.early, EARLY_TAPS[3]) * f(0.25)));
-    mono = f(0.5 * tiltProcess(r.eq, mono));
-    const in1 = allpassProcess(ia[0], allpassProcess(ia[1], mono));
-    const in2 = allpassProcess(ia[2], allpassProcess(ia[3], mono));
-    // late: loop 1, then loop 2, each fed by the other (loop 2 goes through apDelay[1] too, as the firmware has it)
-    let tmp = allpassModProcess(am0, f(in1 + r.lastOut2));
-    tmp = f(verbDelayProcess(d0, tmp) * fb);
-    tmp = verbDelayProcess(d1, allpassProcess(ap1, tmp));
-    r.lastOut = calcOnePole(r.lpFeedback, f(tmp * fb));
-    tmp = allpassModProcess(am1, f(in2 + r.lastOut));
-    tmp = f(verbDelayProcess(d2, tmp) * fb);
-    tmp = verbDelayProcess(d3, allpassProcess(ap1, tmp));
-    r.lastOut2 = f(tmp * fb);
-    let o = f(verbDelayReadTapSample(d2, 266) * 0.6);
-    o = f(o - verbDelayReadTapSample(ap1.delay, 1913) * 0.6);
-    o = f(o + verbDelayReadTapSample(d3, 996) * 0.6);
-    o = f(o - verbDelayReadTapSample(ap0.delay, 187) * 0.6);
-    o = f(o - verbDelayReadTapSample(d1, 1066) * 0.6);
-    o = tiltProcess(r.eqFb, fmaf(early, r.earlyVolume, o));
-    const wet = ssat16(toI32(f(o * 32768)));
+    let y = fmaf(V_EARLY[i], ev, V_OUT[i]);
+    efLp = f(f(efA * y) + f(efB * efLp));
+    y = f(f(efL * efLp) + f(efH * f(y - efLp)));
+    const wet = ssat16(toI32(f(y * 32768)));
     out[2 * i] = qadd16(out[2 * i], dryWetMix(fx[2 * i], wet, dryWet));
     out[2 * i + 1] = qadd16(out[2 * i + 1], dryWetMix(fx[2 * i + 1], wet, dryWet));
   }
+  eqF.lp = efLp;
 }
 
 export class FxBus {
@@ -1256,6 +1355,18 @@ export class FxBus {
     this.input = new Int16Array(BLOCK * 2);
   }
   setParameter(idx, value) { this.parameter[idx] = value; this.updateParameter(); }
+  /**
+   * Not in the firmware: a block of the ring mod with nothing sent to it, whose output is then silence, without working
+   * it out: its carrier moves on (or draws its noise) exactly as process() would move it. False, and nothing done, where
+   * that isn't so simple (another effect, or the PWM carrier, which keeps its last sample): process() it instead.
+   */
+  idleRing(rng) {
+    const osc = this.ringmod.osc;
+    if (this.fxType !== FX_RING || osc.waveform === PWM) return false;
+    if (osc.waveform === NOISE) noiseDraws(osc, rng, true);
+    else if (osc.waveform < PWM) osc.phase = (osc.phase + BLOCK * osc.phaseInc) >>> 0;
+    return true;
+  }
   /**
    * Not in the firmware: set the delay time directly in samples (tempo sync), or null to go
    * back to the TIME/RANGE knobs. Up to SYNC_BUFFER_SIZE (ping-pong: half of it).

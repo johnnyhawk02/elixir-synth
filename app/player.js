@@ -175,38 +175,31 @@ class Player {
     const [L, R] = dst;
     // the voice, its gain ramped over the block; a retrigger starts at its new gain straight away, the engine's declick
     // taking up the step (a ramp's corners would be heard on a dull sound)
-    const g1 = this.gainTo * this.gate, g0 = this.retrig ? g1 : this.gain, dg = (g1 - g0) / 64, gain = (i) => g0 + dg * i;
+    const g1 = this.gainTo * this.gate, g0 = this.retrig ? g1 : this.gain, dg = (g1 - g0) / 64;
     const o = e.voiceOut[0];
     this.retrig = false;
-    this.heard.h1 = o[62] * gain(62); this.heard.h0 = o[63] * gain(63);
+    this.heard.h1 = o[62] * (g0 + dg * 62); this.heard.h0 = o[63] * (g0 + dg * 63);
     const isDelay = e.fx.fxType === LXR.FX_DELAY;
     e.fx.forceWet = isDelay;
     e.fx.setDelaySync(isDelay ? delaySamples(this.delayPos, this.bpm) : null);
     const pl = v.triggeredPanL / 32768, pr = v.triggeredPanR / 32768;
-    for (let i = 0; i < 64; i++) { const s = o[i] * gain(i); L[i] = s * pl; R[i] = s * pr; }
+    for (let i = 0; i < 64; i++) { const s = o[i] * (g0 + dg * i); L[i] = s * pl; R[i] = s * pr; }
     this.gain = g1;
     // the echo: the firmware's FX bus, sample-exact, fed at the echo send when the voice is routed to it
     this.fxGain[0] = e.audioRouting[0] === LXR.MIXER_ROUTING_FX_BUS ? g1 * this.sendE : 0;
     const fx = e.renderFx(this.fxGain, this.echoWidth);
     // the ring mod and reverb buses: the voice at each one's send, saturated to int16; the firmware's ring mod carrier
     // is quiet, so it gets makeup gain. The reverb runs every block, sent to or not, so its tail rings out
-    const bi = this.busIn, bo = this.busOut;
-    const busFeed = (bus, gain) => {
-      for (let i = 0; i < 64; i++) {
-        bi[2 * i] = gain ? int16(o[i] * v.triggeredPanL * gain) : 0;
-        bi[2 * i + 1] = gain ? int16(o[i] * v.triggeredPanR * gain) : 0;
-      }
-      bus.input.set(bi); bo.fill(0);
-      bus.process(bo, 64, this.fxRng);
-    };
-    busFeed(this.ring, this.sendR * g1);
+    // (with nothing sent, the ring mod's output is silence: its carrier just moves on)
+    const bo = this.busOut, rg = this.sendR * g1;
+    if (!rg && this.ring.idleRing(this.fxRng)) bo.fill(0); else this.busFeed(this.ring, rg, o, v);
     for (let i = 0; i < 64; i++) {
       L[i] += (bo[2 * i] * RING_MAKEUP + fx[2 * i]) / 32768; R[i] += (bo[2 * i + 1] * RING_MAKEUP + fx[2 * i + 1]) / 32768;
     }
     // (once nothing is sent and its tail has been silent for a while, it rests until something is sent again)
     const vg = this.sendV * g1;
     if (vg || this.verbQuiet < 256) {
-      busFeed(this.verb, vg);
+      this.busFeed(this.verb, vg, o, v);
       let quiet = !vg;
       for (let i = 0; i < 64; i++) { L[i] += bo[2 * i] / 32768; R[i] += bo[2 * i + 1] / 32768; if (bo[2 * i]) quiet = false; }
       this.verbQuiet = quiet ? this.verbQuiet + 1 : 0;
@@ -227,10 +220,12 @@ class Player {
       // peak detector in dB, attack/release smoothing, gain = over * (1/ratio - 1) + makeup
       const ca = Math.exp(-1000 / (M.attack * LXR.REAL_FS)), cr = Math.exp(-1000 / (M.release * LXR.REAL_FS));
       const slope = 1 / M.ratio - 1, mk = Math.pow(10, M.makeup / 20);
+      // (a peak well under the threshold is under it without its log: below this, over is 0 however the log rounds)
+      const under = Math.pow(10, M.thresh / 20) * 0.999;
       let env = this.compEnv, gr = this.gr;
       for (let i = 0; i < 64; i++) {
         const peak = Math.max(Math.abs(L[i]), Math.abs(R[i])) + 1e-9;
-        const over = Math.max(0, 20 * Math.log10(peak) - M.thresh);
+        const over = peak < under ? 0 : Math.max(0, 20 * Math.log10(peak) - M.thresh);
         env = over + (over > env ? ca : cr) * (env - over);
         const g = Math.pow(10, env * slope / 20) * mk;
         L[i] *= g; R[i] *= g;
@@ -247,6 +242,16 @@ class Player {
       for (let i = 0; i < 64; i++, this.clickN++) { const s = Math.sin(w * this.clickN) * Math.exp(-d * this.clickN) * 0.3; L[i] += s; R[i] += s; }
       if (this.clickN > LXR.REAL_FS * 0.04) this.clickN = -1;
     }
+  }
+  // a send bus: voice v's block o at the send's gain, saturated to int16, through the bus into this.busOut
+  busFeed(bus, gain, o, v) {
+    const bi = this.busIn, bo = this.busOut;
+    for (let i = 0; i < 64; i++) {
+      bi[2 * i] = gain ? int16(o[i] * v.triggeredPanL * gain) : 0;
+      bi[2 * i + 1] = gain ? int16(o[i] * v.triggeredPanR * gain) : 0;
+    }
+    bus.input.set(bi); bo.fill(0);
+    bus.process(bo, 64, this.fxRng);
   }
   process(L, R) {
     for (let n = 0; n < L.length; n++) {

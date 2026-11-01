@@ -192,6 +192,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-prefs .m-rand-card { grid-template-rows: auto auto; }
 .m-prefs .m-chead .m-btn { min-height: 40px; min-width: 120px; font-size: var(--fs-s) !important; }
 .m-prefs-body { display: grid; gap: 16px; align-content: start; }
+.m-aload { font-family: var(--mono); font-size: var(--fs-xs); text-transform: none; }
 .m-prefs .m-foot { text-align: left; }
 .m-nextbar { gap: 8px; font-size: var(--fs-s); white-space: nowrap; justify-content: flex-start; min-height: 30px; min-width: 0; }
 .m-nextbar i { width: 18px; height: 18px; }

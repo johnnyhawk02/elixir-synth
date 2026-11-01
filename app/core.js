@@ -186,9 +186,15 @@ async function startAudio() {
   ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: store.get(LOWLAT_KEY) === '1' ? 'interactive' : 'playback' });
   try {
     const src = $('engine').textContent + $('player').textContent + `
+      const now = globalThis.performance && performance.now ? () => performance.now() : () => Date.now();
       registerProcessor('lxr', class extends AudioWorkletProcessor {
-        constructor() { super({ numberOfInputs: 0 }); this.p = new Player(sampleRate); this.port.onmessage = (e) => this.p.msg(e.data); }
-        process(_, outputs) { const o = outputs[0]; this.p.process(o[0], o[1] || o[0]);
+        constructor() { super({ numberOfInputs: 0 }); this.p = new Player(sampleRate); this.port.onmessage = (e) => this.p.msg(e.data);
+          this.busy = 0; this.peak = 0; this.n = 0; }
+        process(_, outputs) { const o = outputs[0], t0 = now(); this.p.process(o[0], o[1] || o[0]);
+          // the load: the time spent here against the audio made, sent about once a second (timed with whatever clock the
+          // audio thread has, which can be in whole milliseconds: over a second that still averages out)
+          const dt = now() - t0; this.busy += dt; if (dt > this.peak) this.peak = dt;
+          if (++this.n === 375) { this.port.postMessage({ type: 'load', busy: this.busy / (this.n * o[0].length / sampleRate * 1000), peak: this.peak, quantum: o[0].length / sampleRate * 1000 }); this.busy = 0; this.peak = 0; this.n = 0; }
           if (this.p.events.length) { for (const ev of this.p.events) this.port.postMessage(ev); this.p.events.length = 0; } return true; }
       });`;
     const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
