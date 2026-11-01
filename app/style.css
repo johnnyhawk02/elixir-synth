@@ -316,7 +316,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
   pointer-events: auto; box-shadow: 0 -8px 30px rgba(0, 0, 0, .5), inset 0 3px 10px rgba(0, 0, 0, .28); }
 .m-seq .m-chead { gap: 10px; }
 .m-seq .m-chead output { flex: 1; text-align: right; color: var(--muted); font-size: var(--fs-s); }
-.m-seq-steps { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; height: auto; min-height: 60px; touch-action: none; }
+.m-seq-steps { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 5px; height: auto; min-height: 60px; touch-action: none; }
 .m-seq-steps i { --up: 0; --dn: 0; position: relative; border-radius: 2px;
   background: linear-gradient(var(--ink), var(--ink)) center / 100% 2px no-repeat, repeating-linear-gradient(to top, var(--ghost) 0 5px, transparent 5px 8px); }
 /* a step's offset: lit up from the middle line, or down from it */

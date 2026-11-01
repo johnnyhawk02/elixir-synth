@@ -331,7 +331,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
   pointer-events: auto; box-shadow: 0 -8px 30px rgba(0, 0, 0, .5), inset 0 3px 10px rgba(0, 0, 0, .28); }
 .m-seq .m-chead { gap: 10px; }
 .m-seq .m-chead output { flex: 1; text-align: right; color: var(--muted); font-size: var(--fs-s); }
-.m-seq-steps { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; height: auto; min-height: 60px; touch-action: none; }
+.m-seq-steps { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 5px; height: auto; min-height: 60px; touch-action: none; }
 .m-seq-steps i { --up: 0; --dn: 0; position: relative; border-radius: 2px;
   background: linear-gradient(var(--ink), var(--ink)) center / 100% 2px no-repeat, repeating-linear-gradient(to top, var(--ghost) 0 5px, transparent 5px 8px); }
 /* a step's offset: lit up from the middle line, or down from it */
@@ -370,7 +370,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v70</small></b>
+    <b class="m-title">elixir<small class="m-ver">synth v71</small></b>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
     <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
   </header>
@@ -449,7 +449,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v70, 1 Nov, 12:30</footer>
+      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v71, 1 Nov, 12:40</footer>
     </section>
   </div>
   </div>
@@ -5335,7 +5335,7 @@ fseqUse = (all) => {
   const box = $('m-fs-steps');
   let painting = false, slideTo = null;
   const paint = (e, first) => {
-    const r = box.getBoundingClientRect(), cols = 8, rows = 2;
+    const r = box.getBoundingClientRect(), cols = 16, rows = 1;
     const col = Math.max(0, Math.min(cols - 1, Math.floor((e.clientX - r.left) / r.width * cols)));
     const row = Math.max(0, Math.min(rows - 1, Math.floor((e.clientY - r.top) / r.height * rows)));
     const i = row * cols + col, c = fsCells[i], cr = c.getBoundingClientRect();

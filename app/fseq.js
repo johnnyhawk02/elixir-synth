@@ -79,7 +79,7 @@ fseqUse = (all) => {
   const box = $('m-fs-steps');
   let painting = false, slideTo = null;
   const paint = (e, first) => {
-    const r = box.getBoundingClientRect(), cols = 8, rows = 2;
+    const r = box.getBoundingClientRect(), cols = 16, rows = 1;
     const col = Math.max(0, Math.min(cols - 1, Math.floor((e.clientX - r.left) / r.width * cols)));
     const row = Math.max(0, Math.min(rows - 1, Math.floor((e.clientY - r.top) / r.height * rows)));
     const i = row * cols + col, c = fsCells[i], cr = c.getBoundingClientRect();
