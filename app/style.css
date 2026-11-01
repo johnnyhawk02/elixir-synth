@@ -374,3 +374,20 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m .m-vf.cc .m-vtrack i { transition: none; }
 @media (prefers-reduced-motion: reduce) { .m .m-vtrack i, .m .m-gr i b, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button { transition: none; } }
 .m-steps.off { opacity: .5; }
+
+/* ---- held upright: the screen is landscape, so a phone held upright (a touch screen taller than it is wide) shows
+   a prompt to turn it instead, in the LCD's colours (lcd.js sets them here too). The installed app opens landscape
+   already (manifest), and where the browser lets a page lock the screen (Android), go fullscreen does that ---- */
+.m-turn { --panel: #2238e6; --ink: #eef3ff; --ink-rgb: 225 235 255;
+  display: none; position: fixed; inset: 0; z-index: 50; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+  padding: 24px; background: var(--panel); color: var(--ink); font: 2rem "VT323", ui-monospace, monospace; text-align: center; text-transform: uppercase;
+  text-shadow: 0 0 3px rgb(var(--ink-rgb) / .45); -webkit-user-select: none; user-select: none; }
+.m-turn p { margin: 0; max-width: 12em; }
+.m-turn-phone { width: 60px; height: 100px; border: 4px solid var(--ink); border-radius: 10px; animation: m-turn 2.4s ease-in-out infinite; }
+@keyframes m-turn { 0%, 25% { transform: rotate(0); } 55%, 100% { transform: rotate(-90deg); } }
+.m-turn-btn { font: inherit; color: var(--panel); background: var(--ink); border: 0; padding: 10px 22px; cursor: pointer; text-transform: inherit; }
+@media (orientation: portrait) and (pointer: coarse) {
+  .m-turn { display: flex; }
+  .m { visibility: hidden; }
+}
+@media (prefers-reduced-motion: reduce) { .m-turn-phone { animation: none; transform: rotate(-90deg); } }

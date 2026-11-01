@@ -12,8 +12,8 @@ const LCD_KEY = 'elixir-synth-lcd';
 let lcdLook = 0;
 function setLcd(i) {
   lcdLook = LCD_LOOKS[i] ? i : 0;
-  const m = document.querySelector('.m');
-  for (const [k, v] of Object.entries(LCD_LOOKS[lcdLook][1])) m.style.setProperty('--' + k, String(v));
+  for (const m of document.querySelectorAll('.m, .m-turn'))
+    for (const [k, v] of Object.entries(LCD_LOOKS[lcdLook][1])) m.style.setProperty('--' + k, String(v));
   document.querySelectorAll('#m-lcd [data-lcd]').forEach((b) => b.setAttribute('aria-pressed', +b.dataset.lcd === lcdLook));
   store.set(LCD_KEY, LCD_LOOKS[lcdLook][0]);
 }

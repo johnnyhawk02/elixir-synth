@@ -167,6 +167,13 @@
 
 </main>
 
+<!-- held upright, a phone shows this over the screen instead: turn it, or (where the browser can) go fullscreen and lock it landscape -->
+<div class="m-turn" id="m-turn" role="dialog" aria-modal="true" aria-labelledby="m-turn-h">
+  <div class="m-turn-phone" aria-hidden="true"></div>
+  <p id="m-turn-h">turn your phone sideways</p>
+  <button class="m-turn-btn" id="m-turn-go" type="button" hidden>go fullscreen</button>
+</div>
+
 <script id="engine">
 /*@ENGINE@*/
 </script>

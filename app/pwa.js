@@ -10,5 +10,17 @@ $('m-install').addEventListener('click', async () => {
   mInstallEv.prompt(); await mInstallEv.userChoice.catch(() => {});
   mInstallEv = null; $('m-install').hidden = true;
 });
+// ---- landscape on a phone: a page can only lock the screen's turn while it's fullscreen or installed (Android's
+// browsers; iPhones never allow it, so there it stays a prompt to turn the phone). The installed app asks for
+// landscape in its manifest, and tries the lock too; in a browser tab, held upright, the prompt offers go fullscreen,
+// which locks it landscape where the browser allows. Leaving fullscreen lets the phone turn freely again ----
+const canLock = !!(screen.orientation && screen.orientation.lock && document.documentElement.requestFullscreen);
+const lockLandscape = () => screen.orientation.lock('landscape').catch(() => {});
+if (canLock && matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches) lockLandscape();
+$('m-turn-go').hidden = !canLock;
+$('m-turn-go').addEventListener('click', async () => {
+  try { await document.documentElement.requestFullscreen({ navigationUI: 'hide' }); await screen.orientation.lock('landscape'); }
+  catch { $('m-turn-go').hidden = true; } // it wouldn't: turning the phone is the only way left
+});
 // start: everything drawn, the first page shown
 mUndoDraw(); drawAll(); mGo(0); requestAnimationFrame(mDepth);

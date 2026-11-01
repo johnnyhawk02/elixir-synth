@@ -2,7 +2,7 @@
 // it scales to fit): no errors, the screen keeps its 5:3 shape inside the window, no page scrolls but the presets list,
 // swipes and the page buttons along the bottom turn the page, fader drags don't, holding a fader opens
 // its sequencer, MIDI CC 1-8 turn the perf dials, the reverb sends, the note grid edits steps on four pages and copies
-// page 1 to the others, space plays and stops, play runs the steps, presets save and load, and record downloads a WAV.
+// page 1 to the others, space plays and stops, play runs the steps, presets save and load, and record downloads a WAV; a phone held upright is asked to turn sideways.
 //   node test/smoke.mjs [index.html]   (needs Playwright)
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
@@ -257,6 +257,14 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   const d = await dl;
   check(!!d && /\.wav$/.test(d.suggestedFilename()), `record downloads ${d ? d.suggestedFilename() : 'nothing'}`);
   check(!errs.length, `no page errors ${errs.join('; ')}`);
+  await c.close();
+}
+// a phone held upright gets the turn-your-phone prompt over the screen; held sideways, the screen itself
+for (const [w, h, up] of [[390, 844, true], [844, 390, false]]) {
+  const c = await b.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true });
+  const pg = await c.newPage(); await pg.goto(url); await pg.waitForTimeout(300);
+  const [turn, seen] = await pg.evaluate(() => [getComputedStyle($('m-turn')).display !== 'none', getComputedStyle($('m')).visibility === 'visible']);
+  check(turn === up && seen === !up, `phone ${up ? 'upright shows the turn prompt' : 'sideways shows the screen'}`);
   await c.close();
 }
 await b.close();
