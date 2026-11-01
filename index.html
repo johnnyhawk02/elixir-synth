@@ -224,8 +224,8 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-sbar { display: block; min-height: 0; background: repeating-linear-gradient(to top, var(--ghost) 0 4px, transparent 4px 6px); position: relative; }
 .m-sbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: round(down, calc(var(--f) * 100%), 6px);
   background: repeating-linear-gradient(to top, var(--ink) 0 4px, transparent 4px 6px); background-position: bottom; transition: height .09s cubic-bezier(.2, .7, .3, 1); }
-.m-sm { display: flex; justify-content: space-between; font-size: min(.95rem, 14px); line-height: 1; gap: 2px; }
-.m-sm b { flex: 1; font-weight: 400; padding: 3px 0; text-align: center; opacity: .3; cursor: pointer; border-radius: 2px; }
+.m-sm { display: flex; justify-content: space-between; font-size: min(1.05rem, 15px); line-height: 1; gap: 3px; }
+.m-sm b { flex: 1; font-weight: 400; padding: 7px 0; text-align: center; opacity: .45; border: 1px solid currentColor; cursor: pointer; border-radius: 2px; }
 .m-step.acc .m-sm .a, .m-step.slide .m-sm .s { opacity: 1; background: var(--ink); color: var(--panel); text-shadow: none; }
 .m-step.rest .m-sn, .m-step.rest .m-sbar { opacity: .3; }
 .m-step.now { outline: 3px solid var(--ink); outline-offset: 1px; }
@@ -356,7 +356,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v28</small></b>
+    <b class="m-title">elixir<small class="m-ver">synth v29</small></b>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
     <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
   </header>
@@ -432,7 +432,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v28, 1 Nov, 09:11</footer>
+      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v29, 1 Nov, 09:33</footer>
     </section>
   </div>
   </div>
@@ -5075,14 +5075,21 @@ function nsLane(box, what) {
   let flag = null;
   nsLane($('m-steps'), (i, y, first, e) => {
     const st = nsStep(i);
-    if (first) { const b = e.target.closest('.m-sm b'); flag = b ? { k: b.classList.contains('a') ? 'acc' : 'slide', to: null, seen: new Set() } : null; }
+    if (first) {
+      // the A/S row, with some give above it: the left half is A, the right half S
+      const m = nsCells[i].querySelector('.m-sm').getBoundingClientRect(), slop = m.height * 0.5;
+      const k = e.clientY >= m.top - slop ? (e.clientX < m.left + m.width / 2 ? 'acc' : 'slide') : null;
+      flag = k ? { k, to: null, seen: new Set() } : null;
+    }
     if (flag) {
       if (flag.seen.has(i)) return null;
       if (flag.to === null) flag.to = !st[flag.k];
       flag.seen.add(i); st[flag.k] = flag.to;
       return false;
     }
-    const d = Math.min(degMax(), Math.floor(y * (degMax() + 1)));
+    // the note from where the touch is on the step's bar (the note name and A/S rows above and below it are its ends)
+    const br = nsCells[i].querySelector('.m-sbar').getBoundingClientRect(), yb = Math.max(0, Math.min(0.999, (br.bottom - e.clientY) / br.height));
+    const d = Math.min(degMax(), Math.floor(yb * (degMax() + 1)));
     if (d !== st.d || !st.gate) { st.d = d; if (!st.gate) st.gate = 4; return true; }
     return first ? false : null;
   });

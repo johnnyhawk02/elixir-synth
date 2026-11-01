@@ -68,14 +68,21 @@ function nsLane(box, what) {
   let flag = null;
   nsLane($('m-steps'), (i, y, first, e) => {
     const st = nsStep(i);
-    if (first) { const b = e.target.closest('.m-sm b'); flag = b ? { k: b.classList.contains('a') ? 'acc' : 'slide', to: null, seen: new Set() } : null; }
+    if (first) {
+      // the A/S row, with some give above it: the left half is A, the right half S
+      const m = nsCells[i].querySelector('.m-sm').getBoundingClientRect(), slop = m.height * 0.5;
+      const k = e.clientY >= m.top - slop ? (e.clientX < m.left + m.width / 2 ? 'acc' : 'slide') : null;
+      flag = k ? { k, to: null, seen: new Set() } : null;
+    }
     if (flag) {
       if (flag.seen.has(i)) return null;
       if (flag.to === null) flag.to = !st[flag.k];
       flag.seen.add(i); st[flag.k] = flag.to;
       return false;
     }
-    const d = Math.min(degMax(), Math.floor(y * (degMax() + 1)));
+    // the note from where the touch is on the step's bar (the note name and A/S rows above and below it are its ends)
+    const br = nsCells[i].querySelector('.m-sbar').getBoundingClientRect(), yb = Math.max(0, Math.min(0.999, (br.bottom - e.clientY) / br.height));
+    const d = Math.min(degMax(), Math.floor(yb * (degMax() + 1)));
     if (d !== st.d || !st.gate) { st.d = d; if (!st.gate) st.gate = 4; return true; }
     return first ? false : null;
   });
