@@ -178,12 +178,14 @@ let barSync = false;
 // post: straight to the audio thread if it's running; send: through barSync, and kept until the audio starts
 function post(m) { if (node) node.port.postMessage(m); else if (fallback) fallback.msg(m); else return false; return true; }
 function send(m) { if (barSync) m = { type: 'atBar', m }; if (!post(m)) pending.push(m); }
-// the output buffer: long by default, so the audio thread has time in hand when the phone is busy (switching apps,
-// say) and doesn't break up; 'low latency' in the prefs asks for the shortest the device gives
-const LOWLAT_KEY = 'elixir-synth-lowlat';
+// the output buffer: the shortest the device gives ('interactive'), as it was first. A long one ('playback', the
+// 'bigger audio buffer' pref) was the default for a while (v84 to v90), and on a phone the timing went to pieces with
+// it, chunks of audio skipped (Chrome may not give the audio thread its real-time priority then), so it's only an
+// option now
+const BIGBUF_KEY = 'elixir-synth-bigbuf';
 async function startAudio() {
   if (ctx) { if (ctx.state === 'suspended') await ctx.resume(); return; }
-  ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: store.get(LOWLAT_KEY) === '1' ? 'interactive' : 'playback' });
+  ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: store.get(BIGBUF_KEY) === '1' ? 'playback' : 'interactive' });
   try {
     const src = $('engine').textContent + $('player').textContent + `
       const now = globalThis.performance && performance.now ? () => performance.now() : () => Date.now();

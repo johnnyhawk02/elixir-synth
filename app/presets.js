@@ -11,9 +11,9 @@ try { for (const p of JSON.parse(store.get(SAVE_KEY)) || []) if (p && p.v === PR
 const storePresets = () => store.set(SAVE_KEY, JSON.stringify(presetList.filter((k) => k.saved).map(presetData)));
 let pCur = presetList[0], pPending = null, pShown = null;
 storedCheck('m-pbpm', 'elixir-synth-presetbpm');
-storedCheck('m-lowlat', LOWLAT_KEY, false);
+storedCheck('m-bigbuf', BIGBUF_KEY, false);
 // (a take being recorded keeps the buffer it has: the new one comes with the next start)
-$('m-lowlat').addEventListener('change', () => { if (recState === 'off') restartAudio(); });
+$('m-bigbuf').addEventListener('change', () => { if (recState === 'off') restartAudio(); });
 // the audio readout in the prefs: the output's rate and buffer, and the audio thread's load (the share of the time it
 // has that it spends, and its longest block): what to look at when the sound breaks up
 eventHandlers.push((ev) => {
