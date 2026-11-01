@@ -65,6 +65,11 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   await pg.click('.m-main-card [data-nshift="1"]');
   check(await pg.evaluate((b) => { const was = JSON.parse(b), n = seq.len; return JSON.stringify(seq.steps[1]) === JSON.stringify(was[0]) && JSON.stringify(seq.steps[0]) === JSON.stringify(was[n - 1]); }, shBefore), 'main: shift moves the pattern a step');
   await pg.click('.m-main-card [data-nshift="-1"]');
+  // length on the main page is the seq page's length
+  await pg.evaluate(() => { seq.len = 64; drawAll(); });
+  { const r = await box('#m-mlen .m-vtrack'); await drag(r.x + r.width / 2, r.y + 4, r.x + r.width / 2, r.y + 4 + r.height * (64 - 33) / 63, 6); }
+  check(await pg.evaluate(() => seq.len === 32 && document.querySelector('#m-seqf .m-vf:nth-child(4) output').textContent === '32'), `main: the length fader sets the seq's length (${await pg.evaluate(() => seq.len)})`);
+  await pg.evaluate(() => { seq.len = 64; sendSeq(); drawAll(); });
   // the metronome: a toggle kept in this browser; the player clicks on each beat with it on, and is silent with it off
   await pg.click('#m-metro');
   check(await pg.evaluate(() => metroOn && $('m-metro').getAttribute('aria-pressed') === 'true' && localStorage.getItem('elixir-synth-metro') === '1'), 'main: the metronome turns on and is kept');

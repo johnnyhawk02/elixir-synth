@@ -39,11 +39,12 @@
         <button class="m-btn" data-undo type="button" disabled>undo</button>
         <button class="m-toggle" id="m-metro" type="button" aria-pressed="false">metronome</button>
       </div>
-      <div class="m-mcol" role="group" aria-label="randomise the notes">
+      <div class="m-mcol m-mnotescol" role="group" aria-label="the notes">
         <div class="m-fxhead"><b>notes</b></div>
         <button class="m-btn m-big m-mnotes" data-nrand type="button">random<small class="m-nalgo" data-nalgo></small></button>
         <button class="m-btn" data-nalter type="button">alter</button>
         <span class="m-nshift" role="group" aria-label="shift"><button class="m-btn" type="button" data-nshift="-1" aria-label="shift the pattern left">←</button><span aria-hidden="true">shift</span><button class="m-btn" type="button" data-nshift="1" aria-label="shift the pattern right">→</button></span>
+        <div class="m-faders m-row m-mlen" id="m-mlen"></div>
       </div>
       <div class="m-mcol" role="group" aria-label="randomise the voice">
         <div class="m-fxhead"><b>voice</b></div>

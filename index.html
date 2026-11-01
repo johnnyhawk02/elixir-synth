@@ -229,6 +229,8 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-mcol .m-nshift > span { align-self: center; }
 .m .m-mcol .m-nshift .m-btn { font-size: var(--fs-s) !important; }
 .m-mcol .m-fxhead b { padding-left: 0; }
+.m-mnotescol { grid-template-rows: 36px 64px 48px 48px minmax(0, 1fr); align-content: stretch; }
+.m-row.m-mlen { grid-template-columns: minmax(0, 1fr); padding-top: 8px; }
 .m-mpreset { grid-template-rows: 36px 30px 64px; }
 .m-mcur { align-self: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-s); }
 .m-mpreset .m-note { line-height: 1.2; }
@@ -424,7 +426,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v87</small></button>
+    <button class="m-title" id="m-title" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="elixir synth: preferences">elixir<small class="m-ver">synth v88</small></button>
     <div class="m-tport">
       <button class="m-btn m-play" id="m-play" type="button" aria-pressed="false" aria-label="play (space)" title="play (space)"><i aria-hidden="true"></i></button>
       <output class="m-recind" id="m-rec-t" aria-live="polite" hidden></output>
@@ -445,11 +447,12 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" data-undo type="button" disabled>undo</button>
         <button class="m-toggle" id="m-metro" type="button" aria-pressed="false">metronome</button>
       </div>
-      <div class="m-mcol" role="group" aria-label="randomise the notes">
+      <div class="m-mcol m-mnotescol" role="group" aria-label="the notes">
         <div class="m-fxhead"><b>notes</b></div>
         <button class="m-btn m-big m-mnotes" data-nrand type="button">random<small class="m-nalgo" data-nalgo></small></button>
         <button class="m-btn" data-nalter type="button">alter</button>
         <span class="m-nshift" role="group" aria-label="shift"><button class="m-btn" type="button" data-nshift="-1" aria-label="shift the pattern left">←</button><span aria-hidden="true">shift</span><button class="m-btn" type="button" data-nshift="1" aria-label="shift the pattern right">→</button></span>
+        <div class="m-faders m-row m-mlen" id="m-mlen"></div>
       </div>
       <div class="m-mcol" role="group" aria-label="randomise the voice">
         <div class="m-fxhead"><b>voice</b></div>
@@ -578,7 +581,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <div class="m-lcd" id="m-lcd" role="group" aria-label="screen colours"><span>screen</span></div>
         <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
         <label class="m-chk"><input id="m-lowlat" type="checkbox"><i aria-hidden="true"></i>low latency (can break up when the phone is busy)</label>
-        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v87, 1 Nov, 16:22</footer>
+        <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v88, 1 Nov, 16:33</footer>
       </div>
     </section>
   </div>
@@ -5310,7 +5313,11 @@ nsFader('root', 'root', { min: 0, max: 11, show: (v) => NOTE_NAMES[v] });
 nsFader('scale', 'scale', { min: 0, max: SCALES.length - 1, show: (v) => SCALES[v][0] });
 nsFader('accent', 'accent', { min: 0, max: 12, show: (v) => `+${v}dB` });
 // length: a drag catches at 16, 32 and 48 (a page, two, three)
-nsFader('length', 'len', { min: 1, max: NSTEPS, show: (v) => String(v), detents: [16, 32, 48], catch: 2.5 });
+// (the main page has the same fader: a move of either redraws both)
+const nsLen = (v) => { seq.len = v; nsChanged(); drawAll(); };
+nsFader('length', 'len', { set: nsLen, min: 1, max: NSTEPS, show: (v) => String(v), detents: [16, 32, 48], catch: 2.5 });
+// (and again on the main page, under the notes' randomisers)
+mFader($('m-mlen'), 'length', { get: () => seq.len, set: nsLen, dflt: SEQ0.len, min: 1, max: NSTEPS, show: (v) => String(v), detents: [16, 32, 48], catch: 2.5 });
 nsFader('density', 'density', { min: 0, max: 100, step: 5, show: (v) => v + '%' });
 nsFader('glide', 'glide', { min: 0, max: 100, step: 5, show: (v) => v + '%' });
 // morph: off, or the voice parameter the morph lane moves

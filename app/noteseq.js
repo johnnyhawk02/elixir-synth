@@ -138,7 +138,11 @@ nsFader('root', 'root', { min: 0, max: 11, show: (v) => NOTE_NAMES[v] });
 nsFader('scale', 'scale', { min: 0, max: SCALES.length - 1, show: (v) => SCALES[v][0] });
 nsFader('accent', 'accent', { min: 0, max: 12, show: (v) => `+${v}dB` });
 // length: a drag catches at 16, 32 and 48 (a page, two, three)
-nsFader('length', 'len', { min: 1, max: NSTEPS, show: (v) => String(v), detents: [16, 32, 48], catch: 2.5 });
+// (the main page has the same fader: a move of either redraws both)
+const nsLen = (v) => { seq.len = v; nsChanged(); drawAll(); };
+nsFader('length', 'len', { set: nsLen, min: 1, max: NSTEPS, show: (v) => String(v), detents: [16, 32, 48], catch: 2.5 });
+// (and again on the main page, under the notes' randomisers)
+mFader($('m-mlen'), 'length', { get: () => seq.len, set: nsLen, dflt: SEQ0.len, min: 1, max: NSTEPS, show: (v) => String(v), detents: [16, 32, 48], catch: 2.5 });
 nsFader('density', 'density', { min: 0, max: 100, step: 5, show: (v) => v + '%' });
 nsFader('glide', 'glide', { min: 0, max: 100, step: 5, show: (v) => v + '%' });
 // morph: off, or the voice parameter the morph lane moves
