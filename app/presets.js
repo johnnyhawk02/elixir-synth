@@ -11,6 +11,9 @@ try { for (const p of JSON.parse(store.get(SAVE_KEY)) || []) if (p && p.v === PR
 const storePresets = () => store.set(SAVE_KEY, JSON.stringify(presetList.filter((k) => k.saved).map(presetData)));
 let pCur = presetList[0], pPending = null, pShown = null;
 storedCheck('m-pbpm', 'elixir-synth-presetbpm');
+storedCheck('m-lowlat', LOWLAT_KEY, false);
+// (a take being recorded keeps the buffer it has: the new one comes with the next start)
+$('m-lowlat').addEventListener('change', () => { if (recState === 'off') restartAudio(); });
 // a new name: two made-up words
 const SYL = ['ka', 'zu', 'mo', 'ree', 'vax', 'lo', 'quin', 'tor', 'ba', 'shi', 'nek', 'ul', 'dra', 'po', 'ix', 'fen', 'yo', 'gar', 'mi', 'sol'];
 const word = () => { const w = Array.from({ length: rIn(2, 3) }, () => pick(SYL)).join(''); return w[0].toUpperCase() + w.slice(1); };

@@ -127,9 +127,11 @@ function nsNow() {
 }
 eventHandlers.push((ev) => {
   if (ev.type !== 'step') return;
+  if (document.hidden) { nsAt = ev; return; }
   whenHeard(() => { if (playing) { nsAt = ev; nsNow(); } });
 });
 stopHooks.push(() => { nsAt = null; nsNow(); });
+// (out of sight the step marker stands still, and catches up on the next step back on screen)
 
 // the faders: each a setting of the sequence
 const nsFader = (label, key, o) => mFader($('m-seqf'), label, { get: () => seq[key], set: (v) => { seq[key] = v; nsChanged(); }, dflt: SEQ0[key], ...o });

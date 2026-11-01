@@ -12,6 +12,9 @@ class Player {
   constructor(outRate) {
     this.e = new LXR.LxrEngine();
     this.e.loadInitKit();
+    // only drum 1 is heard: the other five voices are not rendered (their random numbers are still drawn, so the sound
+    // is the same to the bit)
+    this.e.voices = 1;
     this.ratio = LXR.REAL_FS / outRate;
     this.A = [new Float32Array(64), new Float32Array(64)];
     this.B = [new Float32Array(64), new Float32Array(64)];

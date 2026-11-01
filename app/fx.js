@@ -34,10 +34,14 @@ mMaster('release', 'release', 20, 500, 10, (v) => v + ' ms');
 mMaster('makeup', 'makeup', 0, 12, 1, (v) => '+' + v + ' dB');
 $('m-comp-on').addEventListener('click', () => { master.comp = !master.comp; sendMix(); drawAll(); });
 drawHooks.push(() => { $('m-comp-on').setAttribute('aria-pressed', master.comp); $('m-comp-on').textContent = master.comp ? 'on' : 'off'; $('m-comp').classList.toggle('off', !master.comp); });
-// the gain reduction meter, from each step's reading
+// the gain reduction meter, from each step's reading: only while its page is on screen (each move of the meter lays out
+// and repaints the page, which a phone shouldn't spend time on unseen), and only when the reading changes
+let grShown = '';
 eventHandlers.push((ev) => {
-  if (ev.type !== 'step') return;
-  const d = Math.max(0, Math.min(20, ev.gr || 0));
-  $('m-gr').style.width = (Math.log1p(d) / Math.log1p(20) * 100).toFixed(1) + '%'; $('m-gr-out').textContent = `${d.toFixed(1)} dB`;
+  if (ev.type !== 'step' || document.hidden || PANELS[mCur].dataset.mPanel !== 'comp') return;
+  const d = Math.max(0, Math.min(20, ev.gr || 0)), t = `${d.toFixed(1)} dB`;
+  if (t === grShown) return;
+  grShown = t;
+  $('m-gr').style.setProperty('--gr', (Math.log1p(d) / Math.log1p(20)).toFixed(3)); $('m-gr-out').textContent = t;
 });
-stopHooks.push(() => { $('m-gr').style.width = '0%'; $('m-gr-out').textContent = '0.0 dB'; });
+stopHooks.push(() => { grShown = '0.0 dB'; $('m-gr').style.setProperty('--gr', 0); $('m-gr-out').textContent = grShown; });

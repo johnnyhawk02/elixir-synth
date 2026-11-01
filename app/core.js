@@ -174,9 +174,12 @@ let barSync = false;
 // post: straight to the audio thread if it's running; send: through barSync, and kept until the audio starts
 function post(m) { if (node) node.port.postMessage(m); else if (fallback) fallback.msg(m); else return false; return true; }
 function send(m) { if (barSync) m = { type: 'atBar', m }; if (!post(m)) pending.push(m); }
+// the output buffer: long by default, so the audio thread has time in hand when the phone is busy (switching apps,
+// say) and doesn't break up; 'low latency' in the prefs asks for the shortest the device gives
+const LOWLAT_KEY = 'elixir-synth-lowlat';
 async function startAudio() {
   if (ctx) { if (ctx.state === 'suspended') await ctx.resume(); return; }
-  ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+  ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: store.get(LOWLAT_KEY) === '1' ? 'interactive' : 'playback' });
   try {
     const src = $('engine').textContent + $('player').textContent + `
       registerProcessor('lxr', class extends AudioWorkletProcessor {
@@ -203,6 +206,15 @@ async function startAudio() {
   // (anything sent before the audio started is in the state below, so it's sent fresh)
   pending.length = 0;
   sendAll();
+}
+// a new buffer size takes a new audio context: the old one closed, everything sent to the new one
+async function restartAudio() {
+  if (!ctx) return;
+  const old = ctx;
+  if (node) { node.port.onmessage = null; node.disconnect(); }
+  ctx = null; node = null; fallback = null;
+  old.close().catch(() => {});
+  await startAudio();
 }
 // everything, to a new audio thread or for a preset
 function sendAll() {

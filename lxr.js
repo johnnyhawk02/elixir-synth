@@ -225,6 +225,17 @@ function calcNoiseBlock(osc, buf, size, gain, rng) {
   }
 }
 
+// a voice that isn't rendered (LxrEngine.voices, not in the firmware): what its oscillator would take from the shared
+// random generator in a block, a number each time a noise oscillator's phase wraps, and nothing else
+function noiseDraws(osc, rng, noise = osc.waveform === NOISE) {
+  if (!noise) return;
+  for (let i = 0; i < BLOCK; i++) {
+    const last = osc.phase;
+    osc.phase = (osc.phase + osc.phaseInc) >>> 0;
+    if (last > osc.phase) rng.next();
+  }
+}
+
 // waveforms above PWM are user samples, which this port doesn't load; like the firmware
 // without samples, they leave the buffer as it was
 function calcNextOscSampleBlock(osc, buf, size, gain, pwm, rng) {
@@ -973,7 +984,7 @@ const DELAY_NORMAL = 0;
 function makeDelay() {
   return { mask: FX_BUFFER_SIZE, sync: null, oldRead: 0, newRead: 0, write: Math.trunc(FX_BUFFER_SIZE / 20) - 10, fracReadNew: 0, fracReadOld: 0,
     interpValue: 0, interpStep: 0, tmp: new Int16Array(2), tmp2: new Int16Array(2), feedback: f(0.7), range: 0,
-    delayTime: 0, pendingDelayTime: 0, timePending: 0, tone: makeOnePole(), tone2: makeOnePole(), type: DELAY_NORMAL };
+    delayTime: 0, pendingDelayTime: 0, timePending: 0, tone: makeOnePole(), tone2: makeOnePole(), type: DELAY_NORMAL, stepR: 0 };
 }
 const interpF = (a, b, x) => f(f(a * f(1 - x)) + f(b * x));
 function calcDelayTime(d, cv) {
@@ -1022,10 +1033,13 @@ function delayCalcBufferPingPong(d, buf, idx) {
   }
 }
 const crossfade = (a, b, v) => toI16(f(a * v) + b * (1.0 - v));
-const toBuf = (itg) => { let v = f(itg / F_32767); if (v > 1) v = f(1); else if (v < -1) v = f(-1); return toHalf(v); };
+// an int16 into the __fp16 delay buffer: worked out once for each of the 65536 values (toHalf() is too slow a sample)
+const TO_BUF = new Float32Array(65536);
+for (let itg = -32768; itg < 32768; itg++) { let v = f(itg / F_32767); if (v > 1) v = f(1); else if (v < -1) v = f(-1); TO_BUF[itg + 32768] = toHalf(v); }
+const toBuf = (itg) => TO_BUF[itg + 32768];
 function delayStep(d, pingPong, buf) {
   const calc = pingPong ? delayCalcBufferPingPong : delayCalcBuffer;
-  let l, r;
+  let l, r = 0;
   if (d.interpValue <= 0) {
     calc(d, buf, 0);
     l = d.tmp[0]; r = d.tmp2[0];
@@ -1038,12 +1052,14 @@ function delayStep(d, pingPong, buf) {
     d.interpValue = f(d.interpValue - d.interpStep);
     if (d.interpValue <= 0) { d.oldRead = d.newRead; d.fracReadOld = d.fracReadNew; }
   }
-  return [l, r];
+  // (the right side in d.stepR rather than a new array a sample, which the audio thread would have to collect)
+  d.stepR = r;
+  return l;
 }
 function delayProcess(d, buf, fx, out, size, dryWet) {
   for (let i = 0; i < size; i++) {
     const x0 = fx[2 * i], x1 = fx[2 * i + 1];
-    let [o] = delayStep(d, false, buf);
+    let o = delayStep(d, false, buf);
     o = toI16(calcOnePole(d.tone, o));
     const itg = qadd16(qadd16(x0, x1), toI16(f(o * d.feedback)));
     buf[d.write++] = toBuf(itg);
@@ -1056,7 +1072,7 @@ function delayProcessPingPong(d, buf, fx, out, size, dryWet) {
   const half = d.mask >> 1;
   for (let i = 0; i < size; i++) {
     const x0 = fx[2 * i], x1 = fx[2 * i + 1];
-    let [l, r] = delayStep(d, true, buf);
+    let l = delayStep(d, true, buf), r = d.stepR;
     l = toI16(calcOnePole(d.tone, l));
     r = toI16(calcOnePole(d.tone2, r));
     buf[half + d.write] = toBuf(qadd16(x0, toI16(f(l * d.feedback))));
@@ -1339,6 +1355,10 @@ export class LxrEngine {
     this.declick = true;
     this.voiceOut = Array.from({ length: 6 }, () => new Float32Array(BLOCK));
     this._dc = Array.from({ length: 6 }, () => ({ at: null, p: 0, k: 0, m: 0 }));
+    // the voices rendered (not in the firmware): a bit per voice, all six by default. A host that only listens to some
+    // can drop the rest, which then only draw their noise oscillators' random numbers, so the shared generator (and
+    // with it every voice that is rendered) stays exactly as with all six. Ignored while the crossfeed is on
+    this.voices = 0x3f;
   }
 
   /**
@@ -1732,13 +1752,19 @@ export class LxrEngine {
     this._snareAsync(this.snare);
     this._metalAsync(this.cymbal);
     this._metalAsync(this.hat);
-    const o = this.out;
-    for (let n = 0; n < 3; n++) { this._drumSync(n, o[n]); this._decimate(n, o[n]); }
-    this._snareSync(o[3]); this._decimate(3, o[3]);
-    this._metalSync(this.cymbal, 1, 4, o[4]); this._decimate(4, o[4]);
-    this._metalSync(this.hat, f(0.5), 5, o[5]); this._decimate(5, o[5]);
+    const o = this.out, on = this.xmod ? 0x3f : this.voices, rng = this.rng;
+    for (let n = 0; n < 3; n++) {
+      if (on & (1 << n)) { this._drumSync(n, o[n]); this._decimate(n, o[n]); }
+      else { const v = this.drums[n]; noiseDraws(v.modOsc, rng); noiseDraws(v.osc, rng); }
+    }
+    if (on & 8) { this._snareSync(o[3]); this._decimate(3, o[3]); }
+    else { noiseDraws(this.snare.noiseOsc, rng, true); noiseDraws(this.snare.osc, rng); }
+    if (on & 16) { this._metalSync(this.cymbal, 1, 4, o[4]); this._decimate(4, o[4]); }
+    else { const v = this.cymbal; noiseDraws(v.modOsc, rng); noiseDraws(v.modOsc2, rng); noiseDraws(v.osc, rng); }
+    if (on & 32) { this._metalSync(this.hat, f(0.5), 5, o[5]); this._decimate(5, o[5]); }
+    else { const v = this.hat; noiseDraws(v.modOsc, rng); noiseDraws(v.modOsc2, rng); noiseDraws(v.osc, rng); }
     if (this.xmod) this._xmodAfter();
-    if (this.declick) for (let n = 0; n < 6; n++) this._declickBlock(n);
+    if (this.declick) for (let n = 0; n < 6; n++) if (on & (1 << n)) this._declickBlock(n);
     return o;
   }
 

@@ -95,7 +95,9 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-gr { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; font-size: var(--fs-s); }
 .m .m-gr i { height: 14px; border-radius: 0; overflow: hidden; display: flex; justify-content: flex-end;
   background: repeating-linear-gradient(to left, var(--ghost) 0 5px, transparent 5px 8px); }
-.m .m-gr i b { height: 100%; width: 0; border-radius: 0; background: repeating-linear-gradient(to left, var(--ink) 0 5px, transparent 5px 8px); background-position: right; }
+.m .m-gr i b { height: 100%; width: 100%; border-radius: 0; background: repeating-linear-gradient(to left, var(--ink) 0 5px, transparent 5px 8px); background-position: right;
+  /* the reading shows by clipping a full bar from the left (--gr, 0 to 1): no layout each step */
+  clip-path: inset(0 0 0 calc((1 - var(--gr, 0)) * 100%)); }
 .m-gr output { font-family: var(--mono); font-size: var(--fs-xs); color: var(--muted); min-width: 4.5em; text-align: right; font-variant-numeric: tabular-nums; }
 
 /* faders: a column of segments, the unlit ones a faint ghost, the value the top lit segment; readout above, label under */
@@ -362,7 +364,8 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 /* ---- LCD fade: liquid crystal is slow, so segments come on quickly and linger a moment going off. The faders' and
    meters' lit segments, the step bars and the inverted buttons and tabs ease rather than jump (off slower than on);
    type changes as it does on a real LCD, at once ---- */
-.m .m-vtrack i, .m .m-gr i b { transition: height .09s cubic-bezier(.2, .7, .3, 1), width .09s cubic-bezier(.2, .7, .3, 1); }
+.m .m-vtrack i { transition: height .09s cubic-bezier(.2, .7, .3, 1), width .09s cubic-bezier(.2, .7, .3, 1); }
+.m .m-gr i b { transition: clip-path .09s cubic-bezier(.2, .7, .3, 1); }
 .m .m-seq-steps i::after, .m .m-seq-steps i::before { transition: height .09s cubic-bezier(.2, .7, .3, 1); }
 .m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button { transition: background-color .22s ease-out, color .22s ease-out, opacity .22s ease-out; }
 .m .m-btn:active, .m .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"] { transition-duration: .06s; }
