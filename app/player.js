@@ -23,6 +23,7 @@ class Player {
     // the sequence: 16 steps a page (up to 4 pages) of { n: semitones from middle C, gate, acc, slide }
     this.steps = Array.from({ length: 16 }, () => ({ n: 0, gate: 0, acc: false, slide: false }));
     this.playing = false; this.bpm = 120; this.vel = 100; this.accGain = 0.5; this.glide = 0.35;
+    this.len = 16; this.pos = 0;
     this.step = 0; this.bar = 0; this.toNext = 0; this.atBar = []; this.clock = 0;
     // pitch: the perf page's pitch, in semitones (hundredths), added to every note
     this.pitch = 0;
@@ -73,8 +74,9 @@ class Player {
       // a live change wins over one still waiting for the bar
       this.atBar = this.atBar.filter((q) => q.type !== 'seq');
       this.steps = m.steps; this.bpm = m.bpm; this.e.bpm = m.bpm; this.vel = m.vel; this.glide = m.glide;
+      this.len = Math.max(1, Math.min(this.steps.length, m.len || this.steps.length)); if (this.pos >= this.len) this.pos = 0;
       this.accGain = Math.pow(10, -m.accentDb / 20);
-      if (m.playing && !this.playing) { this.step = 0; this.bar = 0; this.toNext = 0; this.cutAt = Infinity; this.slideFrom = null; }
+      if (m.playing && !this.playing) { this.step = 0; this.pos = 0; this.bar = 0; this.toNext = 0; this.cutAt = Infinity; this.slideFrom = null; }
       this.playing = m.playing;
       if (!this.playing) { this.flushBar(); this.cutAt = this.clock; }
     }
@@ -109,10 +111,10 @@ class Player {
     this.slideLen = Math.max(64, this.glide * len);
     this.cutAt = gate >= GATE_RING ? Infinity : this.clock + gate / 4 * len;
   }
-  // step s (of all the pages): its note, slid into from the step before when that one slides and both play; a step that slides on
-  // keeps its gate open into the next
+  // step s (of the sequence's len steps): its note, slid into from the step before when that one slides and both play; a step that slides on
+  // keeps its gate open into the next (the sequence wraps at its length)
   doStep(s) {
-    const S = this.steps, N = S.length, cur = S[s], prev = S[(s + N - 1) % N], next = S[(s + 1) % N];
+    const S = this.steps, N = this.len, cur = S[s], prev = S[(s + N - 1) % N], next = S[(s + 1) % N];
     if (!cur.gate) return;
     const slideIn = prev.slide && prev.gate > 0 && this.cutAt === Infinity && this.gate > 0;
     this.play(cur.n, cur.acc, cur.slide && next.gate ? GATE_RING : cur.gate, slideIn);
@@ -123,10 +125,10 @@ class Player {
       if (this.toNext <= 0) {
         if (this.step === 0 && this.atBar.length) this.flushBar();
         const len = LXR.REAL_FS * 60 / this.bpm / 4;
-        // the pages play in turn, a bar each
-        const page = this.bar % Math.max(1, this.steps.length / 16);
-        this.doStep(page * 16 + this.step);
-        this.events.push({ type: 'step', step: this.step, page, bar: this.bar, gr: this.gr });
+        // the sequence plays through its length (the pages in turn) and starts again; a bar is still 16 steps
+        this.doStep(this.pos);
+        this.events.push({ type: 'step', step: this.pos % 16, page: Math.floor(this.pos / 16), bar: this.bar, gr: this.gr });
+        this.pos = (this.pos + 1) % this.len;
         this.gr = 0;
         this.step = (this.step + 1) % 16;
         if (this.step === 0) this.bar++;

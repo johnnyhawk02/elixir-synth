@@ -73,7 +73,7 @@ addEventListener('keyup', (e) => { if (e.code === 'Space' && !e.target.closest('
 // resets it, and holding one still for half a second opens its step sequencer. While a sequencer runs, the fader sets
 // its base (fd.base) and the sequencer moves the value around it: the fill is the value heard, the bar the base ----
 const mFaders = [];
-function mFader(box, label, { min, max, step = 1, get, set, show, dflt, travel = 1, cc = 0 }) {
+function mFader(box, label, { min, max, step = 1, get, set, show, dflt, travel = 1, cc = 0, detents = [], catch: grab = 0 }) {
   const el = document.createElement('div');
   el.className = cc ? 'm-vf m-dial' : 'm-vf';
   el.innerHTML = '<output></output><div class="m-vtrack" role="slider" tabindex="0"><i></i><b></b></div><span class="m-flab"></span>';
@@ -105,7 +105,10 @@ function mFader(box, label, { min, max, step = 1, get, set, show, dflt, travel =
   tr.addEventListener('pointermove', (e) => {
     if (!drag) return;
     if (Math.abs(drag.y - e.clientY) > 6) clearTimeout(hold);
-    move(drag.v + (drag.y - e.clientY) / (drag.h * travel) * (hiOf() - min));
+    // a drag near a detent catches on it (within grab of it either way)
+    let v = drag.v + (drag.y - e.clientY) / (drag.h * travel) * (hiOf() - min);
+    const dt = detents.find((d) => Math.abs(v - d) <= grab); if (dt !== undefined) v = dt;
+    move(v);
   });
   const end = () => { clearTimeout(hold); drag = null; el.classList.remove('held'); };
   tr.addEventListener('pointerup', end); tr.addEventListener('pointercancel', end);

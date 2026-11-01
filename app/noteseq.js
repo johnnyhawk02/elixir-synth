@@ -2,7 +2,7 @@
 // the page shown (the one playing is underlined), and copy puts the page shown onto the next one; oct - and
 // oct + move the whole sequence an octave. A page's steps sit in one line of sixteen: a step's height is its note,
 // two octaves of the scale (a touch on a resting step brings it on), and the A and S under it switch its accent and
-// slide (tap, or drag along the row). Under the notes, a lane of the steps' gate times: bottom rests, then a quarter
+// slide (tap, or drag along the row). Length sets how many steps play (1 to 64, catching at 16, 32 and 48). Under the notes, a lane of the steps' gate times: bottom rests, then a quarter
 // to all of the step, top rings. Under that: root, scale, accent, density (thins the playing steps, off-beats first), glide and algo, and random, alter, undo ----
 let nsPage = 0;
 const nsStep = (i) => seq.steps[nsPage * 16 + i];
@@ -22,6 +22,7 @@ function nsDraw() {
   nsCells.forEach((c, i) => {
     const st = nsStep(i);
     c.classList.toggle('thin', thin[nsPage * 16 + i]); nsGates[i].classList.toggle('thin', thin[nsPage * 16 + i]);
+    const out = nsPage * 16 + i >= seq.len; c.classList.toggle('out', out); nsGates[i].classList.toggle('out', out);
     c.querySelector('.m-sn').textContent = st.gate ? noteName(stepNote(st)) : '—';
     c.style.setProperty('--f', (Math.min(st.d, degMax()) + 1) / (degMax() + 1));
     c.classList.toggle('rest', !st.gate); c.classList.toggle('acc', st.acc); c.classList.toggle('slide', st.slide);
@@ -31,7 +32,7 @@ function nsDraw() {
     g.querySelector('.m-sn').textContent = GATE_NAMES[st.gate];
     g.setAttribute('aria-label', `step ${i + 1} gate: ${GATE_NAMES[st.gate]}`);
   });
-  document.querySelectorAll('#m-npages [data-page]').forEach((b) => b.setAttribute('aria-selected', +b.dataset.page === nsPage));
+  document.querySelectorAll('#m-npages [data-page]').forEach((b) => { b.setAttribute('aria-selected', +b.dataset.page === nsPage); b.classList.toggle('out', +b.dataset.page * 16 >= seq.len); });
   $('m-ncopy').textContent = `copy to ${Math.min(nsPage + 2, PAGES)}`; $('m-ncopy').disabled = nsPage >= PAGES - 1;
   $('m-noct-out').textContent = seq.oct > 0 ? `+${seq.oct}` : String(seq.oct);
   $('m-noct-dn').disabled = seq.oct <= OCT_MIN; $('m-noct-up').disabled = seq.oct >= OCT_MAX;
@@ -109,6 +110,9 @@ const ROOTS = NOTE_NAMES;
 mFader($('m-seqf'), 'root', { min: 0, max: 11, get: () => seq.root, set: (v) => { seq.root = v; sendSeq(); nsDraw(); }, show: (v) => ROOTS[v], dflt: 0 });
 mFader($('m-seqf'), 'scale', { min: 0, max: SCALES.length - 1, get: () => seq.scale, set: (v) => { seq.scale = v; sendSeq(); nsDraw(); }, show: (v) => SCALES[v][0], dflt: SEQ0.scale });
 mFader($('m-seqf'), 'accent', { min: 0, max: 12, get: () => seq.accent, set: (v) => { seq.accent = v; sendSeq(); }, show: (v) => `+${v}dB`, dflt: SEQ0.accent });
+// length: 1 to 64 steps, through the pages in turn; a drag catches at 16, 32 and 48 (a page, two, three). Steps past
+// it are shown faded
+mFader($('m-seqf'), 'length', { min: 1, max: NSTEPS, get: () => seq.len, set: (v) => { seq.len = v; sendSeq(); nsDraw(); }, show: (v) => String(v), dflt: NSTEPS, detents: [16, 32, 48], catch: 2.5 });
 mFader($('m-seqf'), 'density', { min: 0, max: 100, step: 5, get: () => seq.density, set: (v) => { seq.density = v; sendSeq(); nsDraw(); }, show: (v) => v + '%', dflt: 100 });
 mFader($('m-seqf'), 'glide', { min: 0, max: 100, step: 5, get: () => seq.glide, set: (v) => { seq.glide = v; sendSeq(); }, show: (v) => v + '%', dflt: SEQ0.glide });
 

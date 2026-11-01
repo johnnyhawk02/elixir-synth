@@ -153,6 +153,20 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   // play runs the steps
   await pg.keyboard.press('Space'); await pg.waitForTimeout(1200);
   check(await pg.evaluate(() => document.querySelectorAll('.m-step.now').length === 1), 'playing lights the step');
+  // length: a drag on its fader catches at 32; at 20 steps the playing stays on pages 1 and 2, and steps past it fade
+  r = await box('#m-seqf .m-vtrack >> nth=3');
+  await pg.evaluate(() => { seq.len = 64; drawAll(); });
+  const dy = r.height * (64 - 33) / 63;
+  await drag(r.x + r.width / 2, r.y + 4, r.x + r.width / 2, r.y + 4 + dy, 6);
+  check(await pg.evaluate(() => seq.len === 32), `a length drag catches at 32 (${await pg.evaluate(() => seq.len)})`);
+  await pg.evaluate(() => { seq.len = 20; sendSeq(); drawAll(); window.__pages = new Set(); window.__maxpos = 0;
+    eventHandlers.push((ev) => { if (ev.type === 'step') { __pages.add(ev.page); __maxpos = Math.max(__maxpos, ev.page * 16 + ev.step); } }); });
+  await pg.waitForTimeout(3500);
+  check(await pg.evaluate(() => __maxpos === 19 && __pages.size === 2), 'at length 20 the sequence loops after step 20');
+  await pg.click('#m-npages [data-page="1"]');
+  check(await pg.evaluate(() => $('m-steps').children[4].classList.contains('out') && !$('m-steps').children[3].classList.contains('out') && document.querySelector('#m-npages [data-page="2"]').classList.contains('out')), 'steps and pages past the length fade');
+  await pg.click('#m-npages [data-page="0"]');
+  await pg.evaluate(() => { seq.len = 64; sendSeq(); drawAll(); });
   // presets: load a built-in one, save a new one
   await pg.click('[data-m-tab="presets"]');
   await pg.click('.m-pload >> text=Acid Line');
