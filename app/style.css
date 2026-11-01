@@ -208,8 +208,9 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 /* random, alter and undo: a column down the right, as on the voice and fx pages */
 .m-seqpage > .m-seqbtns { grid-column: 2; grid-row: 1 / -1; }
 /* the pages: four tabs (the one playing underlined), copy, morph, shift and octave */
-.m-npages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.4fr) minmax(0, 1.6fr) minmax(0, 1.6fr) minmax(0, 2.6fr); gap: 4px; }
-.m-nshift { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.m-npages { display: grid; grid-template-columns: repeat(4, minmax(0, 0.9fr)) minmax(0, 2fr) minmax(0, 1.4fr) minmax(0, 2.4fr) minmax(0, 2.4fr); gap: 4px; }
+.m-nshift { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 4px; align-items: center; }
+.m-nshift span { text-transform: uppercase; font-size: min(var(--fs-xs), 16px); }
 .m .m-npages .m-btn[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; }
 .m-steps[hidden] { display: none; }
 .m-noct { display: grid; grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr); gap: 4px; align-items: center; }
