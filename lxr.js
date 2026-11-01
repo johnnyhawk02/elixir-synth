@@ -1699,8 +1699,9 @@ export class LxrEngine {
    * are panned into one stereo int16 buffer and run through the selected effect.
    * Returns this.fxOut: the bus's stereo output (interleaved int16) for the last renderBlock().
    * gains[n], if given, scales voice n first (mute, accent; not in the firmware).
+   * src[n], if given, is voice n's block instead of this.out[n] (elixir-synth's declicked voice; not in the firmware).
    */
-  renderFx(gains = null, width = null) {
+  renderFx(gains = null, width = null, src = null) {
     const fx = this.fx, inp = fx.input, out = this.fxOut;
     inp.fill(0); out.fill(0);
     const pans = [this.drums[0], this.drums[1], this.drums[2], this.snare, this.cymbal, this.hat];
@@ -1708,9 +1709,9 @@ export class LxrEngine {
     for (let n = 0; n < 6; n++) {
       if (this.audioRouting[n] !== MIXER_ROUTING_FX_BUS) continue;
       any = true;
-      const v = pans[n], o = this.out[n], g = gains ? gains[n] : 1;
+      const v = pans[n], o = (src && src[n]) || this.out[n], g = gains ? gains[n] : 1;
       for (let i = 0; i < BLOCK; i++) {
-        const s = g === 1 ? o[i] : toI16(f(o[i] * g));
+        const s = g === 1 && !src ? o[i] : toI16(f(o[i] * g));
         inp[2 * i] = qadd16(toI16(f(s * v.triggeredPanL)), inp[2 * i]);
         inp[2 * i + 1] = qadd16(toI16(f(s * v.triggeredPanR)), inp[2 * i + 1]);
       }

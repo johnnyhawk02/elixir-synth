@@ -6,6 +6,10 @@ const delaySamples = (pos, bpm) => 240 / bpm * Math.pow(2, -7 * (1 - pos)) * LXR
 const RING_MAKEUP = 3;
 // a step's gate: 0 rests, 1 to 4 close after a quarter to all of the step, 5 lets the note ring out
 const GATE_RING = 5;
+// the declick: a retrigger restarts the voice from silence (the firmware resets its filter and oscillator), so a note
+// still sounding would jump straight to the new one's start. The jump is taken out as an offset that dies away over a
+// few ms (a time constant of 1 ms); the new note itself plays exactly as the engine renders it
+const DECLICK_K = Math.exp(-1 / (0.001 * LXR.REAL_FS));
 class Player {
   constructor(outRate) {
     this.e = new LXR.LxrEngine();
@@ -24,6 +28,8 @@ class Player {
     this.note = 0; this.cur = 0; this.slideFrom = null; this.slideAt = 0; this.slideLen = 1; this.cutAt = Infinity;
     // the voice's gain: the accent (an unaccented note is turned down by the accent amount) times the gate
     this.gain = 1; this.gainTo = 1; this.gate = 1;
+    // the declick: the voice as heard, with the jump's offset (in the engine's int16 scale) dying away
+    this.voice = new Float32Array(64); this.dc = 0; this.lastHeard = 0; this.retrig = false;
     this.rec = null;
     // the master: the distortion as an insert on the mix, then a compressor, the same design as the LXR-02's FX compressor
     this.master = { comp: true, thresh: -12, ratio: 3, attack: 5, release: 120, makeup: 0 };
@@ -92,6 +98,7 @@ class Player {
       this.slideFrom = null;
       const p = Math.max(0, Math.min(127, 60 + n + this.pitch)), base = Math.floor(p);
       this.e.trigger(0, acc ? 127 : this.vel, base);
+      this.retrig = true;
       if (p !== base) this.e.setDrumPitch(0, p);
       this.gainTo = acc ? 1 : this.accGain; this.gate = 1; this.cur = n;
     }
@@ -138,17 +145,26 @@ class Player {
     this.clock += 64;
     const out = this.e.renderBlock(), e = this.e, v = e.drums[0];
     const [L, R] = dst;
+    // the voice, its gain ramped over the block
+    const g0 = this.gain, g1 = this.gainTo * this.gate, dg = (g1 - g0) / 64;
+    // the declick: a retrigger's first sample is put where the last note left off (as heard), and the offset dies away
+    const raw = out[0], o = this.voice;
+    if (this.retrig) { this.retrig = false; this.dc = g0 > 1e-3 ? this.lastHeard / g0 - raw[0] : 0; }
+    if (this.dc) {
+      let dc = this.dc;
+      for (let i = 0; i < 64; i++) { o[i] = raw[i] + dc; dc *= DECLICK_K; }
+      this.dc = Math.abs(dc) < 0.5 ? 0 : dc;
+    } else o.set(raw);
+    this.lastHeard = o[63] * (g0 + dg * 63);
     const isDelay = e.fx.fxType === LXR.FX_DELAY;
     e.fx.forceWet = isDelay;
     e.fx.setDelaySync(isDelay ? delaySamples(this.delayPos, this.bpm) : null);
-    // the voice, its gain ramped over the block
-    const g0 = this.gain, g1 = this.gainTo * this.gate, dg = (g1 - g0) / 64;
-    const pl = v.triggeredPanL / 32768, pr = v.triggeredPanR / 32768, o = out[0];
+    const pl = v.triggeredPanL / 32768, pr = v.triggeredPanR / 32768;
     for (let i = 0; i < 64; i++) { const s = o[i] * (g0 + dg * i); L[i] = s * pl; R[i] = s * pr; }
     this.gain = g1;
     // the echo: the firmware's FX bus, sample-exact, fed at the echo send when the voice is routed to it
     this.fxGain[0] = e.audioRouting[0] === LXR.MIXER_ROUTING_FX_BUS ? g1 * this.sendE : 0;
-    const fx = e.renderFx(this.fxGain, this.echoWidth);
+    const fx = e.renderFx(this.fxGain, this.echoWidth, [o]);
     // the ring mod and reverb buses: the voice at each one's send, saturated to int16; the firmware's ring mod carrier
     // is quiet, so it gets makeup gain. The reverb runs every block, sent to or not, so its tail rings out
     const bi = this.busIn, bo = this.busOut;

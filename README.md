@@ -61,6 +61,11 @@ Elixir Synth adds two things to it. `setDrumPitch()` moves drum 1 to a note betw
 for the pitch dial and for slides. A note on a whole semitone goes through the firmware's own trigger and is
 bit-exact; `test/engine.mjs` checks that.
 
+The audio thread (`app/player.js`) declicks retriggers. The firmware's trigger restarts the voice from silence (it
+resets the filter and the oscillator), so a note still sounding when the next one starts would jump straight to the
+new one's first sample. The player takes that jump out as an offset that dies away within a few ms (a 1 ms time
+constant), for the dry voice and every send. The engine's own output is untouched, and so is the new note after that.
+
 And the reverb: the firmware has one (`FX/Reverb.c` and `FX/VerbTools/`), compiled out of the LXR-02 with
 `USE_REVERB 0`. `lxr.js` ports it line by line as the FX bus's `FX_REVERB`, with its quirks (a mono output, loop 2
 running through loop 1's allpass, a modulated allpass whose depth is never set). It hasn't been compared sample for

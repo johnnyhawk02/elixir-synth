@@ -6,6 +6,7 @@
 // - the sequencer: rests don't play, a slide glides into the next step without a retrigger, a short gate closes;
 //   four pages play in turn
 // - the reverb leaves a finite tail, and holds at the top of its decay
+// - a retrigger over a note still sounding doesn't jump (the declick), and the new note settles to the engine's own
 // - every built-in preset loads and plays at a sane level
 import { readFileSync } from 'node:fs';
 const html = readFileSync(process.argv[2] || new URL('../index.html', import.meta.url), 'utf8');
@@ -91,6 +92,32 @@ const check = (ok, what) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`); if
   check(!r.bad && !held.bad && r.peak < 1.5 && held.peak < 1.5, `reverb: finite and sane (peak ${dB(r.peak)} dB)`);
   check(r.tail > 0.001, `reverb: a tail after the note (${dB(r.tail)} dB at 0.4 s)`);
   check(held.tail > 0.01, `reverb: decay at the top holds (${dB(held.tail)} dB after 2.8 s)`);
+}
+// the declick: retriggering the default sound while a note still sounds, at many points in its cycle, the first sample
+// of the new note is never further from the last one than the waveform itself moves in a sample; 10 ms on, the note
+// is the engine's own again (the compressor off, to compare)
+{
+  let worstJump = 0, worstEdge = 0, worstLater = 0;
+  for (let at = 20; at < 60; at++) {
+    const p = new Player(LXR.REAL_FS); env.setFallback(p); env.useSnapshot(env.snapshot(), false);
+    p.master.comp = false;
+    const L = [], B = [new Float32Array(64), new Float32Array(64)];
+    const blk = () => { p._render(B); L.push(...B[0]); };
+    p.msg({ type: 'note', n: 0, acc: true, gate: 5 });
+    for (let k = 0; k < at; k++) blk();
+    const i0 = L.length;
+    p.msg({ type: 'note', n: 7, acc: true, gate: 5 });
+    for (let k = 0; k < 10; k++) blk();
+    for (let i = 1; i < i0; i++) worstEdge = Math.max(worstEdge, Math.abs(L[i] - L[i - 1]));
+    worstJump = Math.max(worstJump, Math.abs(L[i0] - L[i0 - 1]));
+    // past 10 ms the offset is gone: the voice is the engine's output, at the gain
+    const late = i0 + Math.ceil(0.01 * LXR.REAL_FS);
+    const raw = p.e.out[0], pl = p.e.drums[0].triggeredPanL / 32768;
+    for (let i = L.length - 64; i < L.length; i++) if (i >= late) worstLater = Math.max(worstLater, Math.abs(L[i] - raw[i - (L.length - 64)] * pl));
+  }
+  check(worstJump <= worstEdge, `a retrigger doesn't jump (at most ${worstJump.toFixed(3)}, the waveform's own steps up to ${worstEdge.toFixed(3)})`);
+  check(worstLater < 1e-4, `the declick has died away 10 ms on (${worstLater.toExponential(1)})`);
+  env.setFallback(null);
 }
 // the built-in presets: each loads and plays at a sane level
 {

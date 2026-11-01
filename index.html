@@ -372,7 +372,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v48</small></b>
+    <b class="m-title">elixir<small class="m-ver">synth v2</small></b>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
   </header>
   <section class="m-card m-trans">
@@ -477,7 +477,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v48, 1 Nov, 06:50</footer>
+      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v2, 1 Nov, 07:08</footer>
     </section>
   </div>
   </div>
@@ -3905,8 +3905,9 @@ class LxrEngine {
    * are panned into one stereo int16 buffer and run through the selected effect.
    * Returns this.fxOut: the bus's stereo output (interleaved int16) for the last renderBlock().
    * gains[n], if given, scales voice n first (mute, accent; not in the firmware).
+   * src[n], if given, is voice n's block instead of this.out[n] (elixir-synth's declicked voice; not in the firmware).
    */
-  renderFx(gains = null, width = null) {
+  renderFx(gains = null, width = null, src = null) {
     const fx = this.fx, inp = fx.input, out = this.fxOut;
     inp.fill(0); out.fill(0);
     const pans = [this.drums[0], this.drums[1], this.drums[2], this.snare, this.cymbal, this.hat];
@@ -3914,9 +3915,9 @@ class LxrEngine {
     for (let n = 0; n < 6; n++) {
       if (this.audioRouting[n] !== MIXER_ROUTING_FX_BUS) continue;
       any = true;
-      const v = pans[n], o = this.out[n], g = gains ? gains[n] : 1;
+      const v = pans[n], o = (src && src[n]) || this.out[n], g = gains ? gains[n] : 1;
       for (let i = 0; i < BLOCK; i++) {
-        const s = g === 1 ? o[i] : toI16(f(o[i] * g));
+        const s = g === 1 && !src ? o[i] : toI16(f(o[i] * g));
         inp[2 * i] = qadd16(toI16(f(s * v.triggeredPanL)), inp[2 * i]);
         inp[2 * i + 1] = qadd16(toI16(f(s * v.triggeredPanR)), inp[2 * i + 1]);
       }
@@ -4186,6 +4187,10 @@ const delaySamples = (pos, bpm) => 240 / bpm * Math.pow(2, -7 * (1 - pos)) * LXR
 const RING_MAKEUP = 3;
 // a step's gate: 0 rests, 1 to 4 close after a quarter to all of the step, 5 lets the note ring out
 const GATE_RING = 5;
+// the declick: a retrigger restarts the voice from silence (the firmware resets its filter and oscillator), so a note
+// still sounding would jump straight to the new one's start. The jump is taken out as an offset that dies away over a
+// few ms (a time constant of 1 ms); the new note itself plays exactly as the engine renders it
+const DECLICK_K = Math.exp(-1 / (0.001 * LXR.REAL_FS));
 class Player {
   constructor(outRate) {
     this.e = new LXR.LxrEngine();
@@ -4204,6 +4209,8 @@ class Player {
     this.note = 0; this.cur = 0; this.slideFrom = null; this.slideAt = 0; this.slideLen = 1; this.cutAt = Infinity;
     // the voice's gain: the accent (an unaccented note is turned down by the accent amount) times the gate
     this.gain = 1; this.gainTo = 1; this.gate = 1;
+    // the declick: the voice as heard, with the jump's offset (in the engine's int16 scale) dying away
+    this.voice = new Float32Array(64); this.dc = 0; this.lastHeard = 0; this.retrig = false;
     this.rec = null;
     // the master: the distortion as an insert on the mix, then a compressor, the same design as the LXR-02's FX compressor
     this.master = { comp: true, thresh: -12, ratio: 3, attack: 5, release: 120, makeup: 0 };
@@ -4272,6 +4279,7 @@ class Player {
       this.slideFrom = null;
       const p = Math.max(0, Math.min(127, 60 + n + this.pitch)), base = Math.floor(p);
       this.e.trigger(0, acc ? 127 : this.vel, base);
+      this.retrig = true;
       if (p !== base) this.e.setDrumPitch(0, p);
       this.gainTo = acc ? 1 : this.accGain; this.gate = 1; this.cur = n;
     }
@@ -4318,17 +4326,26 @@ class Player {
     this.clock += 64;
     const out = this.e.renderBlock(), e = this.e, v = e.drums[0];
     const [L, R] = dst;
+    // the voice, its gain ramped over the block
+    const g0 = this.gain, g1 = this.gainTo * this.gate, dg = (g1 - g0) / 64;
+    // the declick: a retrigger's first sample is put where the last note left off (as heard), and the offset dies away
+    const raw = out[0], o = this.voice;
+    if (this.retrig) { this.retrig = false; this.dc = g0 > 1e-3 ? this.lastHeard / g0 - raw[0] : 0; }
+    if (this.dc) {
+      let dc = this.dc;
+      for (let i = 0; i < 64; i++) { o[i] = raw[i] + dc; dc *= DECLICK_K; }
+      this.dc = Math.abs(dc) < 0.5 ? 0 : dc;
+    } else o.set(raw);
+    this.lastHeard = o[63] * (g0 + dg * 63);
     const isDelay = e.fx.fxType === LXR.FX_DELAY;
     e.fx.forceWet = isDelay;
     e.fx.setDelaySync(isDelay ? delaySamples(this.delayPos, this.bpm) : null);
-    // the voice, its gain ramped over the block
-    const g0 = this.gain, g1 = this.gainTo * this.gate, dg = (g1 - g0) / 64;
-    const pl = v.triggeredPanL / 32768, pr = v.triggeredPanR / 32768, o = out[0];
+    const pl = v.triggeredPanL / 32768, pr = v.triggeredPanR / 32768;
     for (let i = 0; i < 64; i++) { const s = o[i] * (g0 + dg * i); L[i] = s * pl; R[i] = s * pr; }
     this.gain = g1;
     // the echo: the firmware's FX bus, sample-exact, fed at the echo send when the voice is routed to it
     this.fxGain[0] = e.audioRouting[0] === LXR.MIXER_ROUTING_FX_BUS ? g1 * this.sendE : 0;
-    const fx = e.renderFx(this.fxGain, this.echoWidth);
+    const fx = e.renderFx(this.fxGain, this.echoWidth, [o]);
     // the ring mod and reverb buses: the voice at each one's send, saturated to int16; the firmware's ring mod carrier
     // is quiet, so it gets makeup gain. The reverb runs every block, sent to or not, so its tail rings out
     const bi = this.busIn, bo = this.busOut;
