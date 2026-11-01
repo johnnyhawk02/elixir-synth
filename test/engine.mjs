@@ -93,13 +93,15 @@ const check = (ok, what) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`); if
   check(r.tail > 0.001, `reverb: a tail after the note (${dB(r.tail)} dB at 0.4 s)`);
   check(held.tail > 0.01, `reverb: decay at the top holds (${dB(held.tail)} dB after 2.8 s)`);
 }
-// the declick: retriggering the default sound while a note still sounds, at many points in its cycle, the first sample
-// of the new note is never further from the last one than the waveform itself moves in a sample; 10 ms on, the note
-// is the engine's own again (the compressor off, to compare)
+// the declick: retriggering the default sound (and the same with its filter closed down) while a note still sounds, at many points in its cycle, the first sample
+// of the new note is never further from the last one than the waveform itself moves in a sample, and it leaves at the
+// old note's slope; 25 ms on, the note is the engine's own again (the compressor off, to compare)
 {
-  let worstJump = 0, worstEdge = 0, worstLater = 0;
-  for (let at = 20; at < 60; at++) {
-    const p = new Player(LXR.REAL_FS); env.setFallback(p); env.useSnapshot(env.snapshot(), false);
+  let worstJump = 0, worstEdge = 0, worstLater = 0, worstBend = 0;
+  // (with the filter as it is, and closed right down, where a near-sine has nothing on top to hide a kink)
+  for (const cut of [null, 8]) for (let at = 20; at < 60; at++) {
+    const p = new Player(LXR.REAL_FS), sn = env.snapshot(); if (cut !== null) sn.kit[LXR.PAR.FILTER_FREQ_1] = cut;
+    env.setFallback(p); env.useSnapshot(sn, false);
     p.master.comp = false;
     const L = [], B = [new Float32Array(64), new Float32Array(64)];
     const blk = () => { p._render(B); L.push(...B[0]); };
@@ -107,16 +109,19 @@ const check = (ok, what) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`); if
     for (let k = 0; k < at; k++) blk();
     const i0 = L.length;
     p.msg({ type: 'note', n: 7, acc: true, gate: 5 });
-    for (let k = 0; k < 10; k++) blk();
+    for (let k = 0; k < 20; k++) blk();
     for (let i = 1; i < i0; i++) worstEdge = Math.max(worstEdge, Math.abs(L[i] - L[i - 1]));
     worstJump = Math.max(worstJump, Math.abs(L[i0] - L[i0 - 1]));
-    // past 10 ms the offset is gone: the voice is the engine's output, at the gain
-    const late = i0 + Math.ceil(0.01 * LXR.REAL_FS);
+    // closed down, the slope carries on too: the step into the new note is the step before it, give or take the curve
+    if (cut !== null) worstBend = Math.max(worstBend, Math.abs((L[i0 + 1] - L[i0]) - (L[i0 - 1] - L[i0 - 2])) - Math.abs((L[i0 - 1] - L[i0 - 2]) - (L[i0 - 2] - L[i0 - 3])) * 2);
+    // past 25 ms the offset is gone: the voice is the engine's output, at the gain
+    const late = i0 + Math.ceil(0.025 * LXR.REAL_FS);
     const raw = p.e.out[0], pl = p.e.drums[0].triggeredPanL / 32768;
     for (let i = L.length - 64; i < L.length; i++) if (i >= late) worstLater = Math.max(worstLater, Math.abs(L[i] - raw[i - (L.length - 64)] * pl));
   }
   check(worstJump <= worstEdge, `a retrigger doesn't jump (at most ${worstJump.toFixed(3)}, the waveform's own steps up to ${worstEdge.toFixed(3)})`);
-  check(worstLater < 1e-4, `the declick has died away 10 ms on (${worstLater.toExponential(1)})`);
+  check(worstBend < 0.005, `with the filter closed, a retrigger doesn't bend the waveform (${worstBend.toFixed(4)})`);
+  check(worstLater < 1e-4, `the declick has died away 25 ms on (${worstLater.toExponential(1)})`);
   env.setFallback(null);
 }
 // the built-in presets: each loads and plays at a sane level

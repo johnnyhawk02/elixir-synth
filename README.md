@@ -63,8 +63,11 @@ bit-exact; `test/engine.mjs` checks that.
 
 The audio thread (`app/player.js`) declicks retriggers. The firmware's trigger restarts the voice from silence (it
 resets the filter and the oscillator), so a note still sounding when the next one starts would jump straight to the
-new one's first sample. The player takes that jump out as an offset that dies away within a few ms (a 1 ms time
-constant), for the dry voice and every send. The engine's own output is untouched, and so is the new note after that.
+new one's first sample and change direction there. The player takes both out with an offset that starts at the jump,
+leaves at the old note's slope and dies away over a few ms (critically damped, a 2 ms time constant), for the dry
+voice and every send; a retrigger also starts at its new gain (accent) at once, the offset taking up the step. Matching
+the slope matters with the filter closed down, where a near-sine has nothing on top to hide a kink. The engine's own
+output is untouched, and so is the new note once the offset has gone.
 
 And the reverb: the firmware has one (`FX/Reverb.c` and `FX/VerbTools/`), compiled out of the LXR-02 with
 `USE_REVERB 0`. `lxr.js` ports it line by line as the FX bus's `FX_REVERB`, with its quirks (a mono output, loop 2

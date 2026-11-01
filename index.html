@@ -372,7 +372,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v2</small></b>
+    <b class="m-title">elixir<small class="m-ver">synth v3</small></b>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
   </header>
   <section class="m-card m-trans">
@@ -477,7 +477,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v2, 1 Nov, 07:08</footer>
+      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v3, 1 Nov, 07:22</footer>
     </section>
   </div>
   </div>
@@ -4188,9 +4188,11 @@ const RING_MAKEUP = 3;
 // a step's gate: 0 rests, 1 to 4 close after a quarter to all of the step, 5 lets the note ring out
 const GATE_RING = 5;
 // the declick: a retrigger restarts the voice from silence (the firmware resets its filter and oscillator), so a note
-// still sounding would jump straight to the new one's start. The jump is taken out as an offset that dies away over a
-// few ms (a time constant of 1 ms); the new note itself plays exactly as the engine renders it
-const DECLICK_K = Math.exp(-1 / (0.001 * LXR.REAL_FS));
+// still sounding would jump straight to the new one's start, and change direction there. Both are taken out with an
+// offset that starts at the jump, leaves at the old note's slope and dies away over a few ms (a critically damped
+// curve, time constant 2 ms); the new note itself plays exactly as the engine renders it. Matching the slope as well as
+// the level matters when the filter is closed down: a near-sine has nothing on top to hide a kink
+const DECLICK_K = Math.exp(-1 / (0.002 * LXR.REAL_FS));
 class Player {
   constructor(outRate) {
     this.e = new LXR.LxrEngine();
@@ -4210,7 +4212,7 @@ class Player {
     // the voice's gain: the accent (an unaccented note is turned down by the accent amount) times the gate
     this.gain = 1; this.gainTo = 1; this.gate = 1;
     // the declick: the voice as heard, with the jump's offset (in the engine's int16 scale) dying away
-    this.voice = new Float32Array(64); this.dc = 0; this.lastHeard = 0; this.retrig = false;
+    this.voice = new Float32Array(64); this.dcP = 0; this.dcK = 0; this.dcM = 0; this.heard = [0, 0]; this.retrig = false;
     this.rec = null;
     // the master: the distortion as an insert on the mix, then a compressor, the same design as the LXR-02's FX compressor
     this.master = { comp: true, thresh: -12, ratio: 3, attack: 5, release: 120, makeup: 0 };
@@ -4326,22 +4328,33 @@ class Player {
     this.clock += 64;
     const out = this.e.renderBlock(), e = this.e, v = e.drums[0];
     const [L, R] = dst;
-    // the voice, its gain ramped over the block
-    const g0 = this.gain, g1 = this.gainTo * this.gate, dg = (g1 - g0) / 64;
-    // the declick: a retrigger's first sample is put where the last note left off (as heard), and the offset dies away
+    // the voice, its gain ramped over the block; a retrigger starts at its new gain straight away, the declick below
+    // taking up the step (a ramp's corners would be heard on a dull sound)
+    const g1 = this.gainTo * this.gate, g0 = this.retrig ? g1 : this.gain, dg = (g1 - g0) / 64, gain = (i) => g0 + dg * i;
+    // the declick: a retrigger's first sample carries on from where the last note left off (as heard), level and slope,
+    // and the offset dies away: offset(i) = (c0 + k i) r^i, so offset(0) = c0 and offset(1) - offset(0) = ds
     const raw = out[0], o = this.voice;
-    if (this.retrig) { this.retrig = false; this.dc = g0 > 1e-3 ? this.lastHeard / g0 - raw[0] : 0; }
-    if (this.dc) {
-      let dc = this.dc;
-      for (let i = 0; i < 64; i++) { o[i] = raw[i] + dc; dc *= DECLICK_K; }
-      this.dc = Math.abs(dc) < 0.5 ? 0 : dc;
+    if (this.retrig) {
+      this.retrig = false;
+      const [h1, h0] = this.heard;
+      if (g0 > 1e-3) {
+        // (the slope taken up is at most the old note's own: a new note that starts on an edge, a square's say, keeps it)
+        const c0 = h0 / g0 - raw[0], old = (h0 - h1) / g0, ds = Math.max(-Math.abs(old), Math.min(Math.abs(old), old - (raw[1] - raw[0])));
+        this.dcP = c0; this.dcK = (c0 + ds) / DECLICK_K - c0; this.dcM = 1;
+      } else this.dcM = 0;
+    }
+    if (this.dcM) {
+      let p = this.dcP, m = this.dcM;
+      const k = this.dcK;
+      for (let i = 0; i < 64; i++) { o[i] = raw[i] + p * m; p += k; m *= DECLICK_K; }
+      this.dcP = p; this.dcM = m < 1e-7 ? 0 : m;
     } else o.set(raw);
-    this.lastHeard = o[63] * (g0 + dg * 63);
+    this.heard[0] = o[62] * gain(62); this.heard[1] = o[63] * gain(63);
     const isDelay = e.fx.fxType === LXR.FX_DELAY;
     e.fx.forceWet = isDelay;
     e.fx.setDelaySync(isDelay ? delaySamples(this.delayPos, this.bpm) : null);
     const pl = v.triggeredPanL / 32768, pr = v.triggeredPanR / 32768;
-    for (let i = 0; i < 64; i++) { const s = o[i] * (g0 + dg * i); L[i] = s * pl; R[i] = s * pr; }
+    for (let i = 0; i < 64; i++) { const s = o[i] * gain(i); L[i] = s * pl; R[i] = s * pr; }
     this.gain = g1;
     // the echo: the firmware's FX bus, sample-exact, fed at the echo send when the voice is routed to it
     this.fxGain[0] = e.audioRouting[0] === LXR.MIXER_ROUTING_FX_BUS ? g1 * this.sendE : 0;
