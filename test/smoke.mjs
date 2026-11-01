@@ -1,6 +1,6 @@
 // Drives the built page in Chromium at three window sizes (the 1000 x 600 layout itself, a wide window and a small one, where
 // it scales to fit): no errors, the screen keeps its 5:3 shape inside the window, no page scrolls but the presets list,
-// swipes and page buttons turn the page, fader and pad drags don't, holding a fader opens
+// swipes and the page buttons along the bottom turn the page, fader drags don't, holding a fader opens
 // its sequencer, MIDI CC 1-8 turn the perf dials, the reverb sends, the note grid edits steps on four pages and copies
 // page 1 to the others, space plays and stops, play runs the steps, presets save and load, and record downloads a WAV.
 //   node test/smoke.mjs [index.html]   (needs Playwright)
@@ -44,8 +44,11 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   check(await pg.evaluate(() => !$('m-rnd').hidden) && await pg.isEnabled('#m-fxa ~ [data-undo]'), 'a randomiser works from the popup, which stays open');
   await pg.click('#m-rnd-close');
   check(await pg.evaluate(() => $('m-rnd').hidden), 'done closes the popup');
+  // the page buttons sit along the bottom, under the pages, and there's no x/y page
+  check(await pg.evaluate(() => { const t = document.querySelector('.m > .m-tabs').getBoundingClientRect(), p = $('m-pages').getBoundingClientRect(), m = $('m').getBoundingClientRect();
+    return t.top >= p.bottom - 1 && m.bottom - t.bottom < 20 * mK && document.querySelectorAll('[data-m-tab]').length === 5 && !document.querySelector('[data-m-tab="xy"], [data-m-panel="xy"]'); }), 'the page buttons are along the bottom; no x/y page');
   // no page scrolls; every panel fits
-  for (const t of ['seq', 'voice', 'xy', 'fx', 'comp', 'presets']) {
+  for (const t of ['seq', 'voice', 'fx', 'comp', 'presets']) {
     await pg.click(`[data-m-tab="${t}"]`);
     const o = await pg.evaluate((t) => { const p = document.querySelector(`[data-m-panel="${t}"]`); return [p.scrollHeight - p.clientHeight, document.documentElement.scrollHeight - innerHeight, document.documentElement.scrollWidth - innerWidth]; }, t);
     check(o.every((v) => v <= 0), `${t}: fits the screen (${o})`);
@@ -78,11 +81,6 @@ for (const [w, h] of [[1000, 600], [1600, 900], [700, 520]]) {
   await pg.click('[data-m-tab="fx"]');
   check(await pg.evaluate(() => document.querySelector('#m-verb .m-vtrack').getAttribute('aria-valuenow') === '50'), 'the fx page shows the reverb send');
   await pg.evaluate(() => window.__midiIn.onmidimessage({ data: [0xb0, 10, 0] }));
-  // the x/y pad
-  await pg.click('[data-m-tab="xy"]');
-  r = await box('.m-xy');
-  await drag(r.x + 30, r.y + r.height - 30, r.x + r.width - 16, r.y + 16);
-  check(await page() === 'xy' && await pg.evaluate(() => values[PAR.FILTER_FREQ_1] > 115 && values[PAR.RESO_1] > 115), 'the x/y pad moves its two parameters, not the page');
   // holding a fader opens its step sequencer
   await pg.click('[data-m-tab="voice"]');
   r = await box('#m-voice-tone .m-vtrack');

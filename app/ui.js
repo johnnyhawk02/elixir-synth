@@ -1,10 +1,10 @@
-// ---- the screen: pages, transport and the faders every page uses; then the perf, voice, x/y, fx and master
+// ---- the screen: pages, transport and the faders every page uses; then the perf, voice, fx and master
 // pages and the randomisers ----
 
-// ---- pages: perf stays on the left; the others sit on the right, one at a time: swipe across them, or tap a page button. A swipe starts anywhere but on a fader, the x/y pad, the
+// ---- pages: perf stays on the left; the others sit on the right, one at a time: swipe across them, or tap a page button. A swipe starts anywhere but on a fader, the
 // steps or a list, so dragging those never turns the page ----
 const mPages = $('m-pages'), PANELS = [...mPages.querySelectorAll('[data-m-panel]')];
-const PAGE_NAMES = { play: 'perform', seq: 'notes', voice: 'voice', xy: 'x/y', fx: 'effects', comp: 'master', presets: 'presets' };
+const PAGE_NAMES = { play: 'perform', seq: 'notes', voice: 'voice', fx: 'effects', comp: 'master', presets: 'presets' };
 // the screen is laid out once at 1000 x 600 and scaled as a whole to fit the window, as a plugin window resizes
 const M_W = 1000, M_H = 600;
 let mK = 1;
@@ -23,7 +23,7 @@ function mGo(i, smooth) {
 document.querySelectorAll('[data-m-tab]').forEach((b) => b.addEventListener('click', () => mGo(PANELS.findIndex((p) => p.dataset.mPanel === b.dataset.mTab))));
 addEventListener('resize', () => mGo(mCur));
 {
-  const NOSWIPE = '.m-vtrack, .m-xy, .m-steps, select, input';
+  const NOSWIPE = '.m-vtrack, .m-steps, select, input';
   let sw = null;
   mPages.addEventListener('pointerdown', (e) => {
     if (sw || e.target.closest(NOSWIPE)) return;
@@ -178,7 +178,7 @@ const VP_PAGES = [
   ['shape', ['VELOA1', 'VELOD1', 'VOL_SLOPE1', 'MOD_EG1', 'PITCH_SLOPE1', 'MODAMNT1', 'TRANS1_WAVE', 'TRANS1_VOL', 'TRANS1_FREQ']],
   ['filter', ['FILTER_FREQ_1', 'RESO_1', 'FILTER_TYPE_1', 'FILTER_DRIVE_1', 'VOL1', 'PAN1', 'VOICE_DECIMATION1', 'DRIVE1']],
   ['mod', ['FREQ_LFO1', 'SYNC_LFO1', 'AMOUNT_LFO1', 'WAVE_LFO1', 'RETRIGGER_LFO1', 'OFFSET_LFO1', 'TARGET_LFO1', 'VEL_DEST_1', 'VELO_MOD_AMT_1', 'VOLUME_MOD_ON_OFF1']]];
-// every drum 1 parameter, by page, for the x/y pad and the randomisers
+// every drum 1 parameter, by page, for the randomisers
 const DR1 = VP_PAGES.flatMap(([, ps]) => ps);
 const VP_TABS = [['tone + shape', ['tone', 'shape']], ['filter + mod', ['filter', 'mod']]];
 let mVSec = 0;
@@ -208,48 +208,6 @@ function mVoiceShow() {
   mVBoxes.forEach((tab, k) => { tab.hidden = k !== mVSec; });
 }
 mVoiceShow();
-
-// ---- x/y: one pad moving any two drum 1 parameters, picked in the two lists over it (kept in this browser). The
-// pad moves the voice page's faders, so a fader's sequencer moves around where the pad puts it ----
-const XY_KEY = 'elixir-synth-xy', XY_IN = 16;
-let mXY = (() => { try { const v = JSON.parse(localStorage.getItem(XY_KEY)); return Array.isArray(v) && v.every((n) => DR1.includes(n)) ? v : null; } catch (e) { return null; } })() || ['FILTER_FREQ_1', 'RESO_1'];
-const xyFader = (pn) => mFaders.find((f) => f.key === `m-voice-${VP_PAGES.find(([, ps]) => ps.includes(pn))[0]}:${VP_LABEL[pn]}`);
-{
-  const card = $('m-xy-card');
-  card.innerHTML = ['x', 'y'].map((ax) => `<div class="m-xyrow"><span>${ax === 'x' ? 'x →' : 'y ↑'}</span><select aria-label="pad ${ax === 'x' ? 'across' : 'up'}"></select></div>`).join('')
-    + '<div class="m-xy" role="group"><span class="m-xy-x"></span><span class="m-xy-y"></span><i></i><output></output></div>';
-  const sels = [...card.querySelectorAll('select')], pad = card.querySelector('.m-xy'), out = pad.querySelector('output');
-  sels.forEach((s, k) => {
-    for (const [name, ps] of VP_PAGES) {
-      const og = document.createElement('optgroup'); og.label = name;
-      for (const pn of ps) og.append(new Option(VP_LABEL[pn], pn));
-      s.append(og);
-    }
-    s.value = mXY[k];
-    s.addEventListener('change', () => { mXY[k] = s.value; try { localStorage.setItem(XY_KEY, JSON.stringify(mXY)); } catch (e) {} draw(); });
-  });
-  const fr = (f) => ((f.base !== null ? f.base : f.get()) - f.min) / ((f.hiOf() - f.min) || 1);
-  const draw = () => {
-    const X = xyFader(mXY[0]), Y = xyFader(mXY[1]);
-    pad.querySelector('.m-xy-x').textContent = `${X.label} →`; pad.querySelector('.m-xy-y').textContent = `↑ ${Y.label}`;
-    pad.setAttribute('aria-label', `x/y pad: ${X.label} across, ${Y.label} up`);
-    pad.style.setProperty('--x', fr(X)); pad.style.setProperty('--y', fr(Y));
-    out.textContent = `${X.label} ${X.show(X.get())}\n${Y.label} ${Y.show(Y.get())}`;
-  };
-  const at = (e) => {
-    const r = pad.getBoundingClientRect(), X = xyFader(mXY[0]), Y = xyFader(mXY[1]);
-    const val = (f, x) => f.min + Math.max(0, Math.min(1, x)) * (f.hiOf() - f.min);
-    X.move(val(X, (e.clientX - r.left - XY_IN * mK) / (r.width - 2 * XY_IN * mK)));
-    Y.move(val(Y, (r.bottom - XY_IN * mK - e.clientY) / (r.height - 2 * XY_IN * mK)));
-    drawAll();
-  };
-  let held = false;
-  pad.addEventListener('pointerdown', (e) => { pad.setPointerCapture(e.pointerId); held = true; pad.classList.add('held'); at(e); });
-  pad.addEventListener('pointermove', (e) => { if (held) at(e); });
-  const end = () => { held = false; pad.classList.remove('held'); };
-  pad.addEventListener('pointerup', end); pad.addEventListener('pointercancel', end);
-  drawHooks.push(draw);
-}
 
 // ---- fx: the echo (ping pong, send, time on the musical lengths, tone, feedback, width) and the ring mod (send,
 // carrier wave and frequency) ----
@@ -395,7 +353,7 @@ addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('m-rnd').hidde
 // by the CSS), worked out from where it sits on its own page, and again when the screen's size changes ----
 function mDepth() {
   const m = $('m').getBoundingClientRect();
-  for (const el of document.querySelectorAll('.m-vf, .m-btn, .m-toggle, .m-pload, .m-tabs button, .m-xy, .m-chead, .m-title, .m-trans button, .m-seq-lenrow, .m-step')) {
+  for (const el of document.querySelectorAll('.m-vf, .m-btn, .m-toggle, .m-pload, .m-tabs button, .m-chead, .m-title, .m-trans button, .m-seq-lenrow, .m-step')) {
     const r = el.getBoundingClientRect();
     if (!r.width) continue;
     const x = (((r.left + r.width / 2 - m.left) % m.width) + m.width) % m.width / m.width, y = (r.top + r.height / 2 - m.top) / m.height;

@@ -25,20 +25,11 @@
       <button class="m-rec" id="m-rec" type="button" aria-pressed="false" aria-label="Record"><i></i><span id="m-rec-t">rec</span></button>
     </div>
   </header>
-  <button class="m-btn m-rnd-open" id="m-rnd-open" type="button" aria-haspopup="dialog" aria-expanded="false">randomise</button>
 
   <div class="m-side" id="m-side" aria-label="perform">
     <section class="m-card m-play-card"><div class="m-faders m-dials" id="m-perf"></div></section>
   </div>
 
-  <nav class="m-tabs" role="tablist" aria-label="pages">
-    <button type="button" role="tab" data-m-tab="seq" aria-selected="true">seq</button>
-    <button type="button" role="tab" data-m-tab="voice" aria-selected="false">voice</button>
-    <button type="button" role="tab" data-m-tab="xy" aria-selected="false">x/y</button>
-    <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
-    <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>
-    <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
-  </nav>
   <div class="m-pages" id="m-pages">
   <div class="m-panel" data-m-panel="seq">
     <section class="m-card m-seqpage">
@@ -75,9 +66,6 @@
     </section>
   </div>
 
-  <div class="m-panel" data-m-panel="xy">
-    <section class="m-card m-xy-card" id="m-xy-card"></section>
-  </div>
 
   <div class="m-panel" data-m-panel="fx">
     <section class="m-card m-fx-card">
@@ -116,6 +104,15 @@
     </section>
   </div>
   </div>
+
+  <button class="m-btn m-rnd-open" id="m-rnd-open" type="button" aria-haspopup="dialog" aria-expanded="false">randomise</button>
+  <nav class="m-tabs" role="tablist" aria-label="pages">
+    <button type="button" role="tab" data-m-tab="seq" aria-selected="true">seq</button>
+    <button type="button" role="tab" data-m-tab="voice" aria-selected="false">voice</button>
+    <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
+    <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>
+    <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
+  </nav>
 
   <div class="m-seq m-rnd" id="m-rnd" hidden>
     <section class="m-card m-rand-card" role="dialog" aria-label="randomise">

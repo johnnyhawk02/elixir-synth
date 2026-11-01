@@ -35,8 +35,8 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
   --fs-xs: 1.12rem; --fs-s: 1.25rem; --fs-m: 1.3rem; --fs-l: 1.6rem;
   --rule: 1px solid rgba(225, 235, 255, .38);
   position: absolute; left: 50%; top: 50%; width: 1000px; height: 600px; transform: translate(-50%, -50%) scale(var(--k, 1));
-  display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: 124px auto minmax(0, 1fr);
-  grid-template-areas: "top dials" "rnd tabs" "pages pages"; column-gap: 16px; padding: 8px 12px 10px;
+  display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: 124px minmax(0, 1fr) auto;
+  grid-template-areas: "top dials" "pages pages" "rnd tabs"; column-gap: 16px; padding: 8px 12px 10px;
   font-family: var(--body); color: var(--ink);
   touch-action: manipulation; -webkit-user-select: none; user-select: none;
   -webkit-touch-callout: none; /* a long hold mustn't bring up the phone's own menus */
@@ -69,7 +69,7 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
    (--d, set per control by mDepth in ui.js: 1 at the bottom left, about 1.7 at the top right) */
 .m, .m button, .m-title, .m .m-flab, .m .m-vf output { --d: 1; text-shadow: 0 0 calc(2.5px * var(--d)) rgba(205, 220, 255, calc(.38 + .1 * var(--d))); }
 .m .m-vtrack i, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-gr i b { filter: drop-shadow(calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgba(4, 10, 80, .17)); }
-.m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-xy, .m .m-seq-len, .m .m-xyrow select { box-shadow: calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgba(4, 10, 80, .14); }
+.m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-seq-len { box-shadow: calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgba(4, 10, 80, .14); }
 .m .m-tabs button:not([aria-selected="true"]) { box-shadow: none; }
 
 /* cards: the sheets are glass of their own; the sections inside the screen are bare */
@@ -184,13 +184,13 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 @media (prefers-reduced-motion: reduce) { .m-rec.on i { animation: none; } }
 .m .m-rec:disabled { opacity: .35; }
 /* the pages sit side by side on the right; swipe across them or tap a page button. Each page is one screen, no scrolling */
-.m-pages { grid-area: pages; display: grid; grid-auto-flow: column; grid-auto-columns: 100%; column-gap: 16px; min-height: 0; padding-top: 6px; overflow: hidden;
+.m-pages { grid-area: pages; display: grid; grid-auto-flow: column; grid-auto-columns: 100%; column-gap: 16px; min-height: 0; padding: 6px 0; overflow: hidden;
   overscroll-behavior-x: contain; scrollbar-width: none; touch-action: none; }
 .m-pages::-webkit-scrollbar { display: none; }
 .m-panel { display: grid; grid-template-rows: 1fr; gap: 12px; align-content: stretch; min-height: 0; overflow: hidden; }
 
-/* the page buttons, one line of six over the pages */
-.m > .m-tabs { grid-area: tabs; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; padding: 8px 0 6px; border-bottom: var(--rule); }
+/* the page buttons, one line of five along the bottom, under the pages */
+.m > .m-tabs { grid-area: tabs; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 6px 0 0; border-top: var(--rule); }
 .m-tabs button { border-color: transparent; min-width: 0; }
 .m-tabs button[aria-selected="true"] { border-color: var(--ink); }
 .m .m-tabs button { min-height: 40px; padding: 0; font-size: 1.3rem !important; letter-spacing: .04em; }
@@ -199,9 +199,9 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-side { grid-area: dials; display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; overflow: hidden; border-bottom: var(--rule); }
 .m-play-card { display: grid; min-height: 0; padding: 6px 0 4px; }
 #m-perf { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 2px; min-height: 0; }
-/* the randomise button, left of the page buttons, and its popup: next bar, then the seven buttons and done, four across */
-.m .m-rnd-open { grid-area: rnd; align-self: center; min-height: 40px; margin: 8px 0 6px; font-size: var(--fs-s) !important; letter-spacing: .06em; }
-.m-seq.m-rnd { top: 196px; bottom: auto; height: 250px; }
+/* the randomise button, left of the page buttons along the bottom, and its popup: next bar, then the seven buttons and done, four across */
+.m .m-rnd-open { grid-area: rnd; align-self: center; min-height: 40px; margin: 6px 0 0; font-size: var(--fs-s) !important; letter-spacing: .06em; }
+.m-seq.m-rnd { top: auto; bottom: 64px; height: 250px; }
 .m-rnd .m-rand-card { width: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; pointer-events: auto;
   box-shadow: 0 -8px 30px rgba(0, 0, 0, .5), inset 0 3px 10px rgba(0, 0, 0, .28); }
 .m-rnd .m-chead { gap: 16px; text-transform: uppercase; }
@@ -260,21 +260,6 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m-vpart + .m-vpart { border-left: var(--rule); }
 .m-vset { grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 8px 4px; min-height: 0; }
 
-/* ---- x/y: the two picks, then the pad: a dot grid with a square cursor ---- */
-.m-xy-card { display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 8px; min-height: 0; padding: 10px 2px; }
-.m-xyrow { display: grid; grid-template-columns: 2.6em 1fr; gap: 8px; align-items: center; text-transform: uppercase; font-size: var(--fs-s); }
-.m-xyrow select { min-width: 0; min-height: 44px; font: inherit; font-size: var(--fs-s); text-transform: uppercase; color: var(--ink);
-  background: transparent; border: 2px solid var(--ink); border-radius: 3px; padding: 0 8px; }
-.m .m-xy { position: relative; min-height: 0; border: 2px solid var(--ink); border-radius: 2px; touch-action: none; cursor: crosshair; overflow: hidden;
-  background: radial-gradient(circle, var(--ghost) 1.2px, transparent 1.6px) 0 0 / 12px 12px; }
-.m .m-xy i { position: absolute; left: calc(16px + (100% - 32px) * var(--x, 0)); bottom: calc(16px + (100% - 32px) * var(--y, 0)); width: 24px; height: 24px; margin: 0 0 -12px -12px;
-  border-radius: 2px; background: var(--ink); box-shadow: 0 0 0 3px var(--panel), 0 0 0 5px var(--ink); pointer-events: none; }
-.m .m-xy.held i { background: var(--panel); }
-.m-xy span { position: absolute; font-size: var(--fs-xs); pointer-events: none; line-height: 1; }
-.m-xy output { position: absolute; left: 8px; top: 8px; text-align: left; font-family: var(--mono); font-size: var(--fs-xs); line-height: 1.05; white-space: pre-line; pointer-events: none; }
-.m .m-xy span, .m .m-xy output { color: var(--ink); opacity: .8; font-weight: 400; text-transform: uppercase; }
-.m-xy-x { right: 8px; bottom: 7px; }
-.m-xy-y { left: 8px; bottom: 7px; }
 
 /* ---- fx: the echo row and the ring mod row, each its name over its faders, then random, alter, undo ---- */
 .m-fx-card { display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; min-height: 0; padding: 8px 2px; }
@@ -367,36 +352,26 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
 .m .m-seq-steps i::after, .m .m-seq-steps i::before { transition: height .09s cubic-bezier(.2, .7, .3, 1); }
 .m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-trans button { transition: background-color .22s ease-out, color .22s ease-out, opacity .22s ease-out; }
 .m .m-btn:active, .m .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"], .m .m-play[aria-pressed="true"] { transition-duration: .06s; }
-.m .m-seq-steps i.now, .m .m-xy i { transition: outline-color .2s ease-out, left .07s linear, bottom .07s linear; }
+.m .m-seq-steps i.now { transition: outline-color .2s ease-out, left .07s linear, bottom .07s linear; }
 /* a fader moved by MIDI follows the knob straight away */
 .m .m-vf.cc .m-vtrack i { transition: none; }
-@media (prefers-reduced-motion: reduce) { .m .m-vtrack i, .m .m-gr i b, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-trans button, .m .m-xy i { transition: none; } }
-.m-xyrow option, .m-xyrow optgroup { color: #0b0c0a; background: #eef3ff; }
+@media (prefers-reduced-motion: reduce) { .m .m-vtrack i, .m .m-gr i b, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-trans button { transition: none; } }
 </style>
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title">elixir<small class="m-ver">synth v21</small></b>
+    <b class="m-title">elixir<small class="m-ver">synth v6</small></b>
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
     <div class="m-trans">
       <button class="m-play" id="m-play" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M7 4.5v15l13-7.5z"/><rect class="i-stop" x="5.5" y="5.5" width="13" height="13" rx="2"/></svg><span>play</span></button>
       <button class="m-rec" id="m-rec" type="button" aria-pressed="false" aria-label="Record"><i></i><span id="m-rec-t">rec</span></button>
     </div>
   </header>
-  <button class="m-btn m-rnd-open" id="m-rnd-open" type="button" aria-haspopup="dialog" aria-expanded="false">randomise</button>
 
   <div class="m-side" id="m-side" aria-label="perform">
     <section class="m-card m-play-card"><div class="m-faders m-dials" id="m-perf"></div></section>
   </div>
 
-  <nav class="m-tabs" role="tablist" aria-label="pages">
-    <button type="button" role="tab" data-m-tab="seq" aria-selected="true">seq</button>
-    <button type="button" role="tab" data-m-tab="voice" aria-selected="false">voice</button>
-    <button type="button" role="tab" data-m-tab="xy" aria-selected="false">x/y</button>
-    <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
-    <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>
-    <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
-  </nav>
   <div class="m-pages" id="m-pages">
   <div class="m-panel" data-m-panel="seq">
     <section class="m-card m-seqpage">
@@ -433,9 +408,6 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
     </section>
   </div>
 
-  <div class="m-panel" data-m-panel="xy">
-    <section class="m-card m-xy-card" id="m-xy-card"></section>
-  </div>
 
   <div class="m-panel" data-m-panel="fx">
     <section class="m-card m-fx-card">
@@ -470,10 +442,19 @@ body { position: relative; height: 100dvh; overflow: hidden; -webkit-tap-highlig
         <button class="m-btn" id="m-pexport" type="button">export</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v21, 1 Nov, 07:50</footer>
+      <footer class="m-foot">Erica Synths LXR-02 drum 1 port, GPL-3.0, unofficial<br><a href="https://github.com/johnnyhawk02/elixir-synth">Source</a> · v6, 1 Nov, 07:59</footer>
     </section>
   </div>
   </div>
+
+  <button class="m-btn m-rnd-open" id="m-rnd-open" type="button" aria-haspopup="dialog" aria-expanded="false">randomise</button>
+  <nav class="m-tabs" role="tablist" aria-label="pages">
+    <button type="button" role="tab" data-m-tab="seq" aria-selected="true">seq</button>
+    <button type="button" role="tab" data-m-tab="voice" aria-selected="false">voice</button>
+    <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
+    <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>
+    <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
+  </nav>
 
   <div class="m-seq m-rnd" id="m-rnd" hidden>
     <section class="m-card m-rand-card" role="dialog" aria-label="randomise">
@@ -4657,13 +4638,13 @@ function useSnapshot(p, keepTempo) {
   sendAll(); drawAll();
 }
 
-// ---- the screen: pages, transport and the faders every page uses; then the perf, voice, x/y, fx and master
+// ---- the screen: pages, transport and the faders every page uses; then the perf, voice, fx and master
 // pages and the randomisers ----
 
-// ---- pages: perf stays on the left; the others sit on the right, one at a time: swipe across them, or tap a page button. A swipe starts anywhere but on a fader, the x/y pad, the
+// ---- pages: perf stays on the left; the others sit on the right, one at a time: swipe across them, or tap a page button. A swipe starts anywhere but on a fader, the
 // steps or a list, so dragging those never turns the page ----
 const mPages = $('m-pages'), PANELS = [...mPages.querySelectorAll('[data-m-panel]')];
-const PAGE_NAMES = { play: 'perform', seq: 'notes', voice: 'voice', xy: 'x/y', fx: 'effects', comp: 'master', presets: 'presets' };
+const PAGE_NAMES = { play: 'perform', seq: 'notes', voice: 'voice', fx: 'effects', comp: 'master', presets: 'presets' };
 // the screen is laid out once at 1000 x 600 and scaled as a whole to fit the window, as a plugin window resizes
 const M_W = 1000, M_H = 600;
 let mK = 1;
@@ -4682,7 +4663,7 @@ function mGo(i, smooth) {
 document.querySelectorAll('[data-m-tab]').forEach((b) => b.addEventListener('click', () => mGo(PANELS.findIndex((p) => p.dataset.mPanel === b.dataset.mTab))));
 addEventListener('resize', () => mGo(mCur));
 {
-  const NOSWIPE = '.m-vtrack, .m-xy, .m-steps, select, input';
+  const NOSWIPE = '.m-vtrack, .m-steps, select, input';
   let sw = null;
   mPages.addEventListener('pointerdown', (e) => {
     if (sw || e.target.closest(NOSWIPE)) return;
@@ -4837,7 +4818,7 @@ const VP_PAGES = [
   ['shape', ['VELOA1', 'VELOD1', 'VOL_SLOPE1', 'MOD_EG1', 'PITCH_SLOPE1', 'MODAMNT1', 'TRANS1_WAVE', 'TRANS1_VOL', 'TRANS1_FREQ']],
   ['filter', ['FILTER_FREQ_1', 'RESO_1', 'FILTER_TYPE_1', 'FILTER_DRIVE_1', 'VOL1', 'PAN1', 'VOICE_DECIMATION1', 'DRIVE1']],
   ['mod', ['FREQ_LFO1', 'SYNC_LFO1', 'AMOUNT_LFO1', 'WAVE_LFO1', 'RETRIGGER_LFO1', 'OFFSET_LFO1', 'TARGET_LFO1', 'VEL_DEST_1', 'VELO_MOD_AMT_1', 'VOLUME_MOD_ON_OFF1']]];
-// every drum 1 parameter, by page, for the x/y pad and the randomisers
+// every drum 1 parameter, by page, for the randomisers
 const DR1 = VP_PAGES.flatMap(([, ps]) => ps);
 const VP_TABS = [['tone + shape', ['tone', 'shape']], ['filter + mod', ['filter', 'mod']]];
 let mVSec = 0;
@@ -4867,48 +4848,6 @@ function mVoiceShow() {
   mVBoxes.forEach((tab, k) => { tab.hidden = k !== mVSec; });
 }
 mVoiceShow();
-
-// ---- x/y: one pad moving any two drum 1 parameters, picked in the two lists over it (kept in this browser). The
-// pad moves the voice page's faders, so a fader's sequencer moves around where the pad puts it ----
-const XY_KEY = 'elixir-synth-xy', XY_IN = 16;
-let mXY = (() => { try { const v = JSON.parse(localStorage.getItem(XY_KEY)); return Array.isArray(v) && v.every((n) => DR1.includes(n)) ? v : null; } catch (e) { return null; } })() || ['FILTER_FREQ_1', 'RESO_1'];
-const xyFader = (pn) => mFaders.find((f) => f.key === `m-voice-${VP_PAGES.find(([, ps]) => ps.includes(pn))[0]}:${VP_LABEL[pn]}`);
-{
-  const card = $('m-xy-card');
-  card.innerHTML = ['x', 'y'].map((ax) => `<div class="m-xyrow"><span>${ax === 'x' ? 'x →' : 'y ↑'}</span><select aria-label="pad ${ax === 'x' ? 'across' : 'up'}"></select></div>`).join('')
-    + '<div class="m-xy" role="group"><span class="m-xy-x"></span><span class="m-xy-y"></span><i></i><output></output></div>';
-  const sels = [...card.querySelectorAll('select')], pad = card.querySelector('.m-xy'), out = pad.querySelector('output');
-  sels.forEach((s, k) => {
-    for (const [name, ps] of VP_PAGES) {
-      const og = document.createElement('optgroup'); og.label = name;
-      for (const pn of ps) og.append(new Option(VP_LABEL[pn], pn));
-      s.append(og);
-    }
-    s.value = mXY[k];
-    s.addEventListener('change', () => { mXY[k] = s.value; try { localStorage.setItem(XY_KEY, JSON.stringify(mXY)); } catch (e) {} draw(); });
-  });
-  const fr = (f) => ((f.base !== null ? f.base : f.get()) - f.min) / ((f.hiOf() - f.min) || 1);
-  const draw = () => {
-    const X = xyFader(mXY[0]), Y = xyFader(mXY[1]);
-    pad.querySelector('.m-xy-x').textContent = `${X.label} →`; pad.querySelector('.m-xy-y').textContent = `↑ ${Y.label}`;
-    pad.setAttribute('aria-label', `x/y pad: ${X.label} across, ${Y.label} up`);
-    pad.style.setProperty('--x', fr(X)); pad.style.setProperty('--y', fr(Y));
-    out.textContent = `${X.label} ${X.show(X.get())}\n${Y.label} ${Y.show(Y.get())}`;
-  };
-  const at = (e) => {
-    const r = pad.getBoundingClientRect(), X = xyFader(mXY[0]), Y = xyFader(mXY[1]);
-    const val = (f, x) => f.min + Math.max(0, Math.min(1, x)) * (f.hiOf() - f.min);
-    X.move(val(X, (e.clientX - r.left - XY_IN * mK) / (r.width - 2 * XY_IN * mK)));
-    Y.move(val(Y, (r.bottom - XY_IN * mK - e.clientY) / (r.height - 2 * XY_IN * mK)));
-    drawAll();
-  };
-  let held = false;
-  pad.addEventListener('pointerdown', (e) => { pad.setPointerCapture(e.pointerId); held = true; pad.classList.add('held'); at(e); });
-  pad.addEventListener('pointermove', (e) => { if (held) at(e); });
-  const end = () => { held = false; pad.classList.remove('held'); };
-  pad.addEventListener('pointerup', end); pad.addEventListener('pointercancel', end);
-  drawHooks.push(draw);
-}
 
 // ---- fx: the echo (ping pong, send, time on the musical lengths, tone, feedback, width) and the ring mod (send,
 // carrier wave and frequency) ----
@@ -5054,7 +4993,7 @@ addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('m-rnd').hidde
 // by the CSS), worked out from where it sits on its own page, and again when the screen's size changes ----
 function mDepth() {
   const m = $('m').getBoundingClientRect();
-  for (const el of document.querySelectorAll('.m-vf, .m-btn, .m-toggle, .m-pload, .m-tabs button, .m-xy, .m-chead, .m-title, .m-trans button, .m-seq-lenrow, .m-step')) {
+  for (const el of document.querySelectorAll('.m-vf, .m-btn, .m-toggle, .m-pload, .m-tabs button, .m-chead, .m-title, .m-trans button, .m-seq-lenrow, .m-step')) {
     const r = el.getBoundingClientRect();
     if (!r.width) continue;
     const x = (((r.left + r.width / 2 - m.left) % m.width) + m.width) % m.width / m.width, y = (r.top + r.height / 2 - m.top) / m.height;

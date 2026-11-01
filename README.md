@@ -15,11 +15,11 @@ Elixir Synth is unofficial: it is not made, approved or endorsed by Erica Synths
 The screen is landscape, 5:3, laid out once at 1000 x 600 and scaled as a whole to fit the window, with the case
 showing round it where the window is a different shape. That is how the plugin's window will resize.
 
-Perf is on show all the time. The other pages share the space under its dials: tap the page buttons over them, or swipe across
-them. The space bar starts and stops. Dragging a fader, a dial, the x/y pad or the steps never turns the page. Play and
+Perf is on show all the time. The other pages share the space under its dials: tap the page buttons along the bottom of the window, or swipe across
+them. The space bar starts and stops. Dragging a fader, a dial or the steps never turns the page. Play and
 record sit under the title at the top left.
 
-- **PERF** (always on show): eight dials in a line along the top right, and the randomise button, which opens a popup of everything, sound, alter, notes, random fx, alter fx, undo, and
+- **PERF** (always on show): eight dials in a line along the top right, and the randomise button (bottom left, beside the page buttons), which opens a popup of everything, sound, alter, notes, random fx, alter fx, undo, and
   *next bar* (while playing, a randomise waits for the next bar). Drag a dial up or down to turn it. A MIDI controller
   turns them too: CC 1 to 8, on any channel, left to right:
 
@@ -41,7 +41,6 @@ record sit under the title at the top left.
   2 acid, 3 euclid, 4 arp, 5 walk, 6 motif, 7 groove, 8 phrase. Presets from before there were pages play their one page
   on all four.
 - **VOICE**: every DR1 parameter, on four tabs: tone, shape, filter, mod.
-- **X/Y**: one pad moving any two DR1 parameters.
 - **FX**: the echo (tempo-synced on musical lengths, ping pong, tone, feedback, width), the reverb (send, predelay,
   decay, tone, early reflections; at the top its decay holds) and the ring mod, with random, alter and undo.
 - **MSTR**: distortion (tube, fold or rat) on the whole mix, then the compressor.
